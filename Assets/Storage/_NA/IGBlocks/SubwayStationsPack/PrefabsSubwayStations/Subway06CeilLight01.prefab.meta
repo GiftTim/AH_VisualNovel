@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 7e5aa834b3f50a74fbf930a8cf081c00
+timeCreated: 1577012795
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/PrefabsSubwayStations/Subway06CeilLight01.prefab
+  uploadId: 369231

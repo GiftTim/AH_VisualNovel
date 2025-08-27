@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: a7d011c09ae6ccd489d54ce6ebae3d61
+timeCreated: 1577011473
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/PrefabsSubwayStations/Subway03_InterBorder.prefab
+  uploadId: 369231

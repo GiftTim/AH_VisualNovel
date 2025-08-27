@@ -1,0 +1,280 @@
+fileFormatVersion: 2
+guid: f7392605636f50c4a9d166149116d98e
+timeCreated: 1575361423
+licenseType: Store
+ModelImporter:
+  serializedVersion: 22
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: Subway06Ceiling
+    100004: Subway06CeilingUp
+    100006: Subway06CeilLamp
+    100008: Subway06CeillDetail
+    100010: Subway06CeilLight
+    100012: Subway06Column01a
+    100014: Subway06Column01b
+    100016: Subway06Column01c
+    100018: Subway06Floor01
+    100020: Subway06Floor03
+    100022: Subway06Railfloor
+    100024: Subway06RailMetal
+    100026: Subway06Railway
+    100028: Subway06Side01
+    100030: Subway06Side01a
+    100032: Subway06Timer
+    400000: //RootNode
+    400002: Subway06Ceiling
+    400004: Subway06CeilingUp
+    400006: Subway06CeilLamp
+    400008: Subway06CeillDetail
+    400010: Subway06CeilLight
+    400012: Subway06Column01a
+    400014: Subway06Column01b
+    400016: Subway06Column01c
+    400018: Subway06Floor01
+    400020: Subway06Floor03
+    400022: Subway06Railfloor
+    400024: Subway06RailMetal
+    400026: Subway06Railway
+    400028: Subway06Side01
+    400030: Subway06Side01a
+    400032: Subway06Timer
+    2300000: Subway06Ceiling
+    2300002: Subway06CeilingUp
+    2300004: Subway06CeilLamp
+    2300006: Subway06CeillDetail
+    2300008: Subway06CeilLight
+    2300010: Subway06Column01a
+    2300012: Subway06Column01b
+    2300014: Subway06Column01c
+    2300016: Subway06Floor01
+    2300018: Subway06Floor03
+    2300020: Subway06Railfloor
+    2300022: Subway06RailMetal
+    2300024: Subway06Railway
+    2300026: Subway06Side01
+    2300028: Subway06Side01a
+    2300030: Subway06Timer
+    3300000: Subway06Ceiling
+    3300002: Subway06CeilingUp
+    3300004: Subway06CeilLamp
+    3300006: Subway06CeillDetail
+    3300008: Subway06CeilLight
+    3300010: Subway06Column01a
+    3300012: Subway06Column01b
+    3300014: Subway06Column01c
+    3300016: Subway06Floor01
+    3300018: Subway06Floor03
+    3300020: Subway06Railfloor
+    3300022: Subway06RailMetal
+    3300024: Subway06Railway
+    3300026: Subway06Side01
+    3300028: Subway06Side01a
+    3300030: Subway06Timer
+    4300000: Subway06Floor03
+    4300002: Subway06Ceiling
+    4300004: Subway06Floor01
+    4300006: Subway06Side01a
+    4300008: Subway06Column01c
+    4300010: Subway06Column01a
+    4300012: Subway06Column01b
+    4300014: Subway06Railfloor
+    4300016: Subway06Timer
+    4300018: Subway06RailMetal
+    4300020: Subway06CeilingUp
+    4300022: Subway06Side01
+    4300024: Subway06CeilLight
+    4300026: Subway06CeillDetail
+    4300028: Subway06CeilLamp
+    4300030: Subway06Railway
+    6400000: Subway06Ceiling
+    6400002: Subway06CeilingUp
+    6400004: Subway06CeilLamp
+    6400006: Subway06CeillDetail
+    6400008: Subway06CeilLight
+    6400010: Subway06Column01a
+    6400012: Subway06Column01b
+    6400014: Subway06Column01c
+    6400016: Subway06Floor01
+    6400018: Subway06Floor03
+    6400020: Subway06Railfloor
+    6400022: Subway06RailMetal
+    6400024: Subway06Railway
+    6400026: Subway06Side01
+    6400028: Subway06Side01a
+    6400030: Subway06Timer
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06CeilLamp
+    second: {fileID: 2100000, guid: 5336e05341b3ff34b9d9330609c37357, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06CeilLight
+    second: {fileID: 2100000, guid: a0698030757e6854b8b93bdedad1d9e7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06Ceiling01
+    second: {fileID: 2100000, guid: f2527124e605cd74fb9bd2a23c6d8b3d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06Ceiling02
+    second: {fileID: 2100000, guid: cb8741441669f3842bc5c00a1d937097, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06Ceiling03
+    second: {fileID: 2100000, guid: 7b20fdf3c578e2b48b8d313de327aa54, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06CeilingUp
+    second: {fileID: 2100000, guid: 80414c2895f379d4282a6bc8f8803f1e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06CeillDetail
+    second: {fileID: 2100000, guid: 2239b5b3a8486004c824edb3a182955e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06Column01a
+    second: {fileID: 2100000, guid: c1e0c0ecec7e0bf40bba476a4a1d6d34, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06Column01b
+    second: {fileID: 2100000, guid: 3a6eef8deb44c364fae8ae0e371adef7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06Column01c
+    second: {fileID: 2100000, guid: 0d9586a8f57c5b142b09b1b4aa9f7d66, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06Floor01
+    second: {fileID: 2100000, guid: 7e38fdfb4caa1d74cb14effee35449c4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06Floor02
+    second: {fileID: 2100000, guid: 49fbb1e8ad2e9ce40a61779ec80a814a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06Floor03
+    second: {fileID: 2100000, guid: 8ec233f6bf9473449b33f9058a1e7b59, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06RailMetal
+    second: {fileID: 2100000, guid: 7fb067207adcc2b45b32291daf594eb8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06Railfloor
+    second: {fileID: 2100000, guid: 397cca1d4dca8264aa0ac57b98dbbac8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06Railway
+    second: {fileID: 2100000, guid: 435caf08803b9954b925bd0b12810895, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06Side01
+    second: {fileID: 2100000, guid: 24760e561fdc186479ba65cf25b17f9e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway06Timer
+    second: {fileID: 2100000, guid: 710c18e9899c8374b83ba92c42344696, type: 2}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Subway06.FBX
+  uploadId: 369231

@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: ed5ed0e1abb94cd4380cd1505788b018
+timeCreated: 1575306324
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/Subway03_CorridorFloor.mat
+  uploadId: 369231

@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: b77cfb2d2e034e042afa51f6f2a169f1
+timeCreated: 1575296271
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/Subway02_InterCeilLight.mat
+  uploadId: 369231

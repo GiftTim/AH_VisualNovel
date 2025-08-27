@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: dd9ca7530182dd94cb779a25571000a7
+timeCreated: 1575296274
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/Subway02Timer.mat
+  uploadId: 369231

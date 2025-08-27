@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: f95c6a70c18f0284d909f014e6cd4854
+timeCreated: 1577013718
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/PrefabsSubwayStations/Subway05Circle01.prefab
+  uploadId: 369231

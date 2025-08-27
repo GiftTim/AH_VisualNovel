@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: b046a692ec3be4248b93534bbdd99ea3
+timeCreated: 1577013580
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/PrefabsSubwayStations/SubwayTunnel02b_One.prefab
+  uploadId: 369231

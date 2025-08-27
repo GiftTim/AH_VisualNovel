@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: ff1a50384946be44c9244c8410830b1e
+timeCreated: 1575361416
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/Subway06_InterBorder03.mat
+  uploadId: 369231

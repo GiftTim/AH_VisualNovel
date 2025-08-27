@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: fa0605336a9a2384c94c08e2c6918888
+timeCreated: 1575296736
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/PrefabsSubwayStations/TicketMachine01.prefab
+  uploadId: 369231

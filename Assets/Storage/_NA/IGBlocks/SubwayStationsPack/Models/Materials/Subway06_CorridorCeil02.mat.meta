@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 13dc3e1b037c6bc40b75de8ece7c244a
+timeCreated: 1575361415
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/Subway06_CorridorCeil02.mat
+  uploadId: 369231

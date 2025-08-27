@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 5c9365ab5eab0fb46bf1f6174a4c33e9
+timeCreated: 1573713943
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/Subway01RailMetal.mat
+  uploadId: 369231

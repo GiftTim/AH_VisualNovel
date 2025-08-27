@@ -1,0 +1,343 @@
+fileFormatVersion: 2
+guid: 4b6b082db51e37841b66c37dc0a82284
+timeCreated: 1575359028
+licenseType: Store
+ModelImporter:
+  serializedVersion: 22
+  fileIDToRecycleName:
+    100000: Subway04_aStair
+    100002: Subway04_aStairWall
+    100004: Subway04_CorridorCeil01
+    100006: Subway04_CorridorCeil0102
+    100008: Subway04_CorridorFloor
+    100010: //RootNode
+    100012: Subway04_CorridorWall
+    100014: Subway04_Inter
+    100016: Subway04_InterBorder01
+    100018: Subway04_InterBorder03
+    100020: Subway04_InterBorder04
+    100022: Subway04_InterCalumn01
+    100024: Subway04_InterCalumn02
+    100026: Subway04_InterDoor
+    100028: Subway04_InterDoorGlass
+    100030: Subway04_InterDoorSecurity
+    100032: Subway04_InterPlintus
+    100034: Subway04Stair
+    100036: Subway04StairUp
+    100038: Subway04StairWall01
+    400000: Subway04_aStair
+    400002: Subway04_aStairWall
+    400004: Subway04_CorridorCeil01
+    400006: Subway04_CorridorCeil0102
+    400008: Subway04_CorridorFloor
+    400010: //RootNode
+    400012: Subway04_CorridorWall
+    400014: Subway04_Inter
+    400016: Subway04_InterBorder01
+    400018: Subway04_InterBorder03
+    400020: Subway04_InterBorder04
+    400022: Subway04_InterCalumn01
+    400024: Subway04_InterCalumn02
+    400026: Subway04_InterDoor
+    400028: Subway04_InterDoorGlass
+    400030: Subway04_InterDoorSecurity
+    400032: Subway04_InterPlintus
+    400034: Subway04Stair
+    400036: Subway04StairUp
+    400038: Subway04StairWall01
+    2300000: Subway04_aStair
+    2300002: Subway04_aStairWall
+    2300004: Subway04_CorridorCeil01
+    2300006: Subway04_CorridorCeil0102
+    2300008: Subway04_CorridorFloor
+    2300010: Subway04_CorridorWall
+    2300012: Subway04_Inter
+    2300014: Subway04_InterBorder01
+    2300016: Subway04_InterBorder03
+    2300018: Subway04_InterBorder04
+    2300020: Subway04_InterCalumn01
+    2300022: Subway04_InterCalumn02
+    2300024: Subway04_InterDoor
+    2300026: Subway04_InterDoorGlass
+    2300028: Subway04_InterDoorSecurity
+    2300030: Subway04_InterPlintus
+    2300032: Subway04Stair
+    2300034: Subway04StairUp
+    2300036: Subway04StairWall01
+    3300000: Subway04_aStair
+    3300002: Subway04_aStairWall
+    3300004: Subway04_CorridorCeil01
+    3300006: Subway04_CorridorCeil0102
+    3300008: Subway04_CorridorFloor
+    3300010: Subway04_CorridorWall
+    3300012: Subway04_Inter
+    3300014: Subway04_InterBorder01
+    3300016: Subway04_InterBorder03
+    3300018: Subway04_InterBorder04
+    3300020: Subway04_InterCalumn01
+    3300022: Subway04_InterCalumn02
+    3300024: Subway04_InterDoor
+    3300026: Subway04_InterDoorGlass
+    3300028: Subway04_InterDoorSecurity
+    3300030: Subway04_InterPlintus
+    3300032: Subway04Stair
+    3300034: Subway04StairUp
+    3300036: Subway04StairWall01
+    4300000: Subway04_CorridorWall
+    4300002: Subway04_aStair
+    4300004: Subway04_aStairWall
+    4300006: Subway04_CorridorFloor
+    4300008: Subway04_InterPlintus
+    4300010: Subway04_Inter
+    4300012: Subway04_InterDoorSecurity
+    4300014: Subway04_InterDoor
+    4300016: Subway04_InterDoorGlass
+    4300018: Subway04_InterBorder04
+    4300020: Subway04_InterBorder01
+    4300022: Subway04_InterBorder03
+    4300024: Subway04_InterCalumn01
+    4300026: Subway04_InterCalumn02
+    4300028: Subway04_CorridorCeil0102
+    4300030: Subway04_CorridorCeil01
+    4300032: Subway04StairWall01
+    4300034: Subway04Stair
+    4300036: Subway04StairUp
+    6400000: Subway04_aStair
+    6400002: Subway04_aStairWall
+    6400004: Subway04_CorridorCeil01
+    6400006: Subway04_CorridorCeil0102
+    6400008: Subway04_CorridorFloor
+    6400010: Subway04_CorridorWall
+    6400012: Subway04_Inter
+    6400014: Subway04_InterBorder01
+    6400016: Subway04_InterBorder03
+    6400018: Subway04_InterBorder04
+    6400020: Subway04_InterCalumn01
+    6400022: Subway04_InterCalumn02
+    6400024: Subway04_InterDoor
+    6400026: Subway04_InterDoorGlass
+    6400028: Subway04_InterDoorSecurity
+    6400030: Subway04_InterPlintus
+    6400032: Subway04Stair
+    6400034: Subway04StairUp
+    6400036: Subway04StairWall01
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04Stair
+    second: {fileID: 2100000, guid: e8ab880010f5afd428ad2eecd5974c99, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04StairUp01
+    second: {fileID: 2100000, guid: 3c1843389ad15f745b09811d23f1ff10, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04StairUp02
+    second: {fileID: 2100000, guid: 831ecf444297e2f43b3c512294df36c3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04StairWall01
+    second: {fileID: 2100000, guid: 156f40bcab1ffba419d1bb467b3664a3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_CorridorCeil01
+    second: {fileID: 2100000, guid: cf5ec36f4e90d6449a3c03d0824acf56, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_CorridorCeil02
+    second: {fileID: 2100000, guid: 182dd5d8b908fc0439543d89a7252cce, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_CorridorFloor
+    second: {fileID: 2100000, guid: 4f5678858545ac34196847517061c6ff, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_CorridorWall
+    second: {fileID: 2100000, guid: 0434c43b9eba3f944b34314851f733c7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_InterBorder01
+    second: {fileID: 2100000, guid: d33cd8cd1ea199e45b6a6d072d7e9364, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_InterBorder02
+    second: {fileID: 2100000, guid: 7a80a09e7b0e6fe46995e350853d82c8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_InterBorder03
+    second: {fileID: 2100000, guid: d80c374795fa14d4e94393efac2dffd4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_InterBorder04
+    second: {fileID: 2100000, guid: cfe82e8369e6e794da46557ee43e76fa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_InterCalumn01
+    second: {fileID: 2100000, guid: 27b4338a38e02bc4cbe0411c09c2b3c0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_InterCalumn02
+    second: {fileID: 2100000, guid: 928b1a8cb96d44a4b89ec4dc5de824d9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_InterCalumn03
+    second: {fileID: 2100000, guid: 41af31b7f7f38f14182f1f612c874ea6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_InterCeil01
+    second: {fileID: 2100000, guid: b689fe15c7e22974ebbeeb0efd47d832, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_InterCeil02
+    second: {fileID: 2100000, guid: a2e2e5522cf92394a8fd6ebfaf4ffc50, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_InterDoor
+    second: {fileID: 2100000, guid: 1e63f89f7aedb114180bf47bdcd654b4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_InterDoorGlass
+    second: {fileID: 2100000, guid: f790ae38a32465544a223d9fd7a401bf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_InterDoorSecurity
+    second: {fileID: 2100000, guid: 3abec77421fd5374583034a4b79f7654, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_InterFloor01
+    second: {fileID: 2100000, guid: 3e1d29f5e74a5cf479e44ab579ed631f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_InterPlintus
+    second: {fileID: 2100000, guid: fcb7a4a9b26603b4f8a8c4f39992319f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_InterWall01
+    second: {fileID: 2100000, guid: f293594d552d4c949b363e890af7b819, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_aStair
+    second: {fileID: 2100000, guid: 0c96eb2da0c377248a6a0ebea60c9362, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_aStairWall01
+    second: {fileID: 2100000, guid: 8286ecfb8c64c9344ac0aab1cb9da017, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_aStairWall02
+    second: {fileID: 2100000, guid: d013dd8ddc6bd754ba703d19c39845bf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway04_aStairWall03
+    second: {fileID: 2100000, guid: 182c66bb7dabc434f95905df38e0115d, type: 2}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Subway04_CorridorInter.FBX
+  uploadId: 369231

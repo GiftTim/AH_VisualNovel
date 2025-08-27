@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: a63d5df5b32ab694fadb54f0106f7897
+timeCreated: 1575361075
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/Subway05_InterPlintus.mat
+  uploadId: 369231

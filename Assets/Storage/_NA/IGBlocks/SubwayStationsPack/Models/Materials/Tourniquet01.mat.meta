@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: ede57ecf403915e44b7fe4d5433cb2d5
+timeCreated: 1575359018
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/Tourniquet01.mat
+  uploadId: 369231

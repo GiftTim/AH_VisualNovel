@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 421c28bb75d5e36409954a8bdb8fe0d2
+timeCreated: 1577013133
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/PrefabsSubwayStations/SubwayTrain05_DoorL2.prefab
+  uploadId: 369231

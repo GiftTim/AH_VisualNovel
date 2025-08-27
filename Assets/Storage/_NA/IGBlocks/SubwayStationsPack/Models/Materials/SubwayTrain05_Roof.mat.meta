@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 6adbbb3a4a6727740aad54de6725217b
+timeCreated: 1576769112
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/SubwayTrain05_Roof.mat
+  uploadId: 369231

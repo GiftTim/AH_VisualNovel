@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 553474e87d5253244868ba965281f5ac
+timeCreated: 1575296272
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/Subway02StairUp01.mat
+  uploadId: 369231

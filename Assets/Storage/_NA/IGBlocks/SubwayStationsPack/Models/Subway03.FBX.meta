@@ -1,0 +1,258 @@
+fileFormatVersion: 2
+guid: c1fce1fe4a7ef6b4cb7c8e0c20265bde
+timeCreated: 1575306333
+licenseType: Store
+ModelImporter:
+  serializedVersion: 22
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: Subway03Ceiling
+    100004: Subway03CeilingLamp
+    100006: Subway03CeilingLight
+    100008: Subway03CeilingUp
+    100010: Subway03Column01
+    100012: Subway03Floor
+    100014: Subway03Floor04
+    100016: Subway03Railfloor
+    100018: Subway03RailMetal
+    100020: Subway03Railway
+    100022: Subway03Side01a
+    100024: Subway03Side01b
+    100026: Subway03Side01Part
+    100028: Subway03Timer
+    400000: //RootNode
+    400002: Subway03Ceiling
+    400004: Subway03CeilingLamp
+    400006: Subway03CeilingLight
+    400008: Subway03CeilingUp
+    400010: Subway03Column01
+    400012: Subway03Floor
+    400014: Subway03Floor04
+    400016: Subway03Railfloor
+    400018: Subway03RailMetal
+    400020: Subway03Railway
+    400022: Subway03Side01a
+    400024: Subway03Side01b
+    400026: Subway03Side01Part
+    400028: Subway03Timer
+    2300000: Subway03Ceiling
+    2300002: Subway03CeilingLamp
+    2300004: Subway03CeilingLight
+    2300006: Subway03CeilingUp
+    2300008: Subway03Column01
+    2300010: Subway03Floor
+    2300012: Subway03Floor04
+    2300014: Subway03Railfloor
+    2300016: Subway03RailMetal
+    2300018: Subway03Railway
+    2300020: Subway03Side01a
+    2300022: Subway03Side01b
+    2300024: Subway03Side01Part
+    2300026: Subway03Timer
+    3300000: Subway03Ceiling
+    3300002: Subway03CeilingLamp
+    3300004: Subway03CeilingLight
+    3300006: Subway03CeilingUp
+    3300008: Subway03Column01
+    3300010: Subway03Floor
+    3300012: Subway03Floor04
+    3300014: Subway03Railfloor
+    3300016: Subway03RailMetal
+    3300018: Subway03Railway
+    3300020: Subway03Side01a
+    3300022: Subway03Side01b
+    3300024: Subway03Side01Part
+    3300026: Subway03Timer
+    4300000: Subway03Side01a
+    4300002: Subway03Railfloor
+    4300004: Subway03Ceiling
+    4300006: Subway03Timer
+    4300008: Subway03RailMetal
+    4300010: Subway03Floor04
+    4300012: Subway03Floor
+    4300014: Subway03Side01b
+    4300016: Subway03CeilingUp
+    4300018: Subway03CeilingLight
+    4300020: Subway03CeilingLamp
+    4300022: Subway03Column01
+    4300024: Subway03Side01Part
+    4300026: Subway03Railway
+    6400000: Subway03Ceiling
+    6400002: Subway03CeilingLamp
+    6400004: Subway03CeilingLight
+    6400006: Subway03CeilingUp
+    6400008: Subway03Column01
+    6400010: Subway03Floor
+    6400012: Subway03Floor04
+    6400014: Subway03Railfloor
+    6400016: Subway03RailMetal
+    6400018: Subway03Railway
+    6400020: Subway03Side01a
+    6400022: Subway03Side01b
+    6400024: Subway03Side01Part
+    6400026: Subway03Timer
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway03Ceiling
+    second: {fileID: 2100000, guid: 9690b14e5b135374d850346917161b3d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway03CeilingLamp
+    second: {fileID: 2100000, guid: 76cb08f2d79d2d44092550abd9dff27d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway03CeilingLight
+    second: {fileID: 2100000, guid: e0c78a5d627885f44a5388f1e9b4029d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway03CeilingUp
+    second: {fileID: 2100000, guid: a6a454f7bdf2cf9498a7b7095030c8ad, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway03Column01a
+    second: {fileID: 2100000, guid: 4e7ea2f102b339b44931b541a58ff038, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway03Column01b
+    second: {fileID: 2100000, guid: c49ccbe99a5bf4f4b8eae21f7bf82af0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway03Floor01
+    second: {fileID: 2100000, guid: 9652de80da125754392cd1ee0de78748, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway03Floor02
+    second: {fileID: 2100000, guid: f46ae401530f4ef4fa6879b58c500d4d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway03Floor03
+    second: {fileID: 2100000, guid: 1b9db4c72001dea40a3671383b67313e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway03Floor04
+    second: {fileID: 2100000, guid: 4077901a9eb828948a9a2e28c5d08008, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway03RailMetal
+    second: {fileID: 2100000, guid: 1d02b8003af60cf4a972f0ed50e6bc47, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway03Railfloor
+    second: {fileID: 2100000, guid: 9325c009b47a7af4d97f9f5487f09029, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway03Railway
+    second: {fileID: 2100000, guid: 0b631828731d2044fa1c2e218d800eea, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway03Side01a
+    second: {fileID: 2100000, guid: 3366b19d8fd21ab44bb554e7c7c7f16b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway03Side01b
+    second: {fileID: 2100000, guid: 9cc018ea2f818784c8cc9c4adc85a0eb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Subway03Timer
+    second: {fileID: 2100000, guid: e9e0094889e208244958d7a327d26751, type: 2}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Subway03.FBX
+  uploadId: 369231

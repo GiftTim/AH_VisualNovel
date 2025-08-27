@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: f74116d359155dc46bc51bf479f2ec9f
+timeCreated: 1575309287
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/PrefabsSubwayStations/Panel010.prefab
+  uploadId: 369231

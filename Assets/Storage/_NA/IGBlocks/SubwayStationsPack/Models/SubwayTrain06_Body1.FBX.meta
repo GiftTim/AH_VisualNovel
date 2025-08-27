@@ -1,0 +1,217 @@
+fileFormatVersion: 2
+guid: 9a0163651d1997145ad11948f3ccccc7
+timeCreated: 1576769154
+licenseType: Store
+ModelImporter:
+  serializedVersion: 22
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: SubwayTrain06_Body1
+    100004: SubwayTrain06_DoorF1
+    100006: SubwayTrain06_DoorF2
+    100008: SubwayTrain06_Glass
+    100010: SubwayTrain06_Inter
+    100012: SubwayTrain06_Inter1
+    100014: SubwayTrain06_Inter2
+    100016: SubwayTrain06_InterBench
+    100018: SubwayTrain06_InterEnter
+    100020: SubwayTrain06_InterLamp
+    100022: SubwayTrain06_Roof
+    100024: SubwayTrain06_Wheels
+    100026: SubwayTrain_Bench01c
+    400000: //RootNode
+    400002: SubwayTrain06_Body1
+    400004: SubwayTrain06_DoorF1
+    400006: SubwayTrain06_DoorF2
+    400008: SubwayTrain06_Glass
+    400010: SubwayTrain06_Inter
+    400012: SubwayTrain06_Inter1
+    400014: SubwayTrain06_Inter2
+    400016: SubwayTrain06_InterBench
+    400018: SubwayTrain06_InterEnter
+    400020: SubwayTrain06_InterLamp
+    400022: SubwayTrain06_Roof
+    400024: SubwayTrain06_Wheels
+    400026: SubwayTrain_Bench01c
+    2300000: SubwayTrain06_Body1
+    2300002: SubwayTrain06_DoorF1
+    2300004: SubwayTrain06_DoorF2
+    2300006: SubwayTrain06_Glass
+    2300008: SubwayTrain06_Inter
+    2300010: SubwayTrain06_Inter1
+    2300012: SubwayTrain06_Inter2
+    2300014: SubwayTrain06_InterBench
+    2300016: SubwayTrain06_InterEnter
+    2300018: SubwayTrain06_InterLamp
+    2300020: SubwayTrain06_Roof
+    2300022: SubwayTrain06_Wheels
+    2300024: SubwayTrain_Bench01c
+    3300000: SubwayTrain06_Body1
+    3300002: SubwayTrain06_DoorF1
+    3300004: SubwayTrain06_DoorF2
+    3300006: SubwayTrain06_Glass
+    3300008: SubwayTrain06_Inter
+    3300010: SubwayTrain06_Inter1
+    3300012: SubwayTrain06_Inter2
+    3300014: SubwayTrain06_InterBench
+    3300016: SubwayTrain06_InterEnter
+    3300018: SubwayTrain06_InterLamp
+    3300020: SubwayTrain06_Roof
+    3300022: SubwayTrain06_Wheels
+    3300024: SubwayTrain_Bench01c
+    4300000: SubwayTrain06_DoorF1
+    4300002: SubwayTrain06_DoorF2
+    4300004: SubwayTrain06_Glass
+    4300006: SubwayTrain06_InterLamp
+    4300008: SubwayTrain06_InterEnter
+    4300010: SubwayTrain_Bench01c
+    4300012: SubwayTrain06_InterBench
+    4300014: SubwayTrain06_Inter1
+    4300016: SubwayTrain06_Inter2
+    4300018: SubwayTrain06_Body1
+    4300020: SubwayTrain06_Roof
+    4300022: SubwayTrain06_Inter
+    4300024: SubwayTrain06_Wheels
+    6400000: SubwayTrain06_Body1
+    6400002: SubwayTrain06_DoorF1
+    6400004: SubwayTrain06_DoorF2
+    6400006: SubwayTrain06_Glass
+    6400008: SubwayTrain06_Inter
+    6400010: SubwayTrain06_Inter1
+    6400012: SubwayTrain06_Inter2
+    6400014: SubwayTrain06_InterBench
+    6400016: SubwayTrain06_InterEnter
+    6400018: SubwayTrain06_InterLamp
+    6400020: SubwayTrain06_Roof
+    6400022: SubwayTrain06_Wheels
+    6400024: SubwayTrain_Bench01c
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: SubwayTrain06_Body1
+    second: {fileID: 2100000, guid: be5e5d2ea6024b84da2caf4926e7b665, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: SubwayTrain06_Body2
+    second: {fileID: 2100000, guid: 31008889abd1ccb4483a2dbf0dc3d97b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: SubwayTrain06_Door1
+    second: {fileID: 2100000, guid: be5e5d2ea6024b84da2caf4926e7b665, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: SubwayTrain06_Glass
+    second: {fileID: 2100000, guid: 64960ed69b6cadb48b25a07cebe4f48c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: SubwayTrain06_Glass1
+    second: {fileID: 2100000, guid: 64960ed69b6cadb48b25a07cebe4f48c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: SubwayTrain06_Inter
+    second: {fileID: 2100000, guid: c05e673f46b35ed49befac7eb9db052b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: SubwayTrain06_Roof
+    second: {fileID: 2100000, guid: 96f17645b7ada3c4aaef4fd6fda10855, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: SubwayTrain06_Wheels
+    second: {fileID: 2100000, guid: 0130a7a42123d4445bc0f420246844ae, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: SubwayTrain_Bench01c
+    second: {fileID: 2100000, guid: 57cfdc1aefd572347964bc7c3e211985, type: 2}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/SubwayTrain06_Body1.FBX
+  uploadId: 369231

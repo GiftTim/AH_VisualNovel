@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 6162e62282163fa4c87fd552d3f159fb
+timeCreated: 1576768973
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/SubwayTrain02_Wheels.mat
+  uploadId: 369231

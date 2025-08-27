@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: fac480c86b914cc4db8c9f278e4e5308
+timeCreated: 1577012878
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/PrefabsSubwayStations/SubwayTrain01_Body2.prefab
+  uploadId: 369231

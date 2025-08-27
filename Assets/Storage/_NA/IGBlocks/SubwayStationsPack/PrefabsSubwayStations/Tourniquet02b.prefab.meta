@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: dfacaad484f30c742838d39e5ec8273a
+timeCreated: 1575361612
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/PrefabsSubwayStations/Tourniquet02b.prefab
+  uploadId: 369231

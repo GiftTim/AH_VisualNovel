@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: e0c78a5d627885f44a5388f1e9b4029d
+timeCreated: 1575306332
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/Subway03CeilingLight.mat
+  uploadId: 369231

@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 11b7dd02b99f67e4dada55e4989bfa28
+timeCreated: 1573713942
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/Subway01_InterDoorGlass.mat
+  uploadId: 369231

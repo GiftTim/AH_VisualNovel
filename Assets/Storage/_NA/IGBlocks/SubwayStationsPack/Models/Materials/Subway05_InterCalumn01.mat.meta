@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: f04b5f96ed2b1054c800b1f2a6442d1a
+timeCreated: 1575361078
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/Subway05_InterCalumn01.mat
+  uploadId: 369231

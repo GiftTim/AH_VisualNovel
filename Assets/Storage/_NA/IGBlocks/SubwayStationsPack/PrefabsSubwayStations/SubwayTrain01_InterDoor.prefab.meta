@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 9889d483866ebd4498c93c44d50d7c8a
+timeCreated: 1577013310
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/PrefabsSubwayStations/SubwayTrain01_InterDoor.prefab
+  uploadId: 369231

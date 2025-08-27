@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: ccb2fa84f4637d847a9d48464962f9e8
+timeCreated: 1575361077
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/Subway05_InterCeiling03.mat
+  uploadId: 369231

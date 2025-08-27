@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: ef4b2889a2a975e45bd683b8e69391fb
+timeCreated: 1576769043
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/SubwayTrain03_Body1.mat
+  uploadId: 369231

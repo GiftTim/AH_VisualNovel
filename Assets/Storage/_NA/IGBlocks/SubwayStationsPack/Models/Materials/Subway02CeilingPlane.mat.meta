@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 4587735bfc62c3941a3ec82e626c6348
+timeCreated: 1575296275
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/Subway02CeilingPlane.mat
+  uploadId: 369231

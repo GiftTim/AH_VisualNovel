@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 0c13af2a030ae864f89d9fd504d755c8
+timeCreated: 1575361080
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 160191
+  packageName: Subway Stations (6 Scenes)
+  packageVersion: 1.0
+  assetPath: Assets/IGBlocks/SubwayStationsPack/Models/Materials/TicketMachine01b.mat
+  uploadId: 369231
