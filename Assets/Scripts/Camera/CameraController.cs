@@ -65,11 +65,18 @@ public class CameraController : MonoBehaviour
             );
         }
 
-        // 상하 회전
+        // 상하 회전 + 상하 이동
         if (p.y > screenHeightHalf - 100 || p.y < -screenHeightHalf + 100)
         {
-            currentAngleX += (p.y > 0) ? sightSensitivity : -sightSensitivity;
+            currentAngleX += (p.y > 0) ? -sightSensitivity : sightSensitivity; // 방향 반전
             currentAngleX = Mathf.Clamp(currentAngleX, -lookLimitY, lookLimitY);
+
+            float t_applySpeedY = (p.y > 0) ? -sightMoveSpeed : sightMoveSpeed; // 방향 반전
+            tf_Cam.localPosition = new Vector3(
+                tf_Cam.localPosition.x,
+                tf_Cam.localPosition.y + t_applySpeedY,
+                tf_Cam.localPosition.z
+            );
         }
 
         // 카메라 회전 적용
