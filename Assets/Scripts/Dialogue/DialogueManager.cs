@@ -15,7 +15,7 @@ public class DialogueManager : MonoBehaviour
     [SerializeField] private InteractionManager interactionManager;
 
     [Header("대화 속도 설정")]
-    [SerializeField] private float defaultTextSpeed = 0.05f;
+    //[SerializeField] private float defaultTextSpeed = 0.05f;
 
     private bool isDialogueActive = false;
 
@@ -53,9 +53,5 @@ public class DialogueManager : MonoBehaviour
         interactionManager?.OnDialogueClosed();
     }
 
-    //=== 예시용 ===
-    public void DisplayDialogueLine(string line)
-    {
-        dialogueUI.Print(line, defaultTextSpeed);
-    }
+
 }
