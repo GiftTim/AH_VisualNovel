@@ -1,34 +1,37 @@
 using UnityEngine;
 
-public class DialogueSystem : MonoBehaviour
+namespace DIALOGUE
 {
-
-    public DialogueContainer dialogueContainer = new DialogueContainer();
-
-    public static DialogueSystem instance;
-
-    private void Awake()
+    public class DialogueSystem : MonoBehaviour
     {
-        if (instance == null)
+
+        public DialogueContainer dialogueContainer = new DialogueContainer();
+
+        public static DialogueSystem instance;
+
+        private void Awake()
         {
-            instance = this;
-            //DontDestroyOnLoad(gameObject);
+            if (instance == null)
+            {
+                instance = this;
+                //DontDestroyOnLoad(gameObject);
+            }
+            else
+            {
+                DestroyImmediate(gameObject);
+            }
         }
-        else
+
+        // Start is called once before the first execution of Update after the MonoBehaviour is created
+        void Start()
         {
-            DestroyImmediate(gameObject);
+
         }
-    }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+        // Update is called once per frame
+        void Update()
+        {
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+        }
     }
 }

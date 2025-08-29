@@ -1,7 +1,11 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using DIALOGUE;
 
 namespace TESTING
 {
+    /* [Testing_TextArchitect]
     public class Testing_TextArchitect : MonoBehaviour
     {
         DialogueSystem ds;
@@ -72,6 +76,40 @@ namespace TESTING
         {
             "이건 졸라게 길게 적어야지 진행할 수 있는 글입니다. 이걸 진행해야지 어떻게든 허리 업을 진행할 수 있지요 그래서 이렇게 길게 적는 거랍니다. 현재는 어느정도의 길이까지 진행한지 잘 모르곘지만 이정도면 될 듯합니다."
         };
+    }
+    */
+    /* [Testing_DialogueSystem]
+    public class TestFiles: MonoBehaviour
+    {
+        [SerializeField] private TextAsset fileName;
+
+        void Start()
+        {
+            StartCoroutine(Run());
+        }
+
+        IEnumerator Run()
+        {
+            List<string> lines = FileManager.ReadTextAsset(fileName, false);
+
+            foreach (string line in lines)
+            {
+                Debug.Log(line);
+            }
+
+            yield return null;
+        }
+    }
+    */
+    public class Testing_Parsing : MonoBehaviour
+    {
+        void Start() 
+        { 
+            string line = "Speaker \"Dialogue \\\"Goes in\\\" here!\" Command(arguments)";
+
+            DialogueParser.Parse(line);
+        }
+
     }
 }
 
