@@ -165,8 +165,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dialogueContainer:
     root: {fileID: 638294570}
-    dialogueNameBox: {fileID: 1467790888}
-    nameText: {fileID: 1391088455}
+    nameContainer:
+      dialogueNameBox: {fileID: 1467790888}
+      nameText: {fileID: 1391088455}
     dialogueBox: {fileID: 790850394}
     dialogueText: {fileID: 846728545}
 --- !u!1 &87175761
