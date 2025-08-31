@@ -21,7 +21,6 @@ namespace DIALOGUE
         private void onUserPrompt_Next()
         {
             userPrompt = true;
-
         }
 
         public void StartConversation(List<string> conversation)
@@ -69,8 +68,6 @@ namespace DIALOGUE
         {    
             if(line.hasSpeaker)
                 dialogueSystem.ShowSpeakerName(line.speaker);
-            else
-                dialogueSystem.HideSpeakerName();
 
             //build dialogue
             yield return BuildDialogue(line.dialogue);

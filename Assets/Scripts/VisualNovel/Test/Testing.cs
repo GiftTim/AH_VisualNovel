@@ -129,7 +129,8 @@ namespace TESTING
 
     public class Testing_DialogueFile : MonoBehaviour
     {
-        // Start is called once before the first execution of Update after the MonoBehaviour is created
+        [SerializeField] private TextAsset fileName;
+
         void Start()
         {
 
@@ -139,10 +140,7 @@ namespace TESTING
 
         void StartConversation()
         {
-            List<string> lines = FileManager.ReadTextAsset("testFile");
-            Debug.Log("Lines count: " + lines.Count);
-            foreach (var line in lines)
-                Debug.Log(line);
+            List<string> lines = FileManager.ReadTextAsset(fileName, false);
 
             DialogueSystem.instance.Say(lines);
         }
