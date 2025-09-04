@@ -67,10 +67,10 @@ namespace DIALOGUE
         IEnumerator Line_RunDialogue(DIALOGUE_LINE line)
         {    
             if(line.hasSpeaker)
-                dialogueSystem.ShowSpeakerName(line.speaker.displayname);
+                dialogueSystem.ShowSpeakerName(line.speakerData.displayname);
 
-            //build dialogue
-            yield return BuildLineSegments(line.dialogue);
+            //build dialogueData
+            yield return BuildLineSegments(line.dialogueData);
 
             //wait for user Input
             yield return WaitForUserInput();
@@ -79,7 +79,7 @@ namespace DIALOGUE
 
         IEnumerator LINE_RunCommands(DIALOGUE_LINE line)
         {
-            Debug.Log(line.commands);
+            Debug.Log(line.commandData);
             yield return null;
         }
         
@@ -114,13 +114,13 @@ namespace DIALOGUE
 
         IEnumerator BuildDialogue(string dialogue, bool append = false)
         {
-            //Build the dialogue
+            //Build the dialogueData
             if (!append)
                 architect.Build(dialogue);
             else
                 architect.Append(dialogue);
 
-            //Wait for the dialogue to complete
+            //Wait for the dialogueData to complete
             while (architect.isBuilding)
             {
                 if (userPrompt)

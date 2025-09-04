@@ -8,7 +8,7 @@ public class DL_SPEAKER_DATA
     public string name, castName;
 
     /// <summary>
-    /// This is the name that will display in the dialogue box to show who is speaking
+    /// This is the name that will display in the dialogueData box to show who is speaking
     /// </summary>
     public string displayname => (castName != string.Empty ? castName : name);
 
@@ -32,7 +32,7 @@ public class DL_SPEAKER_DATA
         castPosition = Vector2.zero;
         CastExpressions = new List<(int layer, string expression)>();
 
-        // if there are no matches,then this entire line is the speaker name
+        // if there are no matches,then this entire line is the speakerData name
         if (matches.Count == 0)
         {
             name = rawSpeaker.Trim();

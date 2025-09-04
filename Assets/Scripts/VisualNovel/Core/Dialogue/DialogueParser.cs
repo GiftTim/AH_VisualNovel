@@ -59,7 +59,7 @@ namespace DIALOGUE
 
             if (dialogueStart != -1 && dialogueEnd != -1 && (commandStart == -1 || commandStart > dialogueEnd))
             {
-                // We know that we have valid dialogue
+                // We know that we have valid dialogueData
                 speaker = rawLine.Substring(0, dialogueStart).Trim();
                 dialogue = rawLine.Substring(dialogueStart + 1, dialogueEnd - dialogueStart - 1).Replace("\\\"", "\"");
                 if (commandStart != -1)

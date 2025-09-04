@@ -7,8 +7,6 @@ public class DL_DIALOGUE_DATA
     public List<DIALOGUE_SEGMENT> segments;
     private const string segmentIdentifierPattern = @"\{[ca]\}|\{w[ca]\s\d*\.?\d*\}";
 
-    public bool hasDialogue => segments.Count > 0;
-
     public DL_DIALOGUE_DATA(string rawDialogue)
     {
         segments = RipSegments(rawDialogue);
@@ -49,7 +47,7 @@ public class DL_DIALOGUE_DATA
             if(signalSplit.Length > 1)
                 float.TryParse(signalSplit[1], out segment.signalDelay);
 
-            //Get the dialogue for the segment.
+            //Get the dialogueData for the segment.
             int nextIndex = i + 1 < matches.Count ? matches[i + 1].Index : rawDialogue.Length;
             segment.dialogue = rawDialogue.Substring(lastIndex + match.Length, nextIndex - (lastIndex + match.Length));
             lastIndex = nextIndex;

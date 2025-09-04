@@ -160,27 +160,10 @@ namespace TESTING
             List<string> lines = FileManager.ReadTextAsset(fileName);
             
             DialogueSystem.instance.Say(lines);
-
-            for (int i = 0; i < lines.Count; i++)
-            {
-                string line = lines[i];
-
-                if(string.IsNullOrWhiteSpace(line))
-                    continue; 
-
-                DIALOGUE_LINE dl = DialogueParser.Parse(line);
-
-                Debug.Log($"{dl.speaker.name} as [{(dl.speaker.castName != string.Empty ? dl.speaker.castName : dl.speaker.name)}] at {dl.speaker.castPosition}");
-
-                List<(int l, string ex)> expr = dl.speaker.CastExpressions;
-                for(int c = 0; c < expr.Count; c++)
-                {
-                    Debug.Log($"[Layer[{expr[c].l}] = '{expr[c].ex}']");
-                }
-            }
         }
     }
     */
+    /* [Testing_SpeakerSegments]
     public class SpeakerSegments : MonoBehaviour
     {
         [SerializeField] private TextAsset fileToRoad = null;
@@ -194,7 +177,58 @@ namespace TESTING
         {
             List<string> lines = FileManager.ReadTextAsset(fileToRoad);
 
-            DialogueSystem.instance.Say(lines);
+            for (int i = 0; i < lines.Count; i++)
+            {
+                string line = lines[i];
+
+                if(string.IsNullOrWhiteSpace(line))
+                    continue; 
+
+                DIALOGUE_LINE dl = DialogueParser.Parse(line);
+
+                Debug.Log($"{dl.speakerData.name} as [{(dl.speakerData.castName != string.Empty ? dl.speakerData.castName : dl.speakerData.name)}] at {dl.speakerData.castPosition}");
+
+                List<(int l, string ex)> expr = dl.speakerData.CastExpressions;
+                for(int c = 0; c < expr.Count; c++)
+                {
+                    Debug.Log($"[Layer[{expr[c].l}] = '{expr[c].ex}']");
+                }
+            }
+
+
+            //DialogueSystem.instance.Say(lines);
+        }
+    }
+    */
+
+    public class CommandSegments : MonoBehaviour
+    {
+        [SerializeField] private TextAsset fileToRoad = null;
+        void Start()
+        {
+            StartConversation();
+        }
+        void StartConversation()
+        {
+            List<string> lines = FileManager.ReadTextAsset(fileToRoad);
+
+            foreach (string line in lines)
+            {
+
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+
+                DIALOGUE_LINE dl = DialogueParser.Parse(line);
+
+                for (int i = 0; i < dl.commandData.commands.Count; i++)
+                {
+                    DL_COMMAND_DATA.Command command = dl.commandData.commands[i];
+                    Debug.Log($"Command [{i}] : {command.name} has arguments [{string.Join(", " , command.arguments)}]");
+                }
+
+
+                //DialogueSystem.instance.Say(lines);
+            }
         }
     }
 }
