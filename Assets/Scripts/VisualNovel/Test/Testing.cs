@@ -66,14 +66,14 @@ namespace TESTING
 
         string[] lines1 = new string[3]
         {
-            "ÀÌ°ÍÀÌ Ã¹ ¹øÂ° ÁÙÀÔ´Ï´Ù.",
-            "Ã¹ ¹øÂ° ÁÙº¸´Ù Á¶±Ý ´õ ±ä µÎ ¹øÂ° ÁÙÀÌ ³ª¿É´Ï´Ù.",
-            "¸¶Áö¸·À¸·Î, ÀÌ°ÍÀº ÅØ½ºÆ® ¾ÆÅ°ÅØÆ®ÀÇ ´É·ÂÀ» Å×½ºÆ®ÇÏ±â À§ÇØ ¼¼ ¹øÂ° ÁÙ Áß¿¡¼­ °¡Àå ±ä ÁÙÀÔ´Ï´Ù."
+            "ï¿½Ì°ï¿½ï¿½ï¿½ Ã¹ ï¿½ï¿½Â° ï¿½ï¿½ï¿½Ô´Ï´ï¿½.",
+            "Ã¹ ï¿½ï¿½Â° ï¿½Ùºï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Â° ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½É´Ï´ï¿½.",
+            "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½Ì°ï¿½ï¿½ï¿½ ï¿½Ø½ï¿½Æ® ï¿½ï¿½Å°ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½É·ï¿½ï¿½ï¿½ ï¿½×½ï¿½Æ®ï¿½Ï±ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Â° ï¿½ï¿½ ï¿½ß¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½Ô´Ï´ï¿½."
         };
 
         string[] lines2 = new string[1]
         {
-            "ÀÌ°Ç Á¹¶ó°Ô ±æ°Ô Àû¾î¾ßÁö ÁøÇàÇÒ ¼ö ÀÖ´Â ±ÛÀÔ´Ï´Ù. ÀÌ°É ÁøÇàÇØ¾ßÁö ¾î¶»°Ôµç Çã¸® ¾÷À» ÁøÇàÇÒ ¼ö ÀÖÁö¿ä ±×·¡¼­ ÀÌ·¸°Ô ±æ°Ô Àû´Â °Å¶ø´Ï´Ù. ÇöÀç´Â ¾î´ÀÁ¤µµÀÇ ±æÀÌ±îÁö ÁøÇàÇÑÁö Àß ¸ð¸£ÙÁö¸¸ ÀÌÁ¤µµ¸é µÉ µíÇÕ´Ï´Ù."
+            "ï¿½Ì°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½Ô´Ï´ï¿½. ï¿½Ì°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ø¾ï¿½ï¿½ï¿½ ï¿½î¶»ï¿½Ôµï¿½ ï¿½ã¸® ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½×·ï¿½ï¿½ï¿½ ï¿½Ì·ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Å¶ï¿½ï¿½Ï´ï¿½. ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ì±ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ð¸£ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½Õ´Ï´ï¿½."
         };
     }
     */
@@ -200,7 +200,7 @@ namespace TESTING
         }
     }
     */
-
+    /* [Testing_CommandSegments]
     public class CommandSegments : MonoBehaviour
     {
         [SerializeField] private TextAsset fileToRoad = null;
@@ -223,13 +223,30 @@ namespace TESTING
                 for (int i = 0; i < dl.commandData.commands.Count; i++)
                 {
                     DL_COMMAND_DATA.Command command = dl.commandData.commands[i];
-                    Debug.Log($"Command [{i}] : {command.name} has arguments [{string.Join(", " , command.arguments)}]");
+                    Debug.Log($"Command [{i}] : {command.name} has arguments [{string.Join(", ", command.arguments)}]");
                 }
 
 
-                //DialogueSystem.instance.Say(lines);
+                DialogueSystem.instance.Say(lines);
             }
         }
     }
+    */
+
+    public class CommandTesting : MonoBehaviour
+    {
+        void Start()
+        {
+            CommandManager.instance.Execute("print");
+            CommandManager.instance.Execute("print_1p", "Hello World!");
+            CommandManager.instance.Execute("print_mp", "Line1", "Line2", "Line3");
+        }
+
+        void Update()
+        {
+            
+        }
+    }
+
 }
 
