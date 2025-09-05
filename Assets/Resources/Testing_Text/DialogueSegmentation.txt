@@ -1,0 +1,17 @@
+
+
+
+
+Detective: "This changes everything. {a} We're dealing with a whole new level of evil here."
+
+Partner: "I know.{c} It's hard to believe that someone could do something...{wa 1} like this."
+
+Detective: "We need to find this killer and put a stop to his experiments. {c}But how do we even begin to track him down?"
+
+Partner: "Maybe we can start by looking at the victims.{wa 0.5} See if there's any connection between them."
+
+Detective: "Good idea.{wc 1} But we need to be careful.{a} If this guy is experimenting with the supernatural,{wa 1} who knows what kind of powers he might have."
+
+Partner: "I'll see if I can dig up any information on local occult groups.{a} Maybe someone's heard something."
+
+Detective: "Alright.{a} In the meantime, I'll try to gather as much evidence as possible.{c} We'll catch this guy, no matter what it takes."

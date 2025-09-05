@@ -1,0 +1,10 @@
+
+
+
+Elen as ??? "Hello there"
+
+Elen as ??? at 1:0 "Hello there"
+
+Elen at 0.5:0.5 as The Girl "Hello there"
+
+Elen as ??? [0:Angle1, 1:happy] at0 "Hello there"

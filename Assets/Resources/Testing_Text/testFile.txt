@@ -1,0 +1,11 @@
+
+John "Hello World!" list(items -f long), playSong("Intro Song" -v 1)
+
+setScene("Classroom" -s 5.5)
+
+World "Hello, \"Quote Here\" right back at you!"
+
+narrator "And so ended the traditional 'Hello World' conversation." PlaySong(End, -p 0.5), list(players), saveGame(1 -g all -f simple)
+
+
+Test Line "This is an example of a very long line that I think would be a real hit if you knew how to write it better. Seriously - this thing could go viral. All it needs is a little spit and grit and some good luck and this will break the internet faster than you can recite every word in the english dictionary!"
