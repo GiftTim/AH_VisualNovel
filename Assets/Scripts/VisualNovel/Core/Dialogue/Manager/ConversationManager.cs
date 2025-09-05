@@ -79,7 +79,12 @@ namespace DIALOGUE
 
         IEnumerator LINE_RunCommands(DIALOGUE_LINE line)
         {
-            Debug.Log(line.commandData);
+            List<DL_COMMAND_DATA.Command> commands = line.commandData.commands;
+
+            foreach (DL_COMMAND_DATA.Command command in commands)
+            {
+                CommandManager.instance.Execute(command.name, command.arguments);
+            }
             yield return null;
         }
         
