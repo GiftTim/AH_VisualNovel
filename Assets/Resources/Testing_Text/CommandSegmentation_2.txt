@@ -1,8 +1,6 @@
-print_lp("This is a command running straight from our dialogue file!")
+print_1p("This is a command running straight from our dialogue file!")
 
-John "Move Left" moveCharDemo(left)
-
-"Move Right" moveCharDemo(right)
+John "Move Left and then Right" print_1p("start Moving"), [Wait]moveCharDemo(left), [wait]moveCharDemo(right), print_1p("Done Moving")
 
 John "Let's play some music!" playSong("Funky Beets" -v 0.75 -p 1), setMood(chill)
 

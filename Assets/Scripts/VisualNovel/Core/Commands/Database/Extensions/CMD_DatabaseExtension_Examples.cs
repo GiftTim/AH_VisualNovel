@@ -103,7 +103,7 @@ public class CMD_DatabaseExtension_Examples : CMD_DatabaseExtension
         // Move the image gradually towards the target position
         while (Mathf.Abs(targetX - currentX) > 0.1f)
         {
-            Debug.Log($"Moving character to {(left ? "left" : "right")} ({currentX}/{targetX})");
+            //Debug.Log($"Moving character to {(left ? "left" : "right")} ({currentX}/{targetX})");
             currentX = Mathf.MoveTowards(currentX, targetX, movespeed * Time.deltaTime);
             character.position = new Vector3(currentX, character.position.y, character.position.z);
             yield return null;

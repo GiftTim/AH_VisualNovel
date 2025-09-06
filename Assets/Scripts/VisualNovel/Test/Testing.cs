@@ -267,9 +267,14 @@ namespace TESTING
     {
         [SerializeField] private TextAsset fileToRead = null;
 
-        private void Update()
+        private void Start()
         {
             StartConversation();
+        }
+
+        private void Update()
+        {
+            
         }
 
         void StartConversation()

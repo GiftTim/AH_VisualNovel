@@ -1,0 +1,7 @@
+
+
+Elen "command(arguments go here)"
+Elen "(This is a thought)"
+Elen "This is some dialogue" command(args go here)
+command(more args go here), argCom(yes another one)
+command("This is another one again")

@@ -67,6 +67,7 @@ public class CommandManager : MonoBehaviour
     private IEnumerator RunningProcess(Delegate command, string[] args)
     {
         yield return WaitingForProcessToComplete(command, args);
+
         process = null;
     }
 
