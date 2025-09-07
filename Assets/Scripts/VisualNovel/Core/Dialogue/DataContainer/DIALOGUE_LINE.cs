@@ -1,4 +1,3 @@
-
 namespace DIALOGUE
 {
     public class DIALOGUE_LINE
