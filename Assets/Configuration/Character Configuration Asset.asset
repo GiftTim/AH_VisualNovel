@@ -16,21 +16,21 @@ MonoBehaviour:
   - name: Rachel
     alias: R
     characterType: 0
-    nameColor: {r: 1, g: 1, b: 1, a: 0}
-    dialogueColor: {r: 1, g: 1, b: 1, a: 0}
+    nameColor: {r: 1, g: 1, b: 1, a: 1}
+    dialogueColor: {r: 1, g: 1, b: 1, a: 1}
     nameFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
     dialogueFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
   - name: Mari
     alias: M
-    characterType: 1
-    nameColor: {r: 0.90188676, g: 0.032331664, b: 0.032331664, a: 0}
-    dialogueColor: {r: 1, g: 1, b: 1, a: 0}
-    nameFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
-    dialogueFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
+    characterType: 0
+    nameColor: {r: 0.90188676, g: 0.032331664, b: 0.032331664, a: 1}
+    dialogueColor: {r: 1, g: 1, b: 1, a: 1}
+    nameFont: {fileID: 11400000, guid: ddb4535e7cca90642803d237e6798f3f, type: 2}
+    dialogueFont: {fileID: 11400000, guid: ddb4535e7cca90642803d237e6798f3f, type: 2}
   - name: Benjamin
     alias: B
-    characterType: 1
-    nameColor: {r: 0.4428717, g: 0.9019608, b: 0.031372532, a: 0}
-    dialogueColor: {r: 0.5778973, g: 0.93207544, b: 0.46955496, a: 0}
-    nameFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
-    dialogueFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
+    characterType: 0
+    nameColor: {r: 0.4428717, g: 0.9019608, b: 0.031372532, a: 1}
+    dialogueColor: {r: 0.5778973, g: 0.93207544, b: 0.46955496, a: 1}
+    nameFont: {fileID: 11400000, guid: ddb4535e7cca90642803d237e6798f3f, type: 2}
+    dialogueFont: {fileID: 11400000, guid: ddb4535e7cca90642803d237e6798f3f, type: 2}

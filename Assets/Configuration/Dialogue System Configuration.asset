@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Dialogue System Configuration
   m_EditorClassIdentifier: 
   CharacterConfigurationAsset: {fileID: 11400000, guid: ac0cf4d453555e749837f7905050500a, type: 2}
-  defaultTextColor: {r: 1, g: 1, b: 1, a: 1}
-  defaultFont: {fileID: 11400000, guid: ddb4535e7cca90642803d237e6798f3f, type: 2}
+  defaultTextColor: {r: 0.3207547, g: 0.31893912, b: 0.31893912, a: 1}
+  defaultFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}

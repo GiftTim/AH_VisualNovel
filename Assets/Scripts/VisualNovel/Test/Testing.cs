@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using DIALOGUE;
 using CHARACTERS;
+using TMPro;
 
 namespace TESTING
 {
@@ -290,16 +291,63 @@ namespace TESTING
 
     public class Character_Test : MonoBehaviour
     {
+        public TMP_FontAsset tempFont;
+
         private void Start()
+        {
+
+
+            //Character Mari2 = CharacterManager.instance.CreateCharater("Mari");
+            StartCoroutine(Test());
+        }
+
+        IEnumerator Test()
         {
             Character Mari = CharacterManager.instance.CreateCharater("Mari");
             Character Rachel = CharacterManager.instance.CreateCharater("Rachel");
-            Character Adam = CharacterManager.instance.CreateCharater("Adam");
-            Character Mari2 = CharacterManager.instance.CreateCharater("Mari");
+            Character Ben = CharacterManager.instance.CreateCharater("Benjamin");
 
+            List<string> lines = new List<string>()
+            {
+                "Hi, there!",
+                "This is a line.",
+                "And {wa 1} another.",
+                "And a last one."
+            };
+
+            yield return Mari.Say(lines);
+
+            Mari.SetNameColor(Color.yellow);
+            Mari.SetDialogueColor(Color.cyan);
+            Mari.SetNameFont(tempFont);
+            Mari.SetDialogueFont(tempFont);
+
+            yield return Mari.Say(lines);
+
+            Mari.ResetConfigurationData();
+
+            yield return Mari.Say(lines);
+
+
+            lines = new List<string>()
+            {
+                "I am Rachel",
+            
+                "한국어도 잘해요"
+            };
+
+            yield return Rachel.Say(lines);
+
+            yield return Ben.Say("이 라인은 일단 한국어로 쓰는것과 {a} 제대로 나오는지를 확인 하기 위해서 입니다.");
+
+            Debug.Log("Finished");
+        }
+
+        // Update is called once per frame
+        void Update()
+        {
 
         }
     }
 
 }
-
