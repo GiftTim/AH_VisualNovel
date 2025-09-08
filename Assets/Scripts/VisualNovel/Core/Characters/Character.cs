@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections.Generic;
+using DIALOGUE
 
 namespace CHARACTERS
 {
@@ -12,6 +14,14 @@ namespace CHARACTERS
             this.name = name;
 
         }
+
+        public void Say(string dialogue) => Say(new List<string> { dialogue });
+        public void Say(List<string> dialogue)
+        {
+
+        }
+
+
 
         public enum CharacterType
         {
