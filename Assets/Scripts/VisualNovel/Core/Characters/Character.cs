@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using DIALOGUE
 
 namespace CHARACTERS
 {
@@ -19,6 +20,8 @@ namespace CHARACTERS
         {
 
         }
+
+
 
         public enum CharacterType
         {

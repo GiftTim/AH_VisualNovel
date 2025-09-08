@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using DIALOGUE;
+using CHARACTERS;
 
 namespace TESTING
 {
@@ -263,6 +264,7 @@ namespace TESTING
         }
     }
     */
+    /* [Testing_Command 2]
     public class CommandTesting_2 : MonoBehaviour
     {
         [SerializeField] private TextAsset fileToRead = null;
@@ -283,8 +285,21 @@ namespace TESTING
 
             DialogueSystem.instance.Say(lines);
         }
-
-
     }
+    */
+
+    public class Character_Test : MonoBehaviour
+    {
+        private void Start()
+        {
+            Character Mari = CharacterManager.instance.CreateCharater("Mari");
+            Character Rachel = CharacterManager.instance.CreateCharater("Rachel");
+            Character Adam = CharacterManager.instance.CreateCharater("Adam");
+            Character Mari2 = CharacterManager.instance.CreateCharater("Mari");
+
+
+        }
+    }
+
 }
 
