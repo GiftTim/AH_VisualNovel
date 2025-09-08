@@ -97,3 +97,7 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+Assets/TextMesh Pro/Resources/Fonts & Materials/Maplestory Light SDF.asset
+Assets/TextMesh Pro/Resources/Fonts & Materials/Maplestory Bold SDF.asset
+Assets/TextMesh Pro/Resources/Fonts & Materials/Maplestory Light SDF.asset
+Assets/TextMesh Pro/Resources/Fonts & Materials/Maplestory Bold SDF.asset
