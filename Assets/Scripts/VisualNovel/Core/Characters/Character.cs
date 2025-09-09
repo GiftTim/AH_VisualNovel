@@ -1,10 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 using DIALOGUE;
-<<<<<<< Updated upstream
-=======
 using TMPro;
->>>>>>> Stashed changes
+
 
 namespace CHARACTERS
 {
