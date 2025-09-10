@@ -288,7 +288,7 @@ namespace TESTING
         }
     }
     */
-
+    /* [Testing_Character1]
     public class Character_Test : MonoBehaviour
     {
         public TMP_FontAsset tempFont;
@@ -297,15 +297,15 @@ namespace TESTING
         {
 
 
-            //Character Mari2 = CharacterManager.instance.CreateCharater("Mari");
+            //Character Mari2 = CharacterManager.instance.CreateCharacter("Mari");
             StartCoroutine(Test());
         }
 
         IEnumerator Test()
         {
-            Character Mari = CharacterManager.instance.CreateCharater("Mari");
-            Character Rachel = CharacterManager.instance.CreateCharater("Rachel");
-            Character Ben = CharacterManager.instance.CreateCharater("Benjamin");
+            Character Mari = CharacterManager.instance.CreateCharacter("Mari");
+            Character Rachel = CharacterManager.instance.CreateCharacter("Rachel");
+            Character Ben = CharacterManager.instance.CreateCharacter("Benjamin");
 
             List<string> lines = new List<string>()
             {
@@ -341,6 +341,22 @@ namespace TESTING
             yield return Ben.Say("이 라인은 일단 한국어로 쓰는것과 {a} 제대로 나오는지를 확인 하기 위해서 입니다.");
 
             Debug.Log("Finished");
+
+                yield return new WaitForSeconds(2f);
+
+            Character Mari = CharacterManager.instance.CreateCharacter("Mari");
+
+            yield return new WaitForSeconds(1f);
+
+            yield return Mari.Hide();
+
+            yield return new WaitForSeconds(1f);
+
+            yield return Mari.Show();
+
+            yield return new WaitForSeconds(1f);
+
+            yield return Mari.Say("Hello!");
         }
 
         // Update is called once per frame
@@ -349,5 +365,60 @@ namespace TESTING
 
         }
     }
+    */
+    public class Character_Test : MonoBehaviour
+    {
+        public TMP_FontAsset tempFont;
+        private Character CreateCharacter(string name) => CharacterManager.instance.CreateCharacter(name);
 
+        private void Start()
+        {
+            //Character Mari = CharacterManager.instance.CreateCharacter("Mari");
+            //Character Rachel = CharacterManager.instance.CreateCharacter("Rachel");
+            //Character Raelin = CharacterManager.instance.CreateCharacter("Raelin");
+            StartCoroutine(Test());
+        }
+
+        IEnumerator Test()
+        {
+            Character Mastermind1 = CreateCharacter("Mastermind1 as Generic");
+            Character Mastermind2 = CreateCharacter("Mastermind2 as Generic");
+            Character Mastermind3 = CreateCharacter("Mastermind3 as Generic");
+
+            yield return Mastermind1.Show();
+
+            yield return new WaitForSeconds(1f);
+
+            yield return Mastermind1.Hide();
+
+            yield return new WaitForSeconds(1f);
+
+            yield return Mastermind2.Show();
+
+            yield return new WaitForSeconds(1f);
+
+            yield return Mastermind2.Hide();
+
+            yield return new WaitForSeconds(1f);
+
+            yield return Mastermind3.Show();
+
+            yield return new WaitForSeconds(1f);
+
+            yield return Mastermind3.Hide();
+
+            yield return new WaitForSeconds(1f);
+
+
+
+            yield return null;
+        }
+
+
+        // Update is called once per frame
+        void Update()
+        {
+
+        }
+    }
 }

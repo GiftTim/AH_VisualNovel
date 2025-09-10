@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6533802647759299704}
   - component: {fileID: 6308036223596277085}
+  - component: {fileID: 3167483499966399467}
   m_Layer: 5
   m_Name: Raelin
   m_TagString: Untagged
@@ -45,6 +46,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 177097187150044692}
   m_CullTransparentMesh: 1
+--- !u!95 &3167483499966399467
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 177097187150044692}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &281007980596767419
 GameObject:
   m_ObjectHideFlags: 0
@@ -55,6 +78,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2395361525250700213}
   - component: {fileID: 349466717742607602}
+  - component: {fileID: 984776803463286894}
   m_Layer: 5
   m_Name: 'Character-[Raelin]'
   m_TagString: Untagged
@@ -90,6 +114,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 281007980596767419}
   m_CullTransparentMesh: 1
+--- !u!225 &984776803463286894
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 281007980596767419}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &2162977025184339832
 GameObject:
   m_ObjectHideFlags: 0
@@ -138,7 +174,6 @@ GameObject:
   - component: {fileID: 2489142269629884928}
   - component: {fileID: 1990219055131993050}
   - component: {fileID: 7315678887868598122}
-  - component: {fileID: 6099745638241802986}
   m_Layer: 5
   m_Name: Face
   m_TagString: Untagged
@@ -203,18 +238,6 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!225 &6099745638241802986
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5508994813529851227}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 0
-  m_BlocksRaycasts: 0
-  m_IgnoreParentGroups: 0
 --- !u!1 &6945542350934250715
 GameObject:
   m_ObjectHideFlags: 0
@@ -226,7 +249,6 @@ GameObject:
   - component: {fileID: 4866008238811967890}
   - component: {fileID: 4085592518852166590}
   - component: {fileID: 2346554445662116148}
-  - component: {fileID: 6653497781058039933}
   m_Layer: 5
   m_Name: Body
   m_TagString: Untagged
@@ -291,15 +313,3 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!225 &6653497781058039933
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6945542350934250715}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 0
-  m_BlocksRaycasts: 0
-  m_IgnoreParentGroups: 0

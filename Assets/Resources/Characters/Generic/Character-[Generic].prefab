@@ -10,8 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 8556878287447792273}
   - component: {fileID: 614038380191720780}
+  - component: {fileID: 8765419539964007852}
   m_Layer: 5
-  m_Name: 'Character-[Extra]'
+  m_Name: 'Character-[Generic]'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -45,6 +46,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3291599542281744595}
   m_CullTransparentMesh: 1
+--- !u!225 &8765419539964007852
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3291599542281744595}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &4532007268179323206
 GameObject:
   m_ObjectHideFlags: 0
@@ -55,6 +68,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8067380916489237060}
   - component: {fileID: 8791759409750181765}
+  - component: {fileID: 5123803647307369469}
   m_Layer: 5
   m_Name: Extra
   m_TagString: Untagged
@@ -90,6 +104,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4532007268179323206}
   m_CullTransparentMesh: 1
+--- !u!95 &5123803647307369469
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4532007268179323206}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &8149163703859700938
 GameObject:
   m_ObjectHideFlags: 0
@@ -101,9 +137,8 @@ GameObject:
   - component: {fileID: 6604002503535605503}
   - component: {fileID: 6590331118420596396}
   - component: {fileID: 6624607831854526581}
-  - component: {fileID: 472558108148709267}
   m_Layer: 5
-  m_Name: Guard
+  m_Name: Mastermind
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -166,18 +201,6 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!225 &472558108148709267
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8149163703859700938}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 0
-  m_BlocksRaycasts: 0
-  m_IgnoreParentGroups: 0
 --- !u!1 &9162630810922889374
 GameObject:
   m_ObjectHideFlags: 0

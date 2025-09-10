@@ -7,9 +7,24 @@ namespace CHARACTERS
     public class CharacterManager : MonoBehaviour
     {
         public static CharacterManager instance { get; private set; }
-        private Dictionary<string, Character> characters = new Dictionary<string, Character>();
+
 
         private CharacterConfigurationSO config => DialogueSystem.instance.config.CharacterConfigurationAsset;
+
+
+        private Dictionary<string, Character> characters = new Dictionary<string, Character>();
+
+
+        private const string CHARACTER_NAME_ID = "<charname>";
+        private string characterRootPath => $"Characters/{CHARACTER_NAME_ID}";
+        private string characterPrefabPath => $"{characterRootPath}/Character-[{CHARACTER_NAME_ID}]";
+
+        [SerializeField] private RectTransform _characterpanel = null;
+        public RectTransform characterPanel => _characterpanel;
+
+        private const string CHARACTER_CASTING_ID = " as ";
+
+
 
         private void Awake()
         {
@@ -26,12 +41,12 @@ namespace CHARACTERS
             if (characters.ContainsKey(characterName.ToLower()))
                 return characters[characterName.ToLower()];
             else if (createIfDoesNotExist)
-                return CreateCharater(characterName);
+                return CreateCharacter(characterName);
 
             return null;
         }
 
-        public Character CreateCharater(string characterName)
+        public Character CreateCharacter(string characterName)
         {
             if (characters.ContainsKey(characterName.ToLower()))
             {
@@ -52,12 +67,25 @@ namespace CHARACTERS
         {
             CHARACTER_INFO result = new CHARACTER_INFO();
 
-            result.name = CharacterName;
+            string[] nameData = CharacterName.Split(CHARACTER_CASTING_ID, System.StringSplitOptions.RemoveEmptyEntries);
+            result.name = nameData[0];
+            result.castingName = nameData.Length > 1 ? nameData[1] : result.name;
 
-            result.config = config.GetConfig(CharacterName);
+            result.config = config.GetConfig(result.castingName);
+
+            result.prefab = GetPrefabForCharacter(result.castingName);
 
             return result;
         }
+
+        private GameObject GetPrefabForCharacter(string characterName)
+        {
+            string prefabPath = FormatCharacterPath(characterPrefabPath, characterName);
+
+            return Resources.Load<GameObject>(prefabPath);
+        }
+
+        private string FormatCharacterPath(string path, string characterName) => path.Replace(CHARACTER_NAME_ID, characterName);
 
         private Character CreateCharacterFromInfo(CHARACTER_INFO info)
         {
@@ -68,13 +96,13 @@ namespace CHARACTERS
 
                 case Character.CharacterType.Sprite:
                 case Character.CharacterType.SpriteSheet:
-                    return new Character_Sprite(info.name, info.config);
+                    return new Character_Sprite(info.name, info.config, info.prefab);
 
                 case Character.CharacterType.Live2D:
-                    return new Character_Live2D(info.name, info.config);
+                    return new Character_Live2D(info.name, info.config, info.prefab);
 
                 case Character.CharacterType.Model3D:
-                    return new Character_Model3D(info.name, info.config);
+                    return new Character_Model3D(info.name, info.config, info.prefab);
 
                 default:
                     return null;
@@ -85,8 +113,11 @@ namespace CHARACTERS
         private class CHARACTER_INFO
         {
             public string name = "";
+            public string castingName = "";
 
             public CharacterConfigData config = null;
+
+            public GameObject prefab = null;
         }
     }
 }
