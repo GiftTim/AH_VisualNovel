@@ -382,32 +382,45 @@ namespace TESTING
         IEnumerator Test()
         {
             Character Mastermind1 = CreateCharacter("Mastermind1 as Generic");
-            Character Mastermind2 = CreateCharacter("Mastermind2 as Generic");
-            Character Mastermind3 = CreateCharacter("Mastermind3 as Generic");
+            Character Raelin = CreateCharacter("Raelin");
+            Character Rachel = CreateCharacter("Rachel");
+            Character Mari = CreateCharacter("Mari");
+
+            Mastermind1.SetPosition(Vector2.zero);
+            Raelin.SetPosition(new Vector2(0.5f, 0.5f));
+            Rachel.SetPosition(Vector2.one);
+            Mari.SetPosition(new Vector2(2, 1));
 
             yield return Mastermind1.Show();
+            yield return Raelin.Show();
+            yield return Rachel.Show();
+            yield return Mari.Show();
 
-            yield return new WaitForSeconds(1f);
+            yield return Mastermind1.MoveToPosition(Vector2.one, smooth: true);
+            yield return Mastermind1.MoveToPosition(Vector2.zero, smooth: true);
 
-            yield return Mastermind1.Hide();
 
-            yield return new WaitForSeconds(1f);
+            //yield return new WaitForSeconds(2f);
 
-            yield return Mastermind2.Show();
+            //yield return Mastermind1.Hide();
 
-            yield return new WaitForSeconds(1f);
+            //yield return new WaitForSeconds(1f);
 
-            yield return Mastermind2.Hide();
 
-            yield return new WaitForSeconds(1f);
 
-            yield return Mastermind3.Show();
+            //yield return new WaitForSeconds(1f);
 
-            yield return new WaitForSeconds(1f);
+            //yield return Raelin.Hide();
 
-            yield return Mastermind3.Hide();
+            //yield return new WaitForSeconds(1f);
 
-            yield return new WaitForSeconds(1f);
+
+
+            //yield return new WaitForSeconds(1f);
+
+            //yield return Rachel.Hide();
+
+            //yield return new WaitForSeconds(1f);
 
 
 
