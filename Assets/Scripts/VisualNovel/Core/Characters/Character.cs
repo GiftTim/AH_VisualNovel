@@ -3,13 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using DIALOGUE;
 using TMPro;
-using UnityEngine.Purchasing;
 
 
 namespace CHARACTERS
 {
     public abstract class Character
     {
+        public const bool ENABLE_ON_START = true;
+
         public DialogueSystem dialogueSystem => DialogueSystem.instance;
         protected CharacterManager manager => CharacterManager.instance;
 

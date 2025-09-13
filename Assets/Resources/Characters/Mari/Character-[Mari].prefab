@@ -165,7 +165,7 @@ CanvasGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2185079428719751741}
   m_Enabled: 1
-  m_Alpha: 1
+  m_Alpha: 0
   m_Interactable: 0
   m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
@@ -181,7 +181,7 @@ GameObject:
   - component: {fileID: 7764077369713444918}
   - component: {fileID: 6301497139019515128}
   m_Layer: 5
-  m_Name: Mari
+  m_Name: Animator
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

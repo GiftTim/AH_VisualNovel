@@ -123,7 +123,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Characters_0
+      name: Monk
       rect:
         serializedVersion: 2
         x: 5
@@ -145,33 +145,11 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Characters_1
+      name: Girl
       rect:
         serializedVersion: 2
-        x: 508
-        y: 1511
-        width: 496
-        height: 746
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: fdb807f13b9246f419b599f270b0b7cb
-      internalID: -1782830534
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Characters_2
-      rect:
-        serializedVersion: 2
-        x: 5
-        y: 758
+        x: 2
+        y: 761
         width: 496
         height: 746
       alignment: 0
@@ -189,7 +167,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Characters_3
+      name: Man
       rect:
         serializedVersion: 2
         x: 508
@@ -211,7 +189,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Characters_4
+      name: Guard
       rect:
         serializedVersion: 2
         x: 5
@@ -232,28 +210,6 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
-    - serializedVersion: 2
-      name: Characters_5
-      rect:
-        serializedVersion: 2
-        x: 508
-        y: 5
-        width: 496
-        height: 746
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 76085cc6032f83f48b7839caa6affffa
-      internalID: 688024097
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
     outline: []
     customData: 
     physicsShape: []
@@ -268,12 +224,12 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Characters_0: -205546424
-      Characters_1: -1782830534
-      Characters_2: -1661922626
-      Characters_3: 1047175139
-      Characters_4: 1104514585
       Characters_5: 688024097
+      Girl: -1661922626
+      Guard: 1104514585
+      Man: 1047175139
+      Monk: -205546424
+      TBC: -1782830534
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

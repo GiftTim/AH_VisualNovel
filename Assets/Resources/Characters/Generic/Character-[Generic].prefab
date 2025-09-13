@@ -54,7 +54,7 @@ CanvasGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3291599542281744595}
   m_Enabled: 1
-  m_Alpha: 1
+  m_Alpha: 0
   m_Interactable: 0
   m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
@@ -70,7 +70,7 @@ GameObject:
   - component: {fileID: 8791759409750181765}
   - component: {fileID: 5123803647307369469}
   m_Layer: 5
-  m_Name: Extra
+  m_Name: Animator
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -211,7 +211,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3108368769469151651}
   m_Layer: 5
-  m_Name: Rendrers
+  m_Name: Renderers
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

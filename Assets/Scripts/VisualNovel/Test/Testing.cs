@@ -289,7 +289,7 @@ namespace TESTING
     }
     */
     /* [Testing_Character1]
-    public class Character_Test : MonoBehaviour
+    public class CharacterMoving_Test : MonoBehaviour
     {
         public TMP_FontAsset tempFont;
 
@@ -366,7 +366,8 @@ namespace TESTING
         }
     }
     */
-    public class Character_Test : MonoBehaviour
+    /* [Testing_Character Moving]
+    public class CharacterMoving_Test : MonoBehaviour
     {
         public TMP_FontAsset tempFont;
         private Character CreateCharacter(string name) => CharacterManager.instance.CreateCharacter(name);
@@ -385,44 +386,73 @@ namespace TESTING
             Character Raelin = CreateCharacter("Raelin");
             Character Rachel = CreateCharacter("Rachel");
             Character Mari = CreateCharacter("Mari");
+            Character_Sprite Mina = CreateCharacter("Mina") as Character_Sprite;
 
             Mastermind1.SetPosition(Vector2.zero);
             Raelin.SetPosition(new Vector2(0.5f, 0.5f));
             Rachel.SetPosition(Vector2.one);
             Mari.SetPosition(new Vector2(2, 1));
+            Mina.SetPosition(new Vector2(0.5f, 0.5f));
 
+            yield return Raelin.Show();
+            yield return new WaitForSeconds(2f);
+            yield return Raelin.Hide();
+
+            Sprite BodySprite = Mina.GetSprite("Mina-3");
+            Sprite faceSprite = Mina.GetSprite("Mina-5");
+
+            Mina.SetSprite(BodySprite, 0);
+            Mina.SetSprite(faceSprite, 1);
+
+            yield return Mina.Show();
             yield return Mastermind1.Show();
             yield return Raelin.Show();
             yield return Rachel.Show();
-            yield return Mari.Show();
+
 
             yield return Mastermind1.MoveToPosition(Vector2.one, smooth: true);
             yield return Mastermind1.MoveToPosition(Vector2.zero, smooth: true);
 
 
-            //yield return new WaitForSeconds(2f);
-
-            //yield return Mastermind1.Hide();
-
-            //yield return new WaitForSeconds(1f);
 
 
 
-            //yield return new WaitForSeconds(1f);
-
-            //yield return Raelin.Hide();
-
-            //yield return new WaitForSeconds(1f);
+            yield return null;
+        }
 
 
+        // Update is called once per frame
+        void Update()
+        {
 
-            //yield return new WaitForSeconds(1f);
+        }
+    }
+    */
 
-            //yield return Rachel.Hide();
+    public class CharacterMoving_Test : MonoBehaviour
+    {
+        public TMP_FontAsset tempFont;
+        private Character CreateCharacter(string name) => CharacterManager.instance.CreateCharacter(name);
 
-            //yield return new WaitForSeconds(1f);
+        private void Start()
+        {
+            //Character Mari = CharacterManager.instance.CreateCharacter("Mari");
+            //Character Rachel = CharacterManager.instance.CreateCharacter("Rachel");
+            //Character Raelin = CharacterManager.instance.CreateCharacter("Raelin");
+            StartCoroutine(Test());
+        }
 
+        IEnumerator Test()
+        {
+            Character_Sprite Mastermind1 = CreateCharacter("Mastermind1 as Generic") as Character_Sprite;
+            //Character_Sprite Raelin = CreateCharacter("Raelin") as Character_Sprite;
+            //Character_Sprite Rachel = CreateCharacter("Rachel") as Character_Sprite;
+            //Character_Sprite Mina = CreateCharacter("Mina") as Character_Sprite;
 
+            Mastermind1.Show();
+
+            Sprite s1 = Mastermind1.GetSprite("Characters-Girl");
+            Mastermind1.SetSprite(s1);
 
             yield return null;
         }

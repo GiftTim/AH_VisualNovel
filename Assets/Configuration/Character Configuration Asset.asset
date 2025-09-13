@@ -43,6 +43,13 @@ MonoBehaviour:
     dialogueFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
   - name: Generic
     alias: Mastermind
+    characterType: 2
+    nameColor: {r: 1, g: 1, b: 1, a: 1}
+    dialogueColor: {r: 1, g: 1, b: 1, a: 1}
+    nameFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
+    dialogueFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
+  - name: Mina
+    alias: I
     characterType: 1
     nameColor: {r: 1, g: 1, b: 1, a: 1}
     dialogueColor: {r: 1, g: 1, b: 1, a: 1}
