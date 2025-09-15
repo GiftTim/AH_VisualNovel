@@ -428,7 +428,7 @@ namespace TESTING
         }
     }
     */
-
+    /* [Testing CharacterMoving2]
     public class CharacterMoving_Test : MonoBehaviour
     {
         public TMP_FontAsset tempFont;
@@ -453,6 +453,55 @@ namespace TESTING
 
             Sprite s1 = Mastermind1.GetSprite("Characters-Girl");
             Mastermind1.SetSprite(s1);
+
+            Debug.Log($"Visible = {Mastermind1.isVisible}");        
+
+            yield return null;
+        }
+
+
+        // Update is called once per frame
+        void Update()
+        {
+
+        }
+    }
+    */
+
+    public class CharacterLayer_Testing : MonoBehaviour
+    {
+        public TMP_FontAsset tempFont;
+        private Character CreateCharacter(string name) => CharacterManager.instance.CreateCharacter(name);
+
+        private void Start()
+        {
+            StartCoroutine(Test());
+        }
+
+        IEnumerator Test()
+        {
+            //Character_Sprite Mastermind1 = CreateCharacter("Mastermind1 as Generic") as Character_Sprite;
+            //Character_Sprite Raelin = CreateCharacter("Raelin") as Character_Sprite;
+            Character_Sprite Mina   = CreateCharacter("Mina") as Character_Sprite;
+            Mina.isVisible = true;
+
+            //Mina.Hide();
+
+            //yield return new WaitForSeconds(1);
+
+            //yield return Raelin.TransitionSprite(Raelin.GetSprite("B_Embarrassed"), 1);
+            //yield return Raelin.TransitionSprite(Raelin.GetSprite("B2"));
+
+            //Raelin.Hide();
+
+            //yield return new WaitForSeconds(1);
+
+            //Mina.Show();
+
+            yield return new WaitForSeconds(1);
+
+            yield return Mina.TransitionSprite(Mina.GetSprite("Mina-A_ShyFace"), 1);
+            yield return Mina.TransitionSprite(Mina.GetSprite("Mina-A2"));
 
             yield return null;
         }

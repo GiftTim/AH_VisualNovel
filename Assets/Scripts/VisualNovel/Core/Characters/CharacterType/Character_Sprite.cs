@@ -18,6 +18,12 @@ namespace CHARACTERS
 
         private string artAssetsDirectory = "";
 
+        public override bool isVisible
+        {
+            get { return isRevealing || rootCG.alpha == 1; }
+            set { rootCG.alpha = value ? 1 : 0; }
+        }
+
         public Character_Sprite(string name, CharacterConfigData config, GameObject prefab, string rootAssetFolder) : base(name, config, prefab)
         {
             rootCG.alpha = ENABLE_ON_START ? 1 : 0;
@@ -39,7 +45,7 @@ namespace CHARACTERS
             {
                 Transform child = rendererRoot.transform.GetChild(i); 
 
-                Image rendererImage = child.GetComponent<Image>();
+                Image rendererImage = child.GetComponentInChildren<Image>();
 
                 if (rendererImage != null)
                 {
@@ -60,27 +66,27 @@ namespace CHARACTERS
             if(config.characterType == CharacterType.SpriteSheet)
             {
                 string[] data = spriteName.Split(SPRITESHEET_TEX_SPRITE_DELIMITER);
+                Sprite[] spriteArray = new Sprite[0];
 
                 if(data.Length == 2)
                 {
                     string texturename = data[0];
                     spriteName = data[1];
-                    Sprite[] spriteArray = Resources.LoadAll<Sprite>($"{artAssetsDirectory}/{texturename}");
+                    spriteArray = Resources.LoadAll<Sprite>($"{artAssetsDirectory}/{texturename}");
 
                     if (spriteArray.Length == 0)
                         Debug.LogWarning($"Character '{name}' does not have an art asset called '{texturename}'");
-
-                    return Array.Find(spriteArray, sprite => sprite.name == spriteName);
                 }
                 else
                 {
-                    Sprite[] defaultSpriteArray = Resources.LoadAll<Sprite>($"{artAssetsDirectory}/{SPRITESHEET_DEFAULT_SHEETNAME}");
+                    spriteArray = Resources.LoadAll<Sprite>($"{artAssetsDirectory}/{SPRITESHEET_DEFAULT_SHEETNAME}");
 
-                    if (defaultSpriteArray.Length == 0)
+                    if (spriteArray.Length == 0)
                         Debug.LogWarning($"Character '{name}' does not have a default art asset called '{SPRITESHEET_DEFAULT_SHEETNAME}'");
-
-                    return Array.Find(defaultSpriteArray, sprite => sprite.name == spriteName);
                 }
+
+        
+                return Array.Find(spriteArray, sprite => sprite.name == spriteName);
             }
             else
             {
@@ -88,6 +94,13 @@ namespace CHARACTERS
             }
         }
 
+        public Coroutine TransitionSprite(Sprite sprite, int layer = 0, float speed = 1)
+        {
+            CharacterSpriteLayer spriteLayer = layers[layer];
+
+            return spriteLayer.TransitionSprite(sprite, speed);
+
+        }
 
         public override IEnumerator ShowingOrHiding(bool show)
         {
