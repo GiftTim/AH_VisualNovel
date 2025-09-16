@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -115,6 +116,31 @@ namespace CHARACTERS
 
             co_revealing = null;
             co_hiding = null;
+        }
+
+        public override void SetColor(Color color)
+        {
+            base.SetColor(color);
+
+            foreach (CharacterSpriteLayer layer in layers)
+            {
+                layer.SetColor(color);
+            }
+        }
+
+        public override IEnumerator ChangingColor(Color color, float speed)
+        {
+            foreach (CharacterSpriteLayer layer in layers)
+                layer.TransitionColor(color, speed);
+
+            yield return null;
+
+            while(layers.Any(l=>l.isChangingColor))
+            {
+                yield return null;
+            }
+
+            co_changingColor = null;
         }
     }
 }

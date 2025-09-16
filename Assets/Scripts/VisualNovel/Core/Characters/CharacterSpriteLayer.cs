@@ -20,9 +20,12 @@ namespace CHARACTERS
         private List<CanvasGroup> oldRenderrers = new List<CanvasGroup>();
 
         private Coroutine co_transitioningLayer = null;
-        private Coroutine co_levelingAlpha = null;
+        private Coroutine co_levelingAlpha      = null;
+        private Coroutine co_changingColor      = null;
+
         public bool isTransitioningLayer => co_transitioningLayer != null;
-        public bool isLevelingAlpha => co_levelingAlpha != null;
+        public bool isLevelingAlpha      => co_levelingAlpha      != null;
+        public bool isChangingColor      => co_changingColor      != null;
 
         public CharacterSpriteLayer(Image defaultRenderer, int layer = 0)
         {
@@ -107,5 +110,55 @@ namespace CHARACTERS
 
             co_levelingAlpha = null;
         }
+        
+        
+        public void SetColor(Color color)
+        {
+            renderer.color = color;
+            
+            foreach(CanvasGroup oldCG in oldRenderrers)
+            {
+                oldCG.GetComponent<Image>().color = color;
+            }
+        }
+
+        public Coroutine TransitionColor(Color color, float speed)
+        {
+            if (isChangingColor)
+                characterManager.StopCoroutine(co_changingColor);
+
+            co_changingColor = characterManager.StartCoroutine(ChangingColor(color, speed));
+
+            return co_changingColor;
+        }
+
+        private IEnumerator ChangingColor(Color color, float speedMultiplier)
+        {
+            Color       oldColor  = renderer.color;
+            List<Image> oldImages = new List<Image>();
+
+            foreach (var oldCG in oldRenderrers)
+            {
+                oldImages.Add(oldCG.GetComponent<Image>());
+            }
+
+            float colorPercent = 0;
+            while(colorPercent <1)
+            {
+                colorPercent += DEFAULT_TRANSITION_SPEED * speedMultiplier * Time.deltaTime;
+
+                renderer.color = Color.Lerp(oldColor, color, colorPercent); ;
+
+                foreach(Image oldImage in oldImages)
+                {
+                    oldImage.color = renderer.color;
+                }
+
+                yield return null;
+            }
+
+            co_changingColor = null;
+        }
+
     }
 }

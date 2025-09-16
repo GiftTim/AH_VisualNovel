@@ -467,7 +467,7 @@ namespace TESTING
         }
     }
     */
-
+    /*[Testing Character layer]
     public class CharacterLayer_Testing : MonoBehaviour
     {
         public TMP_FontAsset tempFont;
@@ -502,6 +502,41 @@ namespace TESTING
 
             yield return Mina.TransitionSprite(Mina.GetSprite("Mina-A_ShyFace"), 1);
             yield return Mina.TransitionSprite(Mina.GetSprite("Mina-A2"));
+
+            yield return null;
+        }
+
+
+        // Update is called once per frame
+        void Update()
+        {
+
+        }
+    }
+    */
+    public class CharacterLayer_Testing : MonoBehaviour
+    {
+        public TMP_FontAsset tempFont;
+        private Character CreateCharacter(string name) => CharacterManager.instance.CreateCharacter(name);
+
+        private void Start()
+        {
+            StartCoroutine(Test());
+        }
+
+        IEnumerator Test()
+        {
+
+            Character_Sprite Raelin = CreateCharacter("Raelin") as Character_Sprite;
+
+            yield return new WaitForSeconds(1);
+
+            //Raelin.layers[1].SetColor(Color.red);
+            yield return Raelin.TransitionColor(Color.red, speed: 0.2f);
+            yield return Raelin.TransitionColor(Color.blue);
+            yield return Raelin.TransitionColor(Color.yellow);
+            yield return Raelin.TransitionColor(Color.black);
+            yield return Raelin.TransitionColor(Color.white);
 
             yield return null;
         }
