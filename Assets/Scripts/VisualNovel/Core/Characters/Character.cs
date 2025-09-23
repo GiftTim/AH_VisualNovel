@@ -11,8 +11,9 @@ namespace CHARACTERS
     {
         public  const bool  ENABLE_ON_START = true;
         private const float UNHIGHLIGHTED_DARKEN_STRENGTH = 0.65f;
+        private const bool DEFAULT_ORIENTATION_IS_FACING_LEFT = true;
 
-        public    DialogueSystem dialogueSystem => DialogueSystem.instance;
+        public DialogueSystem dialogueSystem => DialogueSystem.instance;
         protected CharacterManager characterManager => CharacterManager.instance;
 
         public string name = "";
@@ -21,7 +22,8 @@ namespace CHARACTERS
         public CharacterConfigData config;
         public Animator animator;
 
-        public    Color color { get; protected set; } = Color.white;
+
+        public Color color { get; protected set; } = Color.white;
         protected Color displayColor => highlighted ? highlightedColor : unhighlightedColor;
         protected Color highlightedColor   => color;
         protected Color unhighlightedColor 
@@ -32,8 +34,11 @@ namespace CHARACTERS
         public bool highlighted { get; protected set; } = true;
 
 
+        protected bool facingLeft = DEFAULT_ORIENTATION_IS_FACING_LEFT;
+
+
         //Coroutines
-        protected Coroutine co_revealing, co_hiding, co_moving, co_changingColor, co_highlighting;
+        protected Coroutine co_revealing, co_hiding, co_moving, co_changingColor, co_highlighting, co_flipping;
 
         public bool isRevealing      => co_revealing     != null;
         public bool isHiding         => co_hiding        != null;
@@ -41,9 +46,13 @@ namespace CHARACTERS
         public bool isChangingColor  => co_changingColor != null;
         public bool isHighlighting   => (highlighted && co_highlighting != null);
         public bool isUnHighlighting => (!highlighted && co_highlighting != null);
+        public bool isFlipping       => co_flipping != null;
 
 
         public virtual bool isVisible { get; set; }
+        
+        public bool isFacingLeft => facingLeft;
+        public bool isFacingRight => !facingLeft;
         
 
         public Character(string name, CharacterConfigData config, GameObject prefab)
@@ -112,7 +121,7 @@ namespace CHARACTERS
             yield return null;
         }
 
-        // ´Ü°£·ÐÆÄ·Î ÁøÇàÇÒ ¶§, º¯°æÇØ¾ß ÇÒ ºÎºÐ
+        // ï¿½Ü°ï¿½ï¿½ï¿½ï¿½Ä·ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½Ø¾ï¿½ ï¿½ï¿½ ï¿½Îºï¿½
         public virtual void SetPosition(Vector2 position)
         {
             if (root == null)
@@ -127,7 +136,7 @@ namespace CHARACTERS
 
         }
 
-        // ´Ü°£·ÐÆÄ·Î ÁøÇàÇÒ ¶§, º¯°æÇØ¾ß ÇÒ ºÎºÐ
+        // ï¿½Ü°ï¿½ï¿½ï¿½ï¿½Ä·ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½Ø¾ï¿½ ï¿½ï¿½ ï¿½Îºï¿½
         public virtual Coroutine MoveToPosition(Vector2 position, float speed = 2f, bool smooth = false)
         {
             if (root == null)
@@ -141,7 +150,7 @@ namespace CHARACTERS
             return co_moving;
         }
 
-        // ´Ü°£·ÐÆÄ·Î ÁøÇàÇÒ ¶§, º¯°æÇØ¾ß ÇÒ ºÎºÐ
+        // ï¿½Ü°ï¿½ï¿½ï¿½ï¿½Ä·ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½Ø¾ï¿½ ï¿½ï¿½ ï¿½Îºï¿½
         private IEnumerator MovingToPosition(Vector2 position, float speed, bool smooth)
         {
             (Vector2 minAnchorTarget, Vector2 maxAnchorTarget) =
@@ -171,7 +180,7 @@ namespace CHARACTERS
 
         }
 
-        // ´Ü°£·ÐÆÄ·Î ÁøÇàÇÒ ¶§, º¯°æÇØ¾ß ÇÒ ºÎºÐ
+        // ï¿½Ü°ï¿½ï¿½ï¿½ï¿½Ä·ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½Ø¾ï¿½ ï¿½ï¿½ ï¿½Îºï¿½
         protected (Vector2, Vector2) ConvertUITargetPositionToRelativeCharacterAnchorTargets(Vector2 position)
         {
             Vector2 padding = root.anchorMax - root.anchorMin;
@@ -241,6 +250,43 @@ namespace CHARACTERS
             Debug.Log("Highlighting is not available on this character type!");
             yield return null;
         }
+
+        public Coroutine Flip()
+        {
+            if (isFacingLeft)
+                return FaceRight();
+            else
+                return FaceLeft();
+        }
+
+        public Coroutine FaceLeft(float speed = 1, bool immediate = false)
+        {
+            if (isFlipping)
+                characterManager.StopCoroutine(co_flipping);
+
+            facingLeft = true;
+            co_flipping = characterManager.StartCoroutine(FaceDirection(facingLeft, speed, immediate));
+
+            return co_flipping;
+        }
+        
+        public Coroutine FaceRight(float speed = 1, bool immediate = false)
+        {
+            if (isFlipping)
+                characterManager.StopCoroutine(co_flipping);
+
+            facingLeft = false;
+            co_flipping = characterManager.StartCoroutine(FaceDirection(facingLeft, speed, immediate));
+
+            return co_flipping;
+        }
+
+        public virtual IEnumerator FaceDirection(bool FaceLeft, float speedMultiplier, bool immediate)
+        {
+            Debug.Log("Cannot flip a character of this type!");
+            yield return null;
+        }
+
 
         public enum CharacterType
         {
