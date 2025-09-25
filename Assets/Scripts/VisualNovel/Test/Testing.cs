@@ -304,7 +304,7 @@ namespace TESTING
         IEnumerator Test()
         {
             Character Mari = CharacterManager.instance.CreateCharacter("Mari");
-            Character Rachel = CharacterManager.instance.CreateCharacter("Rachel");
+            Character Mina = CharacterManager.instance.CreateCharacter("Mina");
             Character Ben = CharacterManager.instance.CreateCharacter("Benjamin");
 
             List<string> lines = new List<string>()
@@ -331,12 +331,12 @@ namespace TESTING
 
             lines = new List<string>()
             {
-                "I am Rachel",
+                "I am Mina",
             
                 "한국어도 잘해요"
             };
 
-            yield return Rachel.Say(lines);
+            yield return Mina.Say(lines);
 
             yield return Ben.Say("이 라인은 일단 한국어로 쓰는것과 {a} 제대로 나오는지를 확인 하기 위해서 입니다.");
 
@@ -375,7 +375,7 @@ namespace TESTING
         private void Start()
         {
             //Character Mari = CharacterManager.instance.CreateCharacter("Mari");
-            //Character Rachel = CharacterManager.instance.CreateCharacter("Rachel");
+            //Character Mina = CharacterManager.instance.CreateCharacter("Mina");
             //Character Raelin = CharacterManager.instance.CreateCharacter("Raelin");
             StartCoroutine(Test());
         }
@@ -384,13 +384,13 @@ namespace TESTING
         {
             Character Mastermind1 = CreateCharacter("Mastermind1 as Generic");
             Character Raelin = CreateCharacter("Raelin");
-            Character Rachel = CreateCharacter("Rachel");
+            Character Mina = CreateCharacter("Mina");
             Character Mari = CreateCharacter("Mari");
             Character_Sprite Mina = CreateCharacter("Mina") as Character_Sprite;
 
             Mastermind1.SetPosition(Vector2.zero);
             Raelin.SetPosition(new Vector2(0.5f, 0.5f));
-            Rachel.SetPosition(Vector2.one);
+            Mina.SetPosition(Vector2.one);
             Mari.SetPosition(new Vector2(2, 1));
             Mina.SetPosition(new Vector2(0.5f, 0.5f));
 
@@ -407,7 +407,7 @@ namespace TESTING
             yield return Mina.Show();
             yield return Mastermind1.Show();
             yield return Raelin.Show();
-            yield return Rachel.Show();
+            yield return Mina.Show();
 
 
             yield return Mastermind1.MoveToPosition(Vector2.one, smooth: true);
@@ -437,7 +437,7 @@ namespace TESTING
         private void Start()
         {
             //Character Mari = CharacterManager.instance.CreateCharacter("Mari");
-            //Character Rachel = CharacterManager.instance.CreateCharacter("Rachel");
+            //Character Mina = CharacterManager.instance.CreateCharacter("Mina");
             //Character Raelin = CharacterManager.instance.CreateCharacter("Raelin");
             StartCoroutine(Test());
         }
@@ -446,7 +446,7 @@ namespace TESTING
         {
             Character_Sprite Mastermind1 = CreateCharacter("Mastermind1 as Generic") as Character_Sprite;
             //Character_Sprite Raelin = CreateCharacter("Raelin") as Character_Sprite;
-            //Character_Sprite Rachel = CreateCharacter("Rachel") as Character_Sprite;
+            //Character_Sprite Mina = CreateCharacter("Mina") as Character_Sprite;
             //Character_Sprite Mina = CreateCharacter("Mina") as Character_Sprite;
 
             Mastermind1.Show();
@@ -550,7 +550,7 @@ namespace TESTING
         }
     }
     */
-
+    /*[Testing Character Highlighting]
     public class CharacterLayer_Testing : MonoBehaviour
     {
         public TMP_FontAsset tempFont;
@@ -565,22 +565,76 @@ namespace TESTING
         {
 
             Character_Sprite Raelin = CreateCharacter("Raelin") as Character_Sprite;
+            Character_Sprite Mina = CreateCharacter("Mina") as Character_Sprite;
+
+            Raelin.SetPosition(Vector2.zero);
+            Mina.SetPosition(new Vector2(1, 0));
 
             yield return new WaitForSeconds(1);
 
-            yield return Raelin.UnHighlight();
+            Mina.UnHighlight();
+            yield return Raelin.Say("I want to say something");
+
+            Raelin.UnHighlight();
+            Mina.Highlight();
+            yield return Mina.Say("But I want to say something too! {c} Can I go first?");
+              
+            Raelin.Highlight();
+            Mina.UnHighlight();
+            yield return Raelin.Say("Sure, {a} be my guest.");
+
+            Mina.Highlight();
+            Raelin.UnHighlight();
+            Mina.TransitionSprite(Mina.GetSprite("Mina-A_ShyFace"), layer :1);
+            yield return Mina.Say("Yay!");
+
+            yield return null;
+        }
+    }
+    */
+
+    public class CharacterFlipping_Testing : MonoBehaviour
+    {
+        public TMP_FontAsset tempFont;
+        private Character CreateCharacter(string name) => CharacterManager.instance.CreateCharacter(name);
+
+        private void Start()
+        {
+            StartCoroutine(Test());
+        }
+
+        IEnumerator Test()
+        {
+
+            Character_Sprite Raelin = CreateCharacter("Raelin") as Character_Sprite;
+            Character_Sprite Mina = CreateCharacter("Mina") as Character_Sprite;
+
+            Raelin.SetPosition(Vector2.zero);
+            Mina.SetPosition(new Vector2(1, 0));
 
             yield return new WaitForSeconds(1);
 
-            yield return Raelin.TransitionColor(Color.red);
+            yield return Raelin.Flip(0.3f);
 
-            yield return new WaitForSeconds(1);
+            yield return Mina.FaceRight(immediate: true);
 
-            yield return Raelin.Highlight();
+            yield return Raelin.FaceLeft(immediate: true);
 
-            yield return new WaitForSeconds(1);
+            Mina.UnHighlight();
+            yield return Raelin.Say("I want to say something");
 
-            yield return Raelin.TransitionColor(Color.white);
+            Raelin.UnHighlight();
+            Mina.Highlight();
+            yield return Mina.Say("But I want to say something too! {c} Can I go first?");
+
+            Raelin.Highlight();
+            Mina.UnHighlight();
+            yield return Raelin.Say("Sure, {a} be my guest.");
+
+            Mina.Highlight();
+            Raelin.UnHighlight();
+            Mina.TransitionSprite(Mina.GetSprite("Mina-A_ShyFace"), layer: 1);
+            yield return Mina.Say("Yay!");
 
             yield return null;
         }

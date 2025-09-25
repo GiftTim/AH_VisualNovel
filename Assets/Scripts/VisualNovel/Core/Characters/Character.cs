@@ -11,7 +11,7 @@ namespace CHARACTERS
     {
         public  const bool  ENABLE_ON_START = true;
         private const float UNHIGHLIGHTED_DARKEN_STRENGTH = 0.65f;
-        private const bool DEFAULT_ORIENTATION_IS_FACING_LEFT = true;
+        public  const bool  DEFAULT_ORIENTATION_IS_FACING_LEFT = true;
 
         public DialogueSystem dialogueSystem => DialogueSystem.instance;
         protected CharacterManager characterManager => CharacterManager.instance;
@@ -251,12 +251,12 @@ namespace CHARACTERS
             yield return null;
         }
 
-        public Coroutine Flip()
+        public Coroutine Flip(float speed = 1, bool immediate = false)
         {
             if (isFacingLeft)
-                return FaceRight();
+                return FaceRight(speed, immediate);
             else
-                return FaceLeft();
+                return FaceLeft(speed, immediate);
         }
 
         public Coroutine FaceLeft(float speed = 1, bool immediate = false)
