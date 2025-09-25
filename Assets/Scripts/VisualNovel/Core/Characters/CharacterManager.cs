@@ -1,5 +1,6 @@
 using DIALOGUE;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace CHARACTERS
@@ -113,6 +114,24 @@ namespace CHARACTERS
                 default:
                     return null;
             }
+
+        }
+
+        public void SortCharacters()
+        {
+            List<Character> activeCharacters 
+                = characters.Values.Where(c => c.root.gameObject.activeInHierarchy && c.isVisible).ToList();
+            List<Character> inactiveCharacters
+                = characters.Values.Except(activeCharacters).ToList();
+
+            activeCharacters.Sort((a, b) => a.priority.CompareTo(b.priority));
+            activeCharacters.Concat(inactiveCharacters);
+
+            SortCharacters(activeCharacters);
+        }
+
+        private void SortCharacters(List<Character> charactersSortingOrder)
+        {
 
         }
 

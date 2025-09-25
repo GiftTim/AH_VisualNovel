@@ -22,7 +22,7 @@ namespace CHARACTERS
         public CharacterConfigData config;
         public Animator animator;
 
-
+        
         public Color color { get; protected set; } = Color.white;
         protected Color displayColor => highlighted ? highlightedColor : unhighlightedColor;
         protected Color highlightedColor   => color;
@@ -31,10 +31,13 @@ namespace CHARACTERS
                          color.g * UNHIGHLIGHTED_DARKEN_STRENGTH, 
                          color.b * UNHIGHLIGHTED_DARKEN_STRENGTH, 
                          color.a);
-        public bool highlighted { get; protected set; } = true;
+        public bool highlighted { get; protected set; } = true; 
 
 
         protected bool facingLeft = DEFAULT_ORIENTATION_IS_FACING_LEFT;
+
+
+        public int priority { get; protected set; }
 
 
         //Coroutines
@@ -121,7 +124,7 @@ namespace CHARACTERS
             yield return null;
         }
 
-        // �ܰ����ķ� ������ ��, �����ؾ� �� �κ�
+        // 단간론파 할 때, 제거해야 할 부분
         public virtual void SetPosition(Vector2 position)
         {
             if (root == null)
@@ -136,7 +139,7 @@ namespace CHARACTERS
 
         }
 
-        // �ܰ����ķ� ������ ��, �����ؾ� �� �κ�
+        // 단간론파 할 때, 제거해야 할 부분
         public virtual Coroutine MoveToPosition(Vector2 position, float speed = 2f, bool smooth = false)
         {
             if (root == null)
@@ -150,7 +153,7 @@ namespace CHARACTERS
             return co_moving;
         }
 
-        // �ܰ����ķ� ������ ��, �����ؾ� �� �κ�
+        // 단간론파 할 때, 제거해야 할 부분
         private IEnumerator MovingToPosition(Vector2 position, float speed, bool smooth)
         {
             (Vector2 minAnchorTarget, Vector2 maxAnchorTarget) =
@@ -180,7 +183,7 @@ namespace CHARACTERS
 
         }
 
-        // �ܰ����ķ� ������ ��, �����ؾ� �� �κ�
+        // 단간론파 할 때, 제거해야 할 부분
         protected (Vector2, Vector2) ConvertUITargetPositionToRelativeCharacterAnchorTargets(Vector2 position)
         {
             Vector2 padding = root.anchorMax - root.anchorMin;
@@ -217,6 +220,7 @@ namespace CHARACTERS
             yield return null;
         }
 
+        // 단간론파 할 때, 제거해야 할 부분
         public Coroutine Highlight(float speed = 1f)
         {
             if (isHighlighting)
@@ -231,6 +235,7 @@ namespace CHARACTERS
             return co_highlighting;
         }
 
+        // 단간론파 할 때, 제거해야 할 부분
         public Coroutine UnHighlight(float speed = 1f)
         {
             if (isUnHighlighting)
@@ -245,6 +250,7 @@ namespace CHARACTERS
             return co_highlighting;
         }
 
+        // 단간론파 할 때, 제거해야 할 부분
         public virtual IEnumerator Highlighting(bool highlight, float speedMultiplier)
         {
             Debug.Log("Highlighting is not available on this character type!");
@@ -285,6 +291,14 @@ namespace CHARACTERS
         {
             Debug.Log("Cannot flip a character of this type!");
             yield return null;
+        }
+
+        public void SetPriority(int priority, bool autoSortCharacterOnUI = true)
+        {
+            this.priority = priority;
+
+            if (autoSortCharacterOnUI)
+                characterManager.SortCharacters();
         }
 
 
