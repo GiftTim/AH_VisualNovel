@@ -592,7 +592,7 @@ namespace TESTING
         }
     }
     */
-
+    /*[Testing Charater Flipping]
     public class CharacterFlipping_Testing : MonoBehaviour
     {
         public TMP_FontAsset tempFont;
@@ -635,6 +635,53 @@ namespace TESTING
             Raelin.UnHighlight();
             Mina.TransitionSprite(Mina.GetSprite("Mina-A_ShyFace"), layer: 1);
             yield return Mina.Say("Yay!");
+
+            yield return null;
+        }
+    }
+    */
+    public class CharacterFlipping_Testing : MonoBehaviour
+    {
+        public TMP_FontAsset tempFont;
+        private Character CreateCharacter(string name) => CharacterManager.instance.CreateCharacter(name);
+
+        private void Start()
+        {
+            StartCoroutine(Test());
+        }
+
+        IEnumerator Test()
+        {
+
+            Character_Sprite Guard = CreateCharacter("Guard as Generic") as Character_Sprite;
+            Character_Sprite GuardRed = CreateCharacter("Guard Red as Generic") as Character_Sprite;
+            Character_Sprite Raelin = CreateCharacter("Raelin") as Character_Sprite;
+            Character_Sprite Mina = CreateCharacter("Mina") as Character_Sprite;
+            //Mina.isVisible = false;
+
+            GuardRed.SetColor(Color.red);
+
+            Raelin.SetPosition(new Vector2(0.3f, 0));
+            Mina.SetPosition(new Vector2(0.45f, 0));
+            Guard.SetPosition(new Vector2(0.6f, 0));
+            GuardRed.SetPosition(new Vector2(0.85f, 0));
+
+            GuardRed.SetPriority(1000);
+            Mina.SetPriority(15);
+            Raelin.SetPriority(8);
+            Guard.SetPriority(30);
+
+            yield return new WaitForSeconds(1);
+
+            CharacterManager.instance.SortCharacters(new string[] { "Mina", "Raelin" });
+
+            yield return new WaitForSeconds(1);
+
+            CharacterManager.instance.SortCharacters();
+
+            yield return new WaitForSeconds(1);
+
+            CharacterManager.instance.SortCharacters(new string[] { "Raelin", "Guard red", "Guard", "Mina" });
 
             yield return null;
         }
