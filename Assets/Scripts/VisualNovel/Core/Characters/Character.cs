@@ -9,9 +9,10 @@ namespace CHARACTERS
 {
     public abstract class Character
     {
-        public  const bool  ENABLE_ON_START = true;
-        private const float UNHIGHLIGHTED_DARKEN_STRENGTH = 0.65f;
-        public  const bool  DEFAULT_ORIENTATION_IS_FACING_LEFT = true;
+        public  const bool   ENABLE_ON_START = true;
+        private const float  UNHIGHLIGHTED_DARKEN_STRENGTH = 0.65f;
+        public  const bool   DEFAULT_ORIENTATION_IS_FACING_LEFT = true;
+        public  const string ANIMATION_REFRESH_TRIGGER = "Refresh";
 
         public DialogueSystem dialogueSystem => DialogueSystem.instance;
         protected CharacterManager characterManager => CharacterManager.instance;
@@ -301,6 +302,16 @@ namespace CHARACTERS
                 characterManager.SortCharacters();
         }
 
+        public void Animate(string animation)
+        {
+            animator.SetTrigger(animation);
+        }
+
+        public void Animate(string animation, bool state)
+        {
+            animator.SetBool(animation, state);
+            animator.SetTrigger(ANIMATION_REFRESH_TRIGGER);
+        }
 
         public enum CharacterType
         {

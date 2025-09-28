@@ -640,7 +640,8 @@ namespace TESTING
         }
     }
     */
-    public class CharacterFlipping_Testing : MonoBehaviour
+    /*[Testing Character Sorting]
+    public class CharacterSorting_Testing : MonoBehaviour
     {
         public TMP_FontAsset tempFont;
         private Character CreateCharacter(string name) => CharacterManager.instance.CreateCharacter(name);
@@ -682,6 +683,50 @@ namespace TESTING
             yield return new WaitForSeconds(1);
 
             CharacterManager.instance.SortCharacters(new string[] { "Raelin", "Guard red", "Guard", "Mina" });
+
+            yield return null;
+        }
+    }
+    */
+    public class Animation_Testing : MonoBehaviour
+    {
+        public TMP_FontAsset tempFont;
+        private Character CreateCharacter(string name) => CharacterManager.instance.CreateCharacter(name);
+
+        private void Start()
+        {
+            StartCoroutine(Test());
+        }
+
+        IEnumerator Test()
+        {
+            Character_Sprite Raelin = CreateCharacter("Raelin") as Character_Sprite;
+            Character_Sprite Mina = CreateCharacter("Mina") as Character_Sprite;
+
+            Raelin.SetPosition(new Vector2(0, 0));
+            Mina.SetPosition(new Vector2(1, 0));
+
+            yield return new WaitForSeconds(1);
+
+            Mina.TransitionSprite(Mina.GetSprite("Mina-A1"));
+            Mina.TransitionSprite(Mina.GetSprite("Mina-A_SmileFace"), layer: 1);
+            Mina.Animate("Hop");
+            yield return Mina.Say("Where did this wind chill come from?");
+
+            Raelin.FaceRight();
+            Raelin.TransitionSprite(Raelin.GetSprite("A2"));
+            Raelin.TransitionSprite(Raelin.GetSprite("A_Shocked"), layer: 1);
+            Raelin.MoveToPosition(new Vector2(0.1f, 0));
+            Raelin.Animate("Shiver",true);
+            yield return Raelin.Say("I don't know -- but I hate it!{a} It's freezing!");
+
+            Mina.TransitionSprite(Mina.GetSprite("Mina-A_ShyFace"), layer: 1);
+            yield return Mina.Say("Oh, it's over!");
+
+            Raelin.TransitionSprite(Raelin.GetSprite("A2"));
+            Raelin.TransitionSprite(Raelin.GetSprite("A_Shocked"), layer: 1);
+            Raelin.Animate("Shiver", false);
+            yield return Raelin.Say("Thank the Lord...{a} I'm not wearing enough clothes for that crap.");
 
             yield return null;
         }
