@@ -128,7 +128,7 @@ namespace TESTING
 
     }
     */
-    /* [Testing_DialogueFile]
+    // [Testing_DialogueFile]
     public class Testing_DialogueFile : MonoBehaviour
     {
         [SerializeField] private TextAsset fileName;
@@ -147,7 +147,7 @@ namespace TESTING
             DialogueSystem.instance.Say(lines);
         }
     }
-    */
+    
     /* [Testing_Conversation Segment Manager]
     public class DialogueSegments : MonoBehaviour
     {
@@ -688,6 +688,7 @@ namespace TESTING
         }
     }
     */
+    /* [Testing_Character Animation]
     public class Animation_Testing : MonoBehaviour
     {
         public TMP_FontAsset tempFont;
@@ -731,4 +732,30 @@ namespace TESTING
             yield return null;
         }
     }
+    */
+    /* [Testing Live2D Character]
+    public class Live2D_Testing : MonoBehaviour
+    {
+        public TMP_FontAsset tempFont;
+        private Character CreateCharacter(string name) => CharacterManager.instance.CreateCharacter(name);
+
+        private void Start()
+        {
+            StartCoroutine(Test());
+        }
+
+        IEnumerator Test()
+        {
+            Character_Sprite Raelin = CreateCharacter("Raelin") as Character_Sprite;
+            Character_Live2D Mao = CreateCharacter("Mao") as Character_Live2D;
+
+            Raelin.SetPosition(new Vector2(0, 0));
+            Mao.SetPosition(new Vector2(1, 0));
+
+
+            yield return null;
+        }
+    }
+    */
+
 }

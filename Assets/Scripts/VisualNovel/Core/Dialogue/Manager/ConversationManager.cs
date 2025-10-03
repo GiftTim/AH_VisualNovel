@@ -71,9 +71,16 @@ namespace DIALOGUE
         }
 
         IEnumerator Line_RunDialogue(DIALOGUE_LINE line)
-        {    
-            if(line.hasSpeaker)
+        {
+            // Show or hide the speaker name if there is one present.
+            if (line.hasSpeaker)
+            {
+                //Add character name to the UI.
                 dialogueSystem.ShowSpeakerName(line.speakerData.displayname);
+
+                DialogueSystem.instance.ApplySpeakerDataToDialogueContainer(line.speakerData.name);
+            }
+
 
             //build dialogueData
             yield return BuildLineSegments(line.dialogueData);

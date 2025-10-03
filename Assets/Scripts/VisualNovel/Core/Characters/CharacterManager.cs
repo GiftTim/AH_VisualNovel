@@ -25,11 +25,11 @@ namespace CHARACTERS
 
 
         [SerializeField] private RectTransform _characterpanel = null;
-        public RectTransform characterPanel => _characterpanel;
-
-
-
-
+        [SerializeField] private RectTransform _characterpanel_live2D = null;
+        [SerializeField] private RectTransform _characterpanel_model3D = null;
+        public RectTransform characterPanel        => _characterpanel;
+        public RectTransform characterPanelLive2D  => _characterpanel_live2D;
+        public RectTransform characterPanelModel3D => _characterpanel_model3D;
 
         private void Awake()
         {
@@ -149,7 +149,7 @@ namespace CHARACTERS
             for (int i = 0; i < sortedCharacters.Count; i++)
             {
                 Character character = sortedCharacters[i];
-                character.SetPriority(startingPriority + i + 1, autoSortCharacterOnUI: false);
+                character.SetPriority(startingPriority + i + 1, autoSortCharactersOnUI: false);
             }
 
             List<Character> allCharacters = remainingCharacters.Concat(sortedCharacters).ToList();
