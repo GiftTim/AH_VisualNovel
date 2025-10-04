@@ -1,3 +1,4 @@
+using CHARACTERS;
 using COMMANDS;
 using System.Collections;
 using System.Collections.Generic;
@@ -75,9 +76,20 @@ namespace DIALOGUE
             // Show or hide the speaker name if there is one present.
             if (line.hasSpeaker)
             {
+                Character character = CharacterManager.instance.GetCharacter(line.speakerData.name, createIfDoesNotExist: false);
+
+                if (line.speakerData.makeCharacerEnter)
+                {
+                    if (character == null)
+                        CharacterManager.instance.CreateCharacter(line.speakerData.name, revealAfterCreation: true);
+                    else
+                        character.Show();
+                }
+
                 //Add character name to the UI.
                 dialogueSystem.ShowSpeakerName(line.speakerData.displayname);
 
+                //Now customize the dialogue for this character - if applicable.
                 DialogueSystem.instance.ApplySpeakerDataToDialogueContainer(line.speakerData.name);
             }
 
