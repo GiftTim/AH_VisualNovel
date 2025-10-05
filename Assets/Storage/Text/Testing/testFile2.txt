@@ -1,6 +1,4 @@
 
-enter Mina "First line of dialogue."
-
-enter Mina "How is everyone doing today?"
+enter Mina as ??? at 1 [0:Mina-A2, 1:Mina-A_ShyFace] "How is everyone doing today?"
 
 Raelin "Fine. {wa 0.5} Couldn't be better."

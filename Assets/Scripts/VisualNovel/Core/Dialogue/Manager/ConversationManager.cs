@@ -76,27 +76,31 @@ namespace DIALOGUE
             // Show or hide the speaker name if there is one present.
             if (line.hasSpeaker)
             {
-                Character character = CharacterManager.instance.GetCharacter(line.speakerData.name, createIfDoesNotExist: false);
 
-                if (line.speakerData.makeCharacerEnter)
-                {
-                    if (character == null)
-                        CharacterManager.instance.CreateCharacter(line.speakerData.name, revealAfterCreation: true);
-                    else
-                        character.Show();
-                }
-
-                //Add character name to the UI.
-                dialogueSystem.ShowSpeakerName(line.speakerData.displayname);
-
-                //Now customize the dialogue for this character - if applicable.
-                DialogueSystem.instance.ApplySpeakerDataToDialogueContainer(line.speakerData.name);
             }
 
 
             //build dialogueData
             yield return BuildLineSegments(line.dialogueData);
+        }
 
+        private void HandleSpeakerLogic(DL_SPEAKER_DATA speakerData)
+        {
+                Character character = CharacterManager.instance.GetCharacter(speakerData.name, createIfDoesNotExist: false);
+
+                if (speakerData.makeCharacerEnter)
+                {
+                    if (character == null)
+                        CharacterManager.instance.CreateCharacter(speakerData.name, revealAfterCreation: true);
+                    else
+                        character.Show();
+                }
+
+                //Add character name to the UI.
+                dialogueSystem.ShowSpeakerName(speakerData.displayname);
+
+                //Now customize the dialogue for this character - if applicable.
+                DialogueSystem.instance.ApplySpeakerDataToDialogueContainer(speakerData.name);
         }
 
         IEnumerator LINE_RunCommands(DIALOGUE_LINE line)
