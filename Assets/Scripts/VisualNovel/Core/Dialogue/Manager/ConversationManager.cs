@@ -75,10 +75,7 @@ namespace DIALOGUE
         {
             // Show or hide the speaker name if there is one present.
             if (line.hasSpeaker)
-            {
-
-            }
-
+                HandleSpeakerLogic(line.speakerData);
 
             //build dialogueData
             yield return BuildLineSegments(line.dialogueData);
@@ -86,21 +83,31 @@ namespace DIALOGUE
 
         private void HandleSpeakerLogic(DL_SPEAKER_DATA speakerData)
         {
-                Character character = CharacterManager.instance.GetCharacter(speakerData.name, createIfDoesNotExist: false);
+            bool characterMustBeCreated = (speakerData.makeCharacerEnter || speakerData.isCastingExpression || speakerData.isCastingPosition);
 
-                if (speakerData.makeCharacerEnter)
+            Character character = CharacterManager.instance.GetCharacter(speakerData.name, createIfDoesNotExist: characterMustBeCreated);
+
+            if (speakerData.makeCharacerEnter && (!character.isVisible && !character.isRevealing))
+                character.Show();
+
+            //Add character name to the UI.
+            dialogueSystem.ShowSpeakerName(speakerData.displayname);
+
+            //Now customize the dialogue for this character - if applicable.
+            DialogueSystem.instance.ApplySpeakerDataToDialogueContainer(speakerData.name);
+
+            //Set character Casting position
+            if (speakerData.isCastingPosition)
+                character.MoveToPosition(speakerData.castPosition);
+
+            //Cast Expression
+            if (speakerData.isCastingExpression)
+            {
+                foreach (var ce in speakerData.CastExpressions)
                 {
-                    if (character == null)
-                        CharacterManager.instance.CreateCharacter(speakerData.name, revealAfterCreation: true);
-                    else
-                        character.Show();
+                    character.OnReceiveCastingExpression(ce.layer, ce.expression);
                 }
-
-                //Add character name to the UI.
-                dialogueSystem.ShowSpeakerName(speakerData.displayname);
-
-                //Now customize the dialogue for this character - if applicable.
-                DialogueSystem.instance.ApplySpeakerDataToDialogueContainer(speakerData.name);
+            }
         }
 
         IEnumerator LINE_RunCommands(DIALOGUE_LINE line)

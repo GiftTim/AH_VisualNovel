@@ -17,7 +17,7 @@ namespace CHARACTERS
         public Image renderer { get; private set; } = null;
         public CanvasGroup rendererCG => renderer.GetComponent<CanvasGroup>();
 
-        private List<CanvasGroup> oldRenderrers = new List<CanvasGroup>();
+        private List<CanvasGroup> oldRenderers = new List<CanvasGroup>();
 
         private Coroutine co_transitioningLayer = null;
         private Coroutine co_levelingAlpha      = null;
@@ -59,8 +59,8 @@ namespace CHARACTERS
         {
             transitionSpeedMultiplier = speedMultiplier;
 
-            Image newRendrer = CreateRenderer(renderer.transform.parent);
-            newRendrer.sprite = sprite;
+            Image newRenderer = CreateRenderer(renderer.transform.parent);
+            newRenderer.sprite = sprite;
 
             yield return TryStartLevelingAlphas();
 
@@ -70,7 +70,7 @@ namespace CHARACTERS
         private Image CreateRenderer(Transform parent)
         {
             Image newRenderer = Object.Instantiate(renderer, parent);
-            oldRenderrers.Add(rendererCG);
+            oldRenderers.Add(rendererCG);
 
             newRenderer.name = renderer.name;
             renderer = newRenderer;
@@ -92,19 +92,19 @@ namespace CHARACTERS
 
         private IEnumerator RunAlphaLeveling()
         {
-            while (rendererCG.alpha < 1 || oldRenderrers.Any(oldCG => oldCG.alpha > 0)) 
+            while (rendererCG.alpha < 1 || oldRenderers.Any(oldCG => oldCG.alpha > 0)) 
             {
                 float speed = DEFAULT_TRANSITION_SPEED * transitionSpeedMultiplier * Time.deltaTime;
-                rendererCG.alpha = Mathf.MoveTowards(rendererCG.alpha, 1, DEFAULT_TRANSITION_SPEED * transitionSpeedMultiplier * Time.deltaTime);
+                rendererCG.alpha = Mathf.MoveTowards(rendererCG.alpha, 1, speed);
 
-                for(int i = oldRenderrers.Count -1; i>= 0; i--)
+                for(int i = oldRenderers.Count -1; i>= 0; i--)
                 {
-                    CanvasGroup oldCG = oldRenderrers[i];
+                    CanvasGroup oldCG = oldRenderers[i];
                     oldCG.alpha = Mathf.MoveTowards(oldCG.alpha, 0, speed);
 
                     if(oldCG.alpha <= 0)
                     {
-                        oldRenderrers.RemoveAt(i);
+                        oldRenderers.RemoveAt(i);
                         Object.Destroy(oldCG.gameObject);
                     }
                 }
@@ -120,7 +120,7 @@ namespace CHARACTERS
         {
             renderer.color = color;
             
-            foreach(CanvasGroup oldCG in oldRenderrers)
+            foreach(CanvasGroup oldCG in oldRenderers)
             {
                 oldCG.GetComponent<Image>().color = color;
             }
@@ -151,7 +151,7 @@ namespace CHARACTERS
             Color       oldColor  = renderer.color;
             List<Image> oldImages = new List<Image>();
 
-            foreach (var oldCG in oldRenderrers)
+            foreach (var oldCG in oldRenderers)
             {
                 oldImages.Add(oldCG.GetComponent<Image>());
             }

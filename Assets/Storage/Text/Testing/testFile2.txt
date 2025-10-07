@@ -1,4 +1,12 @@
 
+
+Show(Mina Generic Raelin -i true)
+
+Mina.Show()
+
+
 enter Mina as ??? at 1 [0:Mina-A2, 1:Mina-A_ShyFace] "How is everyone doing today?"
 
 Raelin "Fine. {wa 0.5} Couldn't be better."
+
+enter Mari [Mari2_Front] "I'm lacking anything of substance to say"

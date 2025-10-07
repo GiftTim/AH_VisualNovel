@@ -12,10 +12,16 @@ namespace DIALOGUE
         /// <summary>
         /// This is the name that will display in the dialogueData box to show who is speaking
         /// </summary>
-        public string displayname => castName != string.Empty ? castName : name;
+
+        public string displayname => isCastingName ? castName : name;
 
         public Vector2 castPosition;
         public List<(int layer, string expression)> CastExpressions { get; set; }
+
+        public bool isCastingName => castName != string.Empty;
+        public bool isCastingPosition = false;
+        public bool isCastingExpression => CastExpressions.Count > 0;
+
         public bool makeCharacerEnter = false;
 
         private const string NAMECAST_ID = " as ";
@@ -73,6 +79,7 @@ namespace DIALOGUE
                 }
                 else if (match.Value == POSITIONCAST_ID)
                 {
+                    isCastingPosition = true;   
                     startIndex = match.Index + POSITIONCAST_ID.Length;
                     endIndex = i < matches.Count - 1 ? matches[i + 1].Index : rawSpeaker.Length;
                     string castPos = rawSpeaker.Substring(startIndex, endIndex - startIndex).Trim();
@@ -88,13 +95,18 @@ namespace DIALOGUE
                 {
                     startIndex = match.Index + EXPRESSIONCAST_ID.Length;
                     endIndex = i < matches.Count - 1 ? matches[i + 1].Index : rawSpeaker.Length;
-                    string castExp = rawSpeaker.Substring(startIndex, endIndex - startIndex).Trim();
+                    string castExp = rawSpeaker.Substring(startIndex, endIndex - (startIndex+1));
 
                     CastExpressions = castExp.Split(EXPRESSIONLAYER_JOINER)
                     .Select(x =>
                     {
                         var parts = x.Trim().Split(EXPRESSIONLAYER_DELIMITER);
-                        return (int.Parse(parts[0]), parts[1]);
+
+                        if(parts.Length == 2)
+                            return (int.Parse(parts[0]), parts[1]);
+                        else
+                            return(0, parts[0]);
+
                     }).ToList();
                 }
 

@@ -327,6 +327,13 @@ namespace CHARACTERS
             animator.SetTrigger(ANIMATION_REFRESH_TRIGGER);
         }
 
+        public virtual void OnReceiveCastingExpression(int layer, string expression)
+        {
+            Debug.Log("Cannot cast expression on a character of this type!");
+
+            return;
+        }
+
         public enum CharacterType
         {
             Text,
