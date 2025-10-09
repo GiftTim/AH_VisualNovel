@@ -9,11 +9,13 @@ namespace COMMANDS
 
         private Dictionary<string, string> parameters = new Dictionary<string, string>();
 
+        private List<string> unlabeledParameters = new List<string>(); // <- 이거 뒤에 그냥 숫자만 띡띡 적는건데 이거 나중에 빼는게 더 정확하게 시스템을 사용할 수 있을듯 
+
         public CommandParameters(string[] parameterArray)
         {
             for (int i = 0; i < parameterArray.Length; i++) 
             {
-                if (parameterArray[i].StartsWith(PARAMETER_IDENTIFIER))
+                if (parameterArray[i].StartsWith(PARAMETER_IDENTIFIER) && !float.TryParse(parameterArray[i], out _))
                 {
                     string pName = parameterArray[i];
                     string pValue = "";
@@ -23,8 +25,89 @@ namespace COMMANDS
                         pValue = parameterArray[i + 1];
                         i++;
                     }
+                
+                    parameters.Add(pName, pValue);
+                
+                }
+                else
+                    unlabeledParameters.Add(parameterArray[i]);
+            }
+        }
+
+        public bool TryGetValue<T>(string parameterName, out T value, T defaultValue = default(T)) =>
+            TryGetValue(new string[] { parameterName }, out value, defaultValue); 
+
+        public bool TryGetValue<T>(string[] parameterNames, out T value, T defaultValue = default(T))
+        {
+            // 파라미터 없음 대비: 먼저 기본값으로 초기화
+            value = defaultValue;
+
+            foreach (string parameterName in parameterNames)
+            {
+                if (parameters.TryGetValue(parameterName, out string parameterValue))
+                {
+                    if(TryCastParameter(parameterValue, out value))
+                    {
+                        return true;
+                    }
+                    //else
+                    //{
+                    //    Debug.LogWarning($"Could not cast parameter '{parameterName}' with value '{parameterValue}' to type '{typeof(T)}'");
+                    //    value = defaultValue;
+                    //    continue;
+                    //}
                 }
             }
+
+            // if we reach here, no match was found in the identified parameters so search the unlabeled one if present
+            foreach (string parameterName in unlabeledParameters)
+            {
+                if (TryCastParameter(parameterName, out value)) 
+                {
+                    unlabeledParameters.Remove(parameterName);
+                    return true;
+                }
+            }
+
+            value = defaultValue;
+            return false;
+        }
+
+        private bool TryCastParameter<T>(string parameterValue, out T value)
+        {
+            if (typeof(T) == typeof(bool))
+            {
+                if(bool.TryParse(parameterValue, out bool boolValue))
+                {
+                    value = (T)(object)boolValue;
+                    return true;
+                }
+            }
+            else if (typeof(T) == typeof(int))
+            {
+                if(int.TryParse(parameterValue, out int intValue))
+                {
+                    value = (T)(object)intValue;
+                    return true;
+                }
+            }
+            else if (typeof(T) == typeof(float))
+            {
+                if (float.TryParse(parameterValue, out float floatValue))
+                {
+                    value = (T)(object)floatValue;
+                    return true;
+                }
+            }
+            else if (typeof(T) == typeof(string))
+            {
+
+                value = (T)(object)parameterValue;
+                return true;
+            }
+
+            value = default(T);
+            return false;
         }
     }
 }

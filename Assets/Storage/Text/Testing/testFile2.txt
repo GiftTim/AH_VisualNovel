@@ -1,8 +1,15 @@
 
+wait(1), CreateCharacter(Mina -e true), CreateCharacter(Raelin), CreateCharacter("Guard as Generic" -e true -i true)
 
-Show(Mina Generic Raelin -i true)
+MoveCharacter(Mina 1 -0.5 0.75 -i false)
 
-Mina.Show()
+wait(15)
+
+Move(Mina 0 1 1.2 false)
+
+Show(Mina Guard Raelin -immediate false)
+
+Narrator "Showing Characters."
 
 
 enter Mina as ??? at 1 [0:Mina-A2, 1:Mina-A_ShyFace] "How is everyone doing today?"
