@@ -1,11 +1,11 @@
 
 wait(1), CreateCharacter(Mina -e true), CreateCharacter(Raelin), CreateCharacter("Guard as Generic" -e true -i true)
 
-MoveCharacter(Mina 1 -0.5 0.75 -i false)
+MoveCharacter(Mina -x 1 -y -0.5 -spd 0.75 -i false -smt false)
 
 wait(15)
 
-Move(Mina 0 1 1.2 false)
+MoveCharacter(Mina 0 1 1.2 false)
 
 Show(Mina Guard Raelin -immediate false)
 
