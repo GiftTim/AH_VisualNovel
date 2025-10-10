@@ -117,7 +117,21 @@ namespace DIALOGUE
             foreach (DL_COMMAND_DATA.Command command in commands)
             {
                 if (command.waitForCompletion || command.name == "wait")
-                    yield return CommandManager.instance.Execute(command.name, command.arguments);
+                {
+                    CoroutineWrapper cw = CommandManager.instance.Execute(command.name, command.arguments);
+                    while(!cw.IsDone)
+                    {
+                        if (userPrompt) // <- 아직 다 끝난 상태가 아닌데 한번더 클릭할 경우에는 바로 완성되도록 처리
+                        {
+                            CommandManager.instance.StopCurrentProcess();
+                            userPrompt = false;
+                        }
+                        yield return null;
+                    }
+
+
+                }
+
                 else
                     CommandManager.instance.Execute(command.name, command.arguments);
             }

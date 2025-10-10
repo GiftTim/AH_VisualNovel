@@ -1,18 +1,22 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Events;
+using CHARACTERS;
 
 namespace COMMANDS
 {
     public class CommandManager : MonoBehaviour
     {
         public static CommandManager instance { get; private set; }
-        private static Coroutine process = null;
-        public static bool isRunningProcess => process != null;
 
         private CommandDatabase database;
+
+        private List<CommandProcess> activeProcesses = new List<CommandProcess>();
+        private CommandProcess topProcess => activeProcesses.FirstOrDefault();
 
         private void Awake()
         {
@@ -38,7 +42,7 @@ namespace COMMANDS
 
         }
 
-        public Coroutine Execute(string commandName, params string[] args)
+        public CoroutineWrapper Execute(string commandName, params string[] args)
         {
             Delegate command = database.GetCommand(commandName);
 
@@ -49,28 +53,35 @@ namespace COMMANDS
 
         }
 
-        private Coroutine StartProcess(string commandName, Delegate command, string[] args)
+        private CoroutineWrapper StartProcess(string commandName, Delegate command, string[] args)
         {
-            StopCurrentProcess();
+            System.Guid processID = System.Guid.NewGuid();
+            CommandProcess cmd = new CommandProcess(processID, commandName, command, null, args, null);
+            activeProcesses.Add(cmd);
 
-            process = StartCoroutine(RunningProcess(command, args));
+            Coroutine co = StartCoroutine(RunningProcess(cmd));
 
-            return process;
+            cmd.runningProcess = new CoroutineWrapper(this, co);
+
+            return cmd.runningProcess;
         }
 
-        private void StopCurrentProcess()
+        public void StopCurrentProcess()
         {
-            if (process != null)
-                StopCoroutine(process);
-
-            process = null;
+            if (topProcess != null)
+                KillProcess(topProcess);
         }
 
-        private IEnumerator RunningProcess(Delegate command, string[] args)
+        private IEnumerator RunningProcess(CommandProcess process)
         {
-            yield return WaitingForProcessToComplete(command, args);
+            yield return WaitingForProcessToComplete(process.command, process.args);
 
-            process = null;
+            KillProcess(process);
+        }
+
+        public void KillProcess(CommandProcess cmd)
+        {
+            activeProcesses.Remove(cmd);
         }
 
         private IEnumerator WaitingForProcessToComplete(Delegate command, string[] args)

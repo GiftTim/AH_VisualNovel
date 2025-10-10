@@ -1,19 +1,14 @@
 
-wait(1), CreateCharacter(Mina -e true), CreateCharacter(Raelin), CreateCharacter("Guard as Generic" -e true -i true)
+wait(1), CreateCharacter(Mina -x 1 -e true), CreateCharacter(Raelin), CreateCharacter("Guard as Generic" -e true -i true)
 
-MoveCharacter(Mina -x 1 -y -0.5 -spd 0.75 -i false -smt false)
+[wait] MoveCharacter(Mina 0 -2.5 0.75)
 
-wait(15)
+Mina "Thanks you for joining me!{c} I'm looking forward to writing some commands with you!"
 
-MoveCharacter(Mina 0 1 1.2 false)
+MoveCharacter(Guard -x 0 -spd 0.5), MoveCharacter(Raelin -x 0.1 -spd 0.5), Hide(Mina)
 
-Show(Mina Guard Raelin -immediate false)
+Guard "Where did she go?"
 
-Narrator "Showing Characters."
-
+Raelin "I don't know!"
 
 enter Mina as ??? at 1 [0:Mina-A2, 1:Mina-A_ShyFace] "How is everyone doing today?"
-
-Raelin "Fine. {wa 0.5} Couldn't be better."
-
-enter Mari [Mari2_Front] "I'm lacking anything of substance to say"
