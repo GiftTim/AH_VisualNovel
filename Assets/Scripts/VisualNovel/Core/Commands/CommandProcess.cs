@@ -1,10 +1,9 @@
 using System;
-using UnityEngine;
 using UnityEngine.Events;
 
 namespace COMMANDS
 {
-    public class CommandProcess : MonoBehaviour
+    public class CommandProcess
     {
         public Guid ID;
         public string processName;

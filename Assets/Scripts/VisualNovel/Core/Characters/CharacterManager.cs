@@ -12,7 +12,7 @@ namespace CHARACTERS
 
         private CharacterConfigurationSO config => DialogueSystem.instance.config.CharacterConfigurationAsset;
 
-
+        public Character[] allCharacters => characters.Values.ToArray();
         private Dictionary<string, Character> characters = new Dictionary<string, Character>();
 
 
@@ -49,6 +49,11 @@ namespace CHARACTERS
                 return CreateCharacter(characterName);
 
             return null;
+        }
+
+        public bool HasCharacter(string characterName)
+        {
+            return characters.ContainsKey(characterName.ToLower());
         }
 
         public Character CreateCharacter(string characterName, bool revealAfterCreation = false)

@@ -11,9 +11,9 @@ namespace COMMANDS
 
         private List<string> unlabeledParameters = new List<string>(); // <- 이거 뒤에 그냥 숫자만 띡띡 적는건데 이거 나중에 빼는게 더 정확하게 시스템을 사용할 수 있을듯 
 
-        public CommandParameters(string[] parameterArray)
+        public CommandParameters(string[] parameterArray, int startingIndex = 0)
         {
-            for (int i = 0; i < parameterArray.Length; i++) 
+            for (int i = startingIndex; i < parameterArray.Length; i++) 
             {
                 if (parameterArray[i].StartsWith(PARAMETER_IDENTIFIER) && !float.TryParse(parameterArray[i], out _))
                 {

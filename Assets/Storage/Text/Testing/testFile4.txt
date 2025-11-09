@@ -1,0 +1,55 @@
+
+CreateCharacter(Mina 1 -e true -i true), CreateCharacter(Raelin -e true -i true), CreateCharacter("Guard1 as Generic" -e false -i true)
+
+Raelin.SetPosition(1), Mina.SetPosition(0)
+wait(1),
+
+Raelin.SetSprite(A2 -l 0 -spd 0.75), Raelin.SetSprite(A_Scared -l 1 -spd 0.75)
+
+wait(10)
+
+
+[wait]Unhighlight(Mina Raelin), wait(1), [wait]Highlight(Mina Raelin), wait(1)
+
+Guard1.Show(-i true), wait(0.5)
+
+[wait]Highlight(Mina -o true), wait(1), [wait]Unhighlight(Mina -o true), wait(1)
+
+wait(100)
+
+
+
+
+
+
+
+wait(1), Sort(Mina Raelin Guard1), Mina.SetColor(-c red), Guard1.Setcolor(red), wait(1)
+
+[wait]Mina.UnHighlight(), [wait]Raelin.UnHighlight()
+[wait]Mina.Highlight(), [wait]Raelin.Highlight()
+
+[wait]MoveCharacter(Mina 1), [wait]MoveCharacter(Raelin 0)
+
+Mina.Unhighlight(-i true), Raelin.Unhighlight(-i true)
+wait(1)
+Mina.Highlight(-i true), Raelin.Unhighlight(-i true)
+
+[wait]Mina.Hide(), [wait]Mina.Show()
+
+[wait]Mina.Move(0 1 -spd 0.5)
+
+Hide(Mina Guard1 Raelin -spd 0.1)
+Mina "Now we are invisible"
+
+Show(Mina Guard1 Raelin -spd 0.1)
+
+Mina "Thank you for joining me!"
+
+MoveCharacter(Guard1 0 -spd 0.1), MoveCharacter(Raelin 0.1 -spd 0.1), Hide(Mina)
+
+Guard1 "Where did she go?"
+Raelin "I don't know!"
+Guard1 "Did we miss her?"
+Raelin "I said, I don't know."
+
+Mina.SetPriority(5), wait(1), Raelin.SetPriority(6)

@@ -1,0 +1,15 @@
+
+wait(5), CreateCharacter(Mina 1 -e true), CreateCharacter(Raelin), CreateCharacter("Guard1 as Generic" -e true -i true)
+
+[wait]MoveCharacter(Mina 1 -2.5 -spd 0.1)
+
+Hide(Mina Guard1 Raelin -spd 0.1)
+Mina "Now we are invisible"
+
+Show(Mina Guard1 Raelin -spd 0.1)
+
+Mina "Thank you for joining me!{c}I'm looking forward to writing some commands with you!"
+
+MoveCharacter(Guard1 0 -spd 0.5), MoveCharacter(Raelin 0.1 -spd 0.5), Hide(Mina)
+Guard1 "Where did she go?"
+Raelin "I don't know!"

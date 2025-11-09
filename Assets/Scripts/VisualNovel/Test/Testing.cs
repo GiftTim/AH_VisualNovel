@@ -533,11 +533,11 @@ namespace TESTING
             yield return new WaitForSeconds(1);
 
             //Raelin.layers[1].SetColor(Color.red);
-            yield return Raelin.TransitionColor(Color.red, speed: 0.2f);
-            yield return Raelin.TransitionColor(Color.blue);
-            yield return Raelin.TransitionColor(Color.yellow);
-            yield return Raelin.TransitionColor(Color.black);
-            yield return Raelin.TransitionColor(Color.white);
+            yield return Raelin.TransitionToColor(Color.red, speed: 0.2f);
+            yield return Raelin.TransitionToColor(Color.blue);
+            yield return Raelin.TransitionToColor(Color.yellow);
+            yield return Raelin.TransitionToColor(Color.black);
+            yield return Raelin.TransitionToColor(Color.white);
 
             yield return null;
         }

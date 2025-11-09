@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace COMMANDS
 {
-    public class CoroutineWrapper : MonoBehaviour
+    public class CoroutineWrapper
     {
         private MonoBehaviour owner;
         private Coroutine coroutine;
@@ -14,6 +14,12 @@ namespace COMMANDS
         {
             this.owner = owner;
             this.coroutine = coroutine;
+        }
+
+        public void Stop()
+        {
+            owner.StopCoroutine(coroutine);
+            IsDone = true;
         }
     }
 }

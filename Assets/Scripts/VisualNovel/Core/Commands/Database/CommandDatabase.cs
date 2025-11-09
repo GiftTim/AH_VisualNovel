@@ -10,7 +10,7 @@ namespace COMMANDS
 
         public bool HasCommand(string commandName)
         {
-            return database.ContainsKey(commandName);
+            return database.ContainsKey(commandName.ToLower());
         }
 
         public void AddCommand(string commandName, Delegate command)

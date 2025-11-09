@@ -6,7 +6,7 @@ namespace COMMANDS
     {
         public static void Extend(CommandDatabase database) { }
 
-        public static CommandParameters ConvertDataToParameters(string[] data)
-            => new CommandParameters(data);
+        public static CommandParameters ConvertDataToParameters(string[] data, int startingIndex = 0)
+            => new CommandParameters(data, startingIndex);
     }
 }

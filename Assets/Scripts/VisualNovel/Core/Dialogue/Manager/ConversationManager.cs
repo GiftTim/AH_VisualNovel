@@ -64,9 +64,15 @@ namespace DIALOGUE
                     yield return LINE_RunCommands(line);
                 }
 
-                //wait for user Input
+
                 if (line.hasDialogue)
+                {
+                    //wait for user Input
                     yield return WaitForUserInput();
+
+                    CommandManager.instance.StopAllProcesses(); // <- 대사 도중에 실행중인 커맨드가 있으면 모두 종료시킨다.
+                }
+
             }
 
         }
@@ -128,7 +134,6 @@ namespace DIALOGUE
                         }
                         yield return null;
                     }
-
 
                 }
 
