@@ -1,0 +1,51 @@
+wait(1)
+
+SetLayerMedia(background 1 SpaceshipInterior),
+SetLayerMedia(background Nebula)
+
+CreateCharacter(Mina -e true -i true)
+
+Mina "Welcome!"
+
+ClearLayerMedia(background -blend hypno)
+
+Mina "Did we clear the background?"
+
+SetLayerMedia(cinematic -m "~/Graphics/Gallery/flower")
+
+Mina "Have a look at the Cinematic Layer, huh?"
+
+ClearLayerMedia(cinematic -i true)
+
+Mina "The cinematic layer should be cleared!"
+
+
+
+wait(100)
+
+SetLayerMedia(background "Fantasy Landscape" -aud true -spd 0.7 -blend hurricane -i true)
+
+CreateCharacter(Mina -e true -i true)
+
+Mina "Welcome!"
+
+SetLayerMedia(cinematic -m "~/Graphics/Gallery/flower")
+
+Mina "Have a look at the Cinematic Layer, huh?"
+
+ClearLayerMedia(cinematic -i true)
+
+Mina "The cinematic layer should be cleared!"
+
+
+
+
+
+
+
+
+
+
+
+
+

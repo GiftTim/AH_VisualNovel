@@ -1,4 +1,49 @@
 
+SetLayerMedia(bg -l 0 -m abandoneHouse/pic1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SetBackground(image/video)
+
+SetCinematic(image/video -p)
+
+SetLayerImage
+SetLayerVideo
+
+SetLayerMedia(image/video layer)
+
+
+
+
+
+
 CreateCharacter(Mina 1 -e true -i true), CreateCharacter(Raelin -e true -i true), CreateCharacter("Guard1 as Generic" -e false -i true)
 
 Raelin.SetPosition(1), Mina.SetPosition(0)

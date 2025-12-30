@@ -128,7 +128,7 @@ namespace TESTING
 
     }
     */
-    // [Testing_DialogueFile]
+    /* [Testing_DialogueFile]
     public class Testing_DialogueFile : MonoBehaviour
     {
         [SerializeField] private TextAsset fileName;
@@ -147,7 +147,7 @@ namespace TESTING
             DialogueSystem.instance.Say(lines);
         }
     }
-    
+    */
     /* [Testing_Conversation Segment Manager]
     public class DialogueSegments : MonoBehaviour
     {
@@ -757,5 +757,87 @@ namespace TESTING
         }
     }
     */
+    /*[Testing Graphic Layers]
 
+    public class GraphicLayerTesting : MonoBehaviour
+    {
+        private void Start()
+        {
+            StartCoroutine(RunningLayers());
+        }
+        IEnumerator Running()
+        {
+            //GraphicPanelManager.Instance.GetPanel("Background").GetLayer(0, true);
+
+            //layer.currentGraphic.renderer.material.SetColor("_Color", Color.red);
+            //layer.SetVideo("Graphics/BG Videos/Fantasy Landscape", transitionSpeed: 0.07f, useAudio: true);
+
+            GraphicPanel panel = GraphicPanelManager.instance.GetPanel("Background");
+            GraphicLayer layer = panel.GetLayer(0, true);
+
+            yield return new WaitForSeconds(1f);
+
+            Texture blendTex = Resources.Load<Texture>("Graphics/Transition Effects/hurricane");
+            layer.SetTexture("Graphics/BG Images/2", blendingTexture: blendTex);
+
+            yield return new WaitForSeconds(3f);
+
+            layer.SetVideo("Graphics/BG Videos/Fantasy Landscape", blendingTexture: blendTex);
+
+            yield return new WaitForSeconds(5f);
+
+            layer.currentGraphic.FadeOut();
+
+            yield return new WaitForSeconds(5f);
+
+            Debug.Log(layer.currentGraphic);
+        }
+
+        IEnumerator RunningLayers()
+        {
+            GraphicPanel panel = GraphicPanelManager.instance.GetPanel("Background");
+            GraphicLayer layer0 = panel.GetLayer(0, true);
+            GraphicLayer layer1 = panel.GetLayer(1, true);
+
+            GraphicPanel cinematic = GraphicPanelManager.instance.GetPanel("Cinematic");
+            GraphicLayer cinLayer = cinematic.GetLayer(0, true);
+
+            yield return new WaitForSeconds(1f);
+            
+            layer0.SetVideo("Graphics/BG Videos/Nebula");
+            layer1.SetTexture("Graphics/BG Images/Spaceshipinterior");
+
+            Character Mina = CharacterManager.instance.CreateCharacter("Mina", true);
+
+            yield return Mina.Say("Let's take a look at a picture on the cinematic layer.");
+
+            cinLayer.SetTexture("Graphics/Gallery/pup");
+
+            yield return DialogueSystem.instance.Say("Narrator", "We truly don't deserve dogs");
+
+            cinLayer.Clear();
+
+            yield return new WaitForSeconds(1f);
+
+            panel.Clear();
+        }
+    }
+        */
+
+    public class GraphicPanelCommands : MonoBehaviour
+    {
+        [SerializeField] private TextAsset fileName = null;
+
+        void Start()
+        {
+            StartConversation();
+        }
+
+        void StartConversation()
+        {
+            List<string> lines = FileManager.ReadTextAsset(fileName);
+
+            DialogueSystem.instance.Say(lines);
+        }
+    }
 }
