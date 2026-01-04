@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -823,7 +824,7 @@ namespace TESTING
         }
     }
         */
-
+    /* [Testing Graphic Panel Commands]
     public class GraphicPanelCommands : MonoBehaviour
     {
         [SerializeField] private TextAsset fileName = null;
@@ -840,4 +841,43 @@ namespace TESTING
             DialogueSystem.instance.Say(lines);
         }
     }
+    */
+
+    public class AudioTesting : MonoBehaviour
+    {
+        private void Start()
+        {
+            StartCoroutine(Running());
+        }
+
+        Character CreateCharacter(string name) => CharacterManager.instance.CreateCharacter(name);
+
+        IEnumerator Running()
+        {
+            Character_Sprite Mina = CreateCharacter("Mina") as Character_Sprite;
+            Character Me = CreateCharacter("Me");
+            Mina.Show();
+
+            yield return new WaitForSeconds(2f);
+
+            AudioManager.instance.PlaySoundEffect("Audio/SFX/RadioStatic", loop: true);
+
+            yield return Me.Say("I'm going to turn off the radio.");
+
+            AudioManager.instance.StopSoundEffect("RadioStatic");
+            AudioManager.instance.PlayVoice("Audio/Voices/exclamation");
+
+            Mina.Say("Oh!");
+
+            //AudioManager.instance.PlaySoundEffect("Audio/SFX/thunder_strong_01");
+
+            //yield return new WaitForSeconds(1f);
+
+            //Mina.Animate("Hop");
+            //Mina.TransitionSprite(Mina.GetSprite("Mina-A2"));
+            //Mina.TransitionSprite(Mina.GetSprite("Mina-A_ShyFace"), 1);
+            //Mina.Say("Yikes!");
+        }
+    }
+
 }

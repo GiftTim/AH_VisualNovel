@@ -130,7 +130,7 @@ GameObject:
   - component: {fileID: 24203919}
   - component: {fileID: 24203920}
   m_Layer: 0
-  m_Name: DialogueController
+  m_Name: Dialogue Controller
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -524,6 +524,7 @@ Transform:
   - {fileID: 618466765}
   - {fileID: 1760396080}
   - {fileID: 304334407}
+  - {fileID: 530664898}
   m_Father: {fileID: 1994487649}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &304334406
@@ -537,7 +538,7 @@ GameObject:
   - component: {fileID: 304334407}
   - component: {fileID: 304334408}
   m_Layer: 0
-  m_Name: GraphicPanelManager
+  m_Name: Graphic Panel Manager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -614,6 +615,53 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &530664897
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 530664898}
+  - component: {fileID: 530664899}
+  m_Layer: 0
+  m_Name: Audio Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &530664898
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 530664897}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 285602934}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &530664899
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 530664897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cb4d69be877df6498c987b43a821bfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  musicMixer: {fileID: 3526808503534993219, guid: 44946482dea65694cb69046ccbcd0c4c, type: 2}
+  sfxMixer: {fileID: -4151330283605287644, guid: 44946482dea65694cb69046ccbcd0c4c, type: 2}
+  voiceMixer: {fileID: -8005055542272614670, guid: 44946482dea65694cb69046ccbcd0c4c, type: 2}
 --- !u!1 &549962192
 GameObject:
   m_ObjectHideFlags: 0
@@ -734,7 +782,7 @@ GameObject:
   - component: {fileID: 618466765}
   - component: {fileID: 618466766}
   m_Layer: 0
-  m_Name: CommandManager
+  m_Name: Command Manager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2767,7 +2815,7 @@ GameObject:
   - component: {fileID: 1668560661}
   - component: {fileID: 1668560662}
   m_Layer: 0
-  m_Name: PlayerInputManager
+  m_Name: Player Input Manager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2985,7 +3033,7 @@ GameObject:
   - component: {fileID: 1760396080}
   - component: {fileID: 1760396081}
   m_Layer: 0
-  m_Name: CharacterManager
+  m_Name: Character Manager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
