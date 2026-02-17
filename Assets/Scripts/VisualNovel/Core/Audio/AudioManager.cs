@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.Rendering;
@@ -6,8 +7,11 @@ public class AudioManager : MonoBehaviour
 {
     private const string SFX_PARENT_NAME = "SFX";
     private const string SFX_NAME_FORMAT = "SFX - [{0}]";
+    public  const float  TRACK_TRANSITION_SPEED = 1f;
 
     public static AudioManager instance { get; private set; }
+
+    public Dictionary<int, AudioChannel> channels = new Dictionary<int, AudioChannel>();
 
     public AudioMixerGroup musicMixer;
     public AudioMixerGroup sfxMixer;
@@ -106,5 +110,40 @@ public class AudioManager : MonoBehaviour
         }
     }
 
+    public AudioTrack PlayTrack(string filePath, int Channel = 0, bool loop = true, float startingVolume = 0f, float volumeCap = 1f)
+    {
+        AudioClip clip = Resources.Load<AudioClip>(filePath);
+
+        if(clip == null)
+        {
+            Debug.LogError($"Could not load audio file '{filePath}'. Please make sure this file exists in the Resources directory!");
+            return null;
+        }
+
+        return PlayTrack(clip, Channel, loop, startingVolume, volumeCap, filePath);
+    }
+
+    public AudioTrack PlayTrack(AudioClip clip, int Channel = 0, bool loop = true, float startingVolume = 0f, float volumeCap = 1f, string filePath = "")
+    {
+        AudioChannel audioChannel = TryGetChannel(Channel, createIfNotExists: true);
+        AudioTrack track = audioChannel.PlayTrack(clip, loop, startingVolume, volumeCap, filePath);
+        return track;
+    }
+
+    public AudioChannel TryGetChannel(int ChannelNumber, bool createIfNotExists = false)
+    {
+        AudioChannel channel = null;
+
+        if (channels.TryGetValue(ChannelNumber , out channel))
+        {
+            return channel;
+        }
+        else if (createIfNotExists)
+        {
+            return new AudioChannel(ChannelNumber);
+        }
+
+        return null;
+    }
 
 }

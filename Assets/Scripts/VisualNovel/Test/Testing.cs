@@ -854,6 +854,35 @@ namespace TESTING
 
         IEnumerator Running()
         {
+            yield return new WaitForSeconds(1);
+
+            Character_Sprite Mina = CreateCharacter("Mina") as Character_Sprite;
+
+            Mina.Show();
+
+            yield return DialogueSystem.instance.Say("Narrator", "Can we see your ship?");
+
+            GraphicPanelManager.instance.GetPanel("background").GetLayer(0, true).SetTexture("Graphics/BG Images/5");
+            AudioManager.instance.PlayTrack("Audio/Music/Calm", startingVolume: 0.7f);
+            AudioManager.instance.PlayVoice("Audio/Voices/wakeup");
+
+            Mina.SetSprite(Mina.GetSprite("Mina-A2"), 0);
+            Mina.SetSprite(Mina.GetSprite("Mina-A_ShyFace"), 1);
+            Mina.MoveToPosition(new Vector2(0.7f, 0), speed: 0.5f);
+            yield return Mina.Say("Yes, of course!");
+
+            yield return null;
+        }
+
+        IEnumerator Running2()
+        {
+            AudioChannel channel = new AudioChannel(1);
+
+            yield return null;
+        }
+
+        IEnumerator Running1()
+        {
             Character_Sprite Mina = CreateCharacter("Mina") as Character_Sprite;
             Character Me = CreateCharacter("Me");
             Mina.Show();
