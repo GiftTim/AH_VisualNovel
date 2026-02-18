@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -90,7 +91,7 @@ public class AudioManager : MonoBehaviour
         return PlaySoundEffect(clip, voicesMixer, volume, pitch, loop);
     }
 
-    public void SotpSoundEffect(AudioClip clip)
+    public void StopSoundEffect(AudioClip clip)
     {
         StopSoundEffect(clip.name);
     }
@@ -110,7 +111,7 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    public AudioTrack PlayTrack(string filePath, int Channel = 0, bool loop = true, float startingVolume = 0f, float volumeCap = 1f)
+    public AudioTrack PlayTrack(string filePath, int Channel = 0, bool loop = true, float startingVolume = 0f, float volumeCap = 1f, float pitch = 1f)
     {
         AudioClip clip = Resources.Load<AudioClip>(filePath);
 
@@ -120,30 +121,61 @@ public class AudioManager : MonoBehaviour
             return null;
         }
 
-        return PlayTrack(clip, Channel, loop, startingVolume, volumeCap, filePath);
+        return PlayTrack(clip, Channel, loop, startingVolume, volumeCap, pitch, filePath);
     }
 
-    public AudioTrack PlayTrack(AudioClip clip, int Channel = 0, bool loop = true, float startingVolume = 0f, float volumeCap = 1f, string filePath = "")
+    public AudioTrack PlayTrack(AudioClip clip, int Channel = 0, bool loop = true, float startingVolume = 0f, float volumeCap = 1f, float pitch = 1f, string filePath = "")
     {
         AudioChannel audioChannel = TryGetChannel(Channel, createIfNotExists: true);
-        AudioTrack track = audioChannel.PlayTrack(clip, loop, startingVolume, volumeCap, filePath);
+        AudioTrack track = audioChannel.PlayTrack(clip, loop, startingVolume, volumeCap, pitch, filePath);
         return track;
+    }
+
+    public void StopTrack(int channel)
+    {
+        AudioChannel c = TryGetChannel(channel, createIfNotExists: false);
+
+        if (c == null)
+        {
+            return;
+        }
+        
+        c.StopTrack();
+    }
+
+    public void StopTrack(string trackName)
+    {
+        trackName = trackName.ToLower();
+        foreach(var channel in channels.Values)
+        {
+            if(channel.activeTrack != null && channel.activeTrack.name.ToLower() == trackName)
+            {
+                channel.StopTrack();
+                return;
+            }
+        }
     }
 
     public AudioChannel TryGetChannel(int ChannelNumber, bool createIfNotExists = false)
     {
         AudioChannel channel = null;
 
-        if (channels.TryGetValue(ChannelNumber , out channel))
+        if (channels.TryGetValue(ChannelNumber, out channel))
         {
             return channel;
         }
         else if (createIfNotExists)
         {
-            return new AudioChannel(ChannelNumber);
+            channel = new AudioChannel(ChannelNumber);
+            channels.Add(ChannelNumber, channel);
+            return channel;
         }
 
         return null;
     }
 
+    internal void StopSoundEffect(string[] data)
+    {
+        throw new NotImplementedException();
+    }
 }

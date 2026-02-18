@@ -21,6 +21,9 @@ namespace DIALOGUE
 
         public bool isRunningConversation => conversationManager.isRunning;
 
+        public DialogueContinuePrompt prompt;
+
+
         private void Awake()
         {
             if (instance == null)
