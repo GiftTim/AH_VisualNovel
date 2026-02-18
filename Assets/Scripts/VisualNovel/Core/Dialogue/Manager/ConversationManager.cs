@@ -15,11 +15,11 @@ namespace DIALOGUE
         private bool userPrompt = false;
 
         public ConversationManager(TextArchitect architect)
-        { 
+        {
             this.architect = architect;
             dialogueSystem.onUserPrompt_Next += onUserPrompt_Next;
         }
-        
+
         private void onUserPrompt_Next()
         {
             userPrompt = true;
@@ -47,30 +47,31 @@ namespace DIALOGUE
         {
             for (int i = 0; i < conversation.Count; i++)
             {
+                //Dont show any black lines or try to run any logic on them.
                 if (string.IsNullOrWhiteSpace(conversation[i]))
                     continue;
 
                 DIALOGUE_LINE line = DialogueParser.Parse(conversation[i]);
 
-                //Show Danganronpa_Dialogue
+                //Show dialogue
                 if (line.hasDialogue)
                 {
                     yield return Line_RunDialogue(line);
                 }
 
-                // Execute Commands
+                // Run any commands
                 if (line.hasCommands)
                 {
                     yield return LINE_RunCommands(line);
                 }
 
-
+                //Wait for user input if dialogue was in this line
                 if (line.hasDialogue)
                 {
                     //wait for user Input
                     yield return WaitForUserInput();
 
-                    CommandManager.instance.StopAllProcesses(); // <- ´ë»ç µµÁß¿¡ ½ÇÇàÁßÀÎ Ä¿¸Çµå°¡ ÀÖÀ¸¸é ¸ðµÎ Á¾·á½ÃÅ²´Ù.
+                    CommandManager.instance.StopAllProcesses(); 
                 }
 
             }
@@ -125,9 +126,9 @@ namespace DIALOGUE
                 if (command.waitForCompletion || command.name == "wait")
                 {
                     CoroutineWrapper cw = CommandManager.instance.Execute(command.name, command.arguments);
-                    while(!cw.IsDone)
+                    while (!cw.IsDone)
                     {
-                        if (userPrompt) // <- ¾ÆÁ÷ ´Ù ³¡³­ »óÅÂ°¡ ¾Æ´Ñµ¥ ÇÑ¹ø´õ Å¬¸¯ÇÒ °æ¿ì¿¡´Â ¹Ù·Î ¿Ï¼ºµÇµµ·Ï Ã³¸®
+                        if (userPrompt) // <- ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Â°ï¿½ ï¿½Æ´Ñµï¿½ ï¿½Ñ¹ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ì¿¡ï¿½ï¿½ ï¿½Ù·ï¿½ ï¿½Ï¼ï¿½ï¿½Çµï¿½ï¿½ï¿½ Ã³ï¿½ï¿½
                         {
                             CommandManager.instance.StopCurrentProcess();
                             userPrompt = false;
@@ -142,10 +143,10 @@ namespace DIALOGUE
             }
             yield return null;
         }
-        
+
         IEnumerator BuildLineSegments(DL_DIALOGUE_DATA line)
         {
-            for (int i = 0; i < line.segments.Count; i++) 
+            for (int i = 0; i < line.segments.Count; i++)
             {
                 DL_DIALOGUE_DATA.DIALOGUE_SEGMENT segment = line.segments[i];
 
@@ -157,7 +158,7 @@ namespace DIALOGUE
 
         IEnumerator WaitForDialogueSegmentSignalToBeTriggered(DL_DIALOGUE_DATA.DIALOGUE_SEGMENT segment)
         {
-            switch(segment.startSignal)
+            switch (segment.startSignal)
             {
                 case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.C:
                 case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.A:
@@ -199,8 +200,12 @@ namespace DIALOGUE
 
         IEnumerator WaitForUserInput()
         {
-            while(!userPrompt)
+            dialogueSystem.prompt.Show();
+
+            while (!userPrompt)
                 yield return null;
+
+            dialogueSystem.prompt.Hide();
 
             userPrompt = false;
         }

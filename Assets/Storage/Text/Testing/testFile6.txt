@@ -2,7 +2,12 @@
 PlayAmbience(RainyMood)
 PlaySong("Happy2")
 PlayVoice(exclamation)
-enter Mina "그래 작동하고 있어!"
+enter Mina "그래 작동하고 있어!
+그러니까 최대한 길고 길게 끌자 이래야지 
+알겠찌?"
+"이렇게 끊어야지 길이 진행된다고 한다더군요
+그러니 길을 이렇게 길게 끌겠나이다.
+아멘"
 
 wait(100)
 
