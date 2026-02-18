@@ -1,0 +1,26 @@
+
+PlayAmbience(RainyMood)
+PlaySong("Happy2")
+PlayVoice(exclamation)
+enter Mina "그래 작동하고 있어!"
+
+wait(100)
+
+Mina "더월드~"
+
+StopAmbience()
+StopSong()
+
+Mina "음악과 비야 멈춰라!"
+
+
+wait(100)
+
+
+playsfx(thunder_strong_01 -p 0.85 -v 0.3 -loop true)
+narrator "번개가 치는 중이다."
+
+wait(100)
+
+StopSong("Happy2")
+StopAmbience(RainyMood)

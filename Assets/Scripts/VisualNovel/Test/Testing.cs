@@ -468,7 +468,7 @@ namespace TESTING
         }
     }
     */
-    /*[Testing Character layer]
+    /* [Testing Character layer]
     public class CharacterLayer_Testing : MonoBehaviour
     {
         public TMP_FontAsset tempFont;
@@ -515,7 +515,7 @@ namespace TESTING
         }
     }
     */
-    /*[Testing Character Color]
+    /* [Testing Character Color]
     public class CharacterLayer_Testing : MonoBehaviour
     {
         public TMP_FontAsset tempFont;
@@ -551,7 +551,7 @@ namespace TESTING
         }
     }
     */
-    /*[Testing Character Highlighting]
+    /* [Testing Character Highlighting]
     public class CharacterLayer_Testing : MonoBehaviour
     {
         public TMP_FontAsset tempFont;
@@ -593,7 +593,7 @@ namespace TESTING
         }
     }
     */
-    /*[Testing Charater Flipping]
+    /* [Testing Charater Flipping]
     public class CharacterFlipping_Testing : MonoBehaviour
     {
         public TMP_FontAsset tempFont;
@@ -641,7 +641,7 @@ namespace TESTING
         }
     }
     */
-    /*[Testing Character Sorting]
+    /* [Testing Character Sorting]
     public class CharacterSorting_Testing : MonoBehaviour
     {
         public TMP_FontAsset tempFont;
@@ -758,7 +758,7 @@ namespace TESTING
         }
     }
     */
-    /*[Testing Graphic Layers]
+    /* [Testing Graphic Layers]
 
     public class GraphicLayerTesting : MonoBehaviour
     {
@@ -845,40 +845,37 @@ namespace TESTING
 
     public class AudioTesting : MonoBehaviour
     {
+        [SerializeField] private TextAsset fileName = null;
+
         private void Start()
         {
-            StartCoroutine(Running());
+            StartConversation();
+            //StartCoroutine(Running());
+        }
+
+        void StartConversation()
+        {
+            List<string> lines = FileManager.ReadTextAsset(fileName);
+
+            DialogueSystem.instance.Say(lines);
         }
 
         Character CreateCharacter(string name) => CharacterManager.instance.CreateCharacter(name);
 
         IEnumerator Running()
         {
-            yield return new WaitForSeconds(1);
-
             Character_Sprite Mina = CreateCharacter("Mina") as Character_Sprite;
-
+            Character Me = CreateCharacter("Me");
             Mina.Show();
 
-            yield return DialogueSystem.instance.Say("Narrator", "Can we see your ship?");
+            GraphicPanelManager.instance.GetPanel("background").GetLayer(0, true).SetTexture("Graphics/BG Images/villagenight");
 
-            GraphicPanelManager.instance.GetPanel("background").GetLayer(0, true).SetTexture("Graphics/BG Images/5");
-            AudioManager.instance.PlayTrack("Audio/Music/Calm", startingVolume: 0.7f);
-            AudioManager.instance.PlayVoice("Audio/Voices/wakeup");
+            AudioManager.instance.PlayTrack("Audio/Ambience/RainyMood", 0);
+            AudioManager.instance.PlayTrack("Audio/Music/Calm", 1, pitch: 0.7f);
 
-            Mina.SetSprite(Mina.GetSprite("Mina-A2"), 0);
-            Mina.SetSprite(Mina.GetSprite("Mina-A_ShyFace"), 1);
-            Mina.MoveToPosition(new Vector2(0.7f, 0), speed: 0.5f);
-            yield return Mina.Say("Yes, of course!");
+            yield return Mina.Say("제발 게임 성공해라");
 
-            yield return null;
-        }
-
-        IEnumerator Running2()
-        {
-            AudioChannel channel = new AudioChannel(1);
-
-            yield return null;
+            AudioManager.instance.StopTrack(1);       
         }
 
         IEnumerator Running1()
@@ -898,14 +895,47 @@ namespace TESTING
 
             Mina.Say("Oh!");
 
-            //AudioManager.instance.PlaySoundEffect("Audio/SFX/thunder_strong_01");
+            AudioManager.instance.PlaySoundEffect("Audio/SFX/thunder_strong_01");
 
-            //yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(1f);
 
-            //Mina.Animate("Hop");
-            //Mina.TransitionSprite(Mina.GetSprite("Mina-A2"));
-            //Mina.TransitionSprite(Mina.GetSprite("Mina-A_ShyFace"), 1);
-            //Mina.Say("Yikes!");
+            Mina.Animate("Hop");
+            Mina.TransitionSprite(Mina.GetSprite("Mina-A2"));
+            Mina.TransitionSprite(Mina.GetSprite("Mina-A_ShyFace"), 1);
+            Mina.Say("Yikes!");
+        }
+
+        IEnumerator Running2()
+        {
+            AudioChannel channel = new AudioChannel(1);
+
+            yield return null;
+        }
+
+        IEnumerator Running3()
+        {
+            yield return new WaitForSeconds(5);
+
+            Character_Sprite Mina = CreateCharacter("Mina") as Character_Sprite;
+            Mina.Show();
+
+            yield return DialogueSystem.instance.Say("Narrator", "Can we see your ship?");
+
+            GraphicPanelManager.instance.GetPanel("background").GetLayer(0, true).SetTexture("Graphics/BG Images/5");
+            AudioManager.instance.PlayTrack("Audio/Music/Calm", volumeCap: 0.5f);
+            AudioManager.instance.PlayVoice("Audio/Voices/wakeup");
+
+            Mina.SetSprite(Mina.GetSprite("Mina-A2"), 0);
+            Mina.SetSprite(Mina.GetSprite("Mina-A_ShyFace"), 1);
+            Mina.MoveToPosition(new Vector2(0.7f, 0), speed: 0.5f);
+            yield return Mina.Say("Yes, of course!");
+
+            yield return Mina.Say("좋아, 엔진룸으로 가보자");
+
+            GraphicPanelManager.instance.GetPanel("background").GetLayer(0, true).SetTexture("Graphics/BG Images/EngineRoom");
+            AudioManager.instance.PlayTrack("Audio/Music/Happy2", volumeCap: 0.8f);
+
+            yield return null;
         }
     }
 
