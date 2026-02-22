@@ -1,0 +1,107 @@
+
+PlayAmbience(RainyMood)
+PlaySong("Happy2")
+
+SetLayerMedia(background 1 SpaceshipInterior),
+SetLayerMedia(background Nebula)
+
+CreateCharacter(Mina -e true -i true)
+
+Mina "그래! 작동해야지!"
+
+HideDB()
+
+"그래 작동하고 있어! 그러니까 최대한 길고 길게 끌자 이래야지 알겠지?"
+
+"뒤돌아보지 마 "
+ClearLayerMedia(background -blend hypno)
+ShowDB()
+
+"이렇게 끊어야지 길이 진행된다고 한다더군요. 그러니 길을 이렇게 길게 끌겠나이다. 아멘"
+
+
+
+Mina "더월드~"
+
+StopAmbience()
+StopSong()
+
+Mina "음악과 비야 멈춰라!"
+
+
+wait(100)
+
+
+playsfx(thunder_strong_01 -p 0.85 -v 0.3 -loop true)
+narrator "번개가 치는 중이다."
+
+wait(100)
+
+StopSong("Happy2")
+StopAmbience(RainyMood)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Raelin.Animate(Hop), Raelin.Move(0.7 -spd 0.7)
+Raelin [0:B1,1:B_Scold] "좋아, 우선 말인데…{wa 0.5} 차가운 샤워는 <i>절대</i> 좋지 않아. 누가 뭐래도 난 그렇게 생각해.{c}"
+
+Mina.Move(0.3 -spd 0.7)
+Mina [1:default 3] "저기 봐! 뭔가 보이는 것 같아!"
+
+Raelin "오두막이다! 가자!"
+
+Mina.Move(1.5 -spd 2), Raelin.Move(1.5 -spd 2), Raelin.FaceRight(), Mina.Hide(), Raelin.Hide()
+wait(0.75)
+ClearLayerMedia(background), wait(1)
+StopSong(), StopAmbience()
+wait(1)
+
+SetLayerMedia(background inn_night_1), PlaySong(Calm2)
+Mina.Show(), Raelin.Show(), Mina.SetPosition(-0.5), Raelin.SetPosition(-0.5), Mina.FaceRight(), Raelin.FaceRight()
+Mina.Move(0.3 -spd 1.5), Raelin.Move(0 -spd 1.5)
+wait(1)
+
+Raelin "휴, 그 폭풍에서 드디어 벗어났네.{c} 이제 여기 방이 있기를 바라자."
+
+Mina "들어가 보자.{c} 실례합니다?{a} 누구 계세요?"
+
+narrator "여관 안쪽 방에서 한 남자가 걸어 나왔다. 키가 크고 거친 인상의 남자는 카운터 뒤에 자리를 잡았다."
+
+CreateCharacter("Innkeeper as Generic" -e true), Innkeeper.SetPosition(1.3), Innkeeper.Move(1)
+
+Innkeeper "밖에 폭풍이 아주 심하군."

@@ -1,86 +1,87 @@
+using CHARACTERS;
+using DIALOGUE;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using DIALOGUE;
-using CHARACTERS;
 using TMPro;
+using Unity.Android.Gradle;
+using UnityEngine;
 
 namespace TESTING
 {
     /* [Testing_TextArchitect]
-    public class Testing_TextArchitect : MonoBehaviour
-    {
-        DialogueSystem ds;
-        TextArchitect architect;
-
-        public TextArchitect.BuildMethod bm = TextArchitect.BuildMethod.instant;
-
-        // Start is called once before the first execution of Update after the MonoBehaviour is created
-        void Start()
+        public class Testing_TextArchitect : MonoBehaviour
         {
-            ds = DialogueSystem.instance;
-            architect = new TextArchitect(ds.dialogueContainer.dialogueText);
-            architect.buildMethod = TextArchitect.BuildMethod.fade;
-        }
+            DialogueSystem ds;
+            TextArchitect architect;
 
-        // Update is called once per frame
-        void Update()
-        {
-            if(bm != architect.buildMethod)
+            public TextArchitect.BuildMethod bm = TextArchitect.BuildMethod.instant;
+
+            // Start is called once before the first execution of Update after the MonoBehaviour is created
+            void Start()
             {
-                architect.buildMethod = bm;
-                architect.Stop();
+                ds = DialogueSystem.instance;
+                architect = new TextArchitect(ds.dialogueContainer.dialogueText);
+                architect.buildMethod = TextArchitect.BuildMethod.fade;
             }
 
-            if(Input.GetKeyDown(KeyCode.S))
+            // Update is called once per frame
+            void Update()
             {
-                architect.Stop();
-            }
-            
-
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
-                architect.Build(lines1[Random.Range(0, lines1.Length)]);
-            }
-            else if (Input.GetKeyDown(KeyCode.A))
-            {
-                architect.Append(lines1[Random.Range(0, lines1.Length)]);
-            }
-            else if (Input.GetKeyDown(KeyCode.H))
-            {
-                if (architect.isBuilding)
+                if(bm != architect.buildMethod)
                 {
-                    if(!architect.hurryUp)
+                    architect.buildMethod = bm;
+                    architect.Stop();
+                }
+
+                if(Input.GetKeyDown(KeyCode.S))
+                {
+                    architect.Stop();
+                }
+
+
+                if (Input.GetKeyDown(KeyCode.Space))
+                {
+                    architect.Build(lines1[Random.Range(0, lines1.Length)]);
+                }
+                else if (Input.GetKeyDown(KeyCode.A))
+                {
+                    architect.Append(lines1[Random.Range(0, lines1.Length)]);
+                }
+                else if (Input.GetKeyDown(KeyCode.H))
+                {
+                    if (architect.isBuilding)
                     {
-                        architect.hurryUp = true;
+                        if(!architect.hurryUp)
+                        {
+                            architect.hurryUp = true;
+                        }
+                        else
+                            architect.ForceComplete();
+
                     }
                     else
-                        architect.ForceComplete();
+                    {
+                        architect.Build(lines2[0]);
+                    }
 
                 }
-                else
-                {
-                    architect.Build(lines2[0]);
-                }
-
             }
+
+
+            string[] lines1 = new string[3]
+            {
+                "�̰��� ù ��° ���Դϴ�.",
+                "ù ��° �ٺ��� ���� �� �� �� ��° ���� ���ɴϴ�.",
+                "����������, �̰��� �ؽ�Ʈ ��Ű��Ʈ�� �ɷ��� �׽�Ʈ�ϱ� ���� �� ��° �� �߿��� ���� �� ���Դϴ�."
+            };
+
+            string[] lines2 = new string[1]
+            {
+                "�̰� ����� ��� ������� ������ �� �ִ� ���Դϴ�. �̰� �����ؾ��� ��Ե� �㸮 ���� ������ �� ������ �׷��� �̷��� ��� ���� �Ŷ��ϴ�. ����� ��������� ���̱��� �������� �� �𸣁����� �������� �� ���մϴ�."
+            };
         }
-
-
-        string[] lines1 = new string[3]
-        {
-            "�̰��� ù ��° ���Դϴ�.",
-            "ù ��° �ٺ��� ���� �� �� �� ��° ���� ���ɴϴ�.",
-            "����������, �̰��� �ؽ�Ʈ ��Ű��Ʈ�� �ɷ��� �׽�Ʈ�ϱ� ���� �� ��° �� �߿��� ���� �� ���Դϴ�."
-        };
-
-        string[] lines2 = new string[1]
-        {
-            "�̰� ����� ��� ������� ������ �� �ִ� ���Դϴ�. �̰� �����ؾ��� ��Ե� �㸮 ���� ������ �� ������ �׷��� �̷��� ��� ���� �Ŷ��ϴ�. ����� ��������� ���̱��� �������� �� �𸣁����� �������� �� ���մϴ�."
-        };
-    }
-    */
+        */
     /* [Testing_DialogueSystem]
     public class TestFiles: MonoBehaviour
     {
@@ -109,7 +110,7 @@ namespace TESTING
     {
         void Start() 
         { 
-            
+
             //string line = "Speaker \"Danganronpa_Dialogue \\\"Goes in\\\" here!\" Command(arguments)";
             //DialogueParser.Parse(line);
 
@@ -162,7 +163,7 @@ namespace TESTING
         void StartConversation()
         {
             List<string> lines = FileManager.ReadTextAsset(fileName);
-            
+
             DialogueSystem.instance.Say(lines);
         }
     }
@@ -278,7 +279,7 @@ namespace TESTING
 
         private void Update()
         {
-            
+
         }
 
         void StartConversation()
@@ -333,7 +334,7 @@ namespace TESTING
             lines = new List<string>()
             {
                 "I am Mina",
-            
+
                 "한국어도 잘해요"
             };
 
@@ -579,7 +580,7 @@ namespace TESTING
             Raelin.UnHighlight();
             Mina.Highlight();
             yield return Mina.Say("But I want to say something too! {c} Can I go first?");
-              
+
             Raelin.Highlight();
             Mina.UnHighlight();
             yield return Raelin.Say("Sure, {a} be my guest.");
@@ -804,7 +805,7 @@ namespace TESTING
             GraphicLayer cinLayer = cinematic.GetLayer(0, true);
 
             yield return new WaitForSeconds(1f);
-            
+
             layer0.SetVideo("Graphics/BG Videos/Nebula");
             layer1.SetTexture("Graphics/BG Images/Spaceshipinterior");
 
@@ -842,7 +843,7 @@ namespace TESTING
         }
     }
     */
-
+    /*[Testing Audio Commands]
     public class AudioTesting : MonoBehaviour
     {
         [SerializeField] private TextAsset fileName = null;
@@ -937,6 +938,34 @@ namespace TESTING
 
             yield return null;
         }
-    }
+    }*/
 
+    public class DialogueClosingTesting : MonoBehaviour
+    {
+
+        [SerializeField] private TextAsset fileToRoad = null;
+
+        void Start()
+        {
+            StartConversation();
+        }
+
+        void StartConversation()
+        {
+            List<string> lines = FileManager.ReadTextAsset(fileToRoad);
+            DialogueSystem.instance.Say(lines);
+        }
+
+        void Update()
+        {
+            if(Input.GetKeyDown(KeyCode.DownArrow))
+            {
+                DialogueSystem.instance.dialogueContainer.Hide();
+            }
+            else if(Input.GetKeyDown(KeyCode.UpArrow))
+            {
+                DialogueSystem.instance.dialogueContainer.Show();
+            }
+        }
+    }
 }

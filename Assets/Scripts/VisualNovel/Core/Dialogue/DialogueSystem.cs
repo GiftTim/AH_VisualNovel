@@ -8,13 +8,16 @@ namespace DIALOGUE
     public class DialogueSystem : MonoBehaviour
     {
         [SerializeField] private DialogueSystemConfigurationSO _config;
+
         public DialogueSystemConfigurationSO config => _config;
 
         public DialogueContainer dialogueContainer = new DialogueContainer();
         private ConversationManager conversationManager;
         private TextArchitect architect;
-     
+
         public static DialogueSystem instance { get; private set; }
+        
+        [SerializeField] private CanvasGroup mainCanvas;
 
         public delegate void DialogueSystemEvent();
         public event DialogueSystemEvent onUserPrompt_Next; 
@@ -22,6 +25,8 @@ namespace DIALOGUE
         public bool isRunningConversation => conversationManager.isRunning;
 
         public DialogueContinuePrompt prompt;
+        
+        private CanvasGroupController cgController;
 
 
         private void Awake()
@@ -45,6 +50,9 @@ namespace DIALOGUE
 
             architect = new TextArchitect(dialogueContainer.dialogueText);
             conversationManager = new ConversationManager(architect);
+
+            cgController = new CanvasGroupController(this, mainCanvas);
+            dialogueContainer.Initialize();
         }
 
         public void OnUserPrompt_Next()
@@ -62,10 +70,17 @@ namespace DIALOGUE
 
         public void ApplySpeakerDataToDialogueContainer(CharacterConfigData config)
         {
+            //Set Dialogue details
             dialogueContainer.SetDialogueColor(config.dialogueColor);
             dialogueContainer.SetDialogueFont(config.dialogueFont);
+            float fontSize = this.config.defaultDialogueFontSize * this.config.dialogueFontScale * config.dialogueFontScale;
+            dialogueContainer.SetDialogueFontSize(fontSize);
+
+            //Set name details
             dialogueContainer.nameContainer.SetNameColor(config.nameColor);
             dialogueContainer.nameContainer.SetNameFont(config.nameFont);
+            fontSize = this.config.defaultNameFontSize * config.nameFontScale;
+            dialogueContainer.nameContainer.SetNameFontSize(fontSize);
         }
 
         public void ShowSpeakerName(string speakerName = "")
@@ -91,5 +106,17 @@ namespace DIALOGUE
         {
             return conversationManager.StartConversation(conversation);
         }
+
+        public bool isVisible => cgController.isVisible;
+        public Coroutine Show()
+        {
+            return cgController.Show();
+        }
+
+        public Coroutine Hide()
+        {
+            return cgController.Hide();
+        }
+
     }
 }

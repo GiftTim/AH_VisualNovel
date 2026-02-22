@@ -20,6 +20,8 @@ MonoBehaviour:
     dialogueColor: {r: 1, g: 1, b: 1, a: 1}
     nameFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
     dialogueFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
+    nameFontSize: 65
+    dialogueFontSize: 45
   - name: Mari
     alias: M
     characterType: 1
@@ -27,6 +29,8 @@ MonoBehaviour:
     dialogueColor: {r: 1, g: 1, b: 1, a: 1}
     nameFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
     dialogueFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
+    nameFontSize: 65
+    dialogueFontSize: 45
   - name: Benjamin
     alias: B
     characterType: 0
@@ -34,6 +38,8 @@ MonoBehaviour:
     dialogueColor: {r: 0.5778973, g: 0.93207544, b: 0.46955496, a: 1}
     nameFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
     dialogueFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
+    nameFontSize: 65
+    dialogueFontSize: 45
   - name: Raelin
     alias: R
     characterType: 2
@@ -41,6 +47,8 @@ MonoBehaviour:
     dialogueColor: {r: 1, g: 1, b: 1, a: 1}
     nameFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
     dialogueFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
+    nameFontSize: 65
+    dialogueFontSize: 45
   - name: Generic
     alias: Mastermind
     characterType: 2
@@ -48,6 +56,8 @@ MonoBehaviour:
     dialogueColor: {r: 1, g: 1, b: 1, a: 1}
     nameFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
     dialogueFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
+    nameFontSize: 65
+    dialogueFontSize: 45
   - name: Mina
     alias: I
     characterType: 1
@@ -55,3 +65,5 @@ MonoBehaviour:
     dialogueColor: {r: 1, g: 1, b: 1, a: 1}
     nameFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
     dialogueFont: {fileID: 11400000, guid: 808542bee025e124c951eec718a13ecc, type: 2}
+    nameFontSize: 65
+    dialogueFontSize: 45

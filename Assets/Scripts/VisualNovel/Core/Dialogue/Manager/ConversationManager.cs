@@ -78,11 +78,13 @@ namespace DIALOGUE
 
         }
 
-        IEnumerator Line_RunDialogue(DIALOGUE_LINE line)
+        IEnumerator Line_RunDialogue(DIALOGUE_LINE line)// 대사 한 줄을 실행하는 코루틴
         {
             // Show or hide the speaker name if there is one present.
             if (line.hasSpeaker)
+            {
                 HandleSpeakerLogic(line.speakerData);
+            }
 
             //build dialogueData
             yield return BuildLineSegments(line.dialogueData);

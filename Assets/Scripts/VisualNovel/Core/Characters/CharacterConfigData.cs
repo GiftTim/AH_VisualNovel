@@ -16,7 +16,11 @@ namespace CHARACTERS
 
         public TMP_FontAsset nameFont;
         public TMP_FontAsset dialogueFont;
-        
+
+        public float nameFontScale = 1f;
+        public float dialogueFontScale =1f;
+
+
         public CharacterConfigData Copy()
         {
             CharacterConfigData result = new CharacterConfigData();
@@ -29,6 +33,9 @@ namespace CHARACTERS
 
             result.nameColor = new Color(nameColor.r, nameColor.g, nameColor.b, nameColor.a);
             result.dialogueColor = new Color(dialogueColor.r, dialogueColor.g, dialogueColor.b, dialogueColor.a);
+
+            result.dialogueFontScale = dialogueFontScale;
+            result.nameFontScale = nameFontScale;
 
             return result;
         }
@@ -52,12 +59,13 @@ namespace CHARACTERS
                 result.nameColor = new Color(defaultColor.r, defaultColor.g, defaultColor.b, defaultColor.a);
                 result.dialogueColor = new Color(defaultColor.r, defaultColor.g, defaultColor.b, defaultColor.a);
 
+                result.nameFontScale = 1f;
+                result.dialogueFontScale = 1f;
+            
+
                 return result;
             }
-            set
-            {
-                
-            }
+
         }
     }
 }
