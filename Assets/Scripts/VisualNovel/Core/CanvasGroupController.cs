@@ -7,8 +7,8 @@ public class CanvasGroupController
     private MonoBehaviour owner;
     private CanvasGroup   rootCG;
 
-            // 대화창 페이드 속도
-        private const float DEFAULT_FADE_SPEED = 3f;
+    // 대화창 페이드 속도
+    private const float DEFAULT_FADE_SPEED = 3f;
 
     // 코루틴 중복 실행 방지용 참조 관리 패턴
     private Coroutine co_showing = null;
@@ -26,7 +26,7 @@ public class CanvasGroupController
         this.rootCG = rootCG;
     }
 
-    public Coroutine Show()
+    public Coroutine Show(float speed = 1f, bool immediate = false)
     {
         if (isShowing)
         {
@@ -38,12 +38,12 @@ public class CanvasGroupController
             co_hiding = null;
         }
 
-        co_showing = DialogueSystem.instance.StartCoroutine(Fading(1f));
+        co_showing = DialogueSystem.instance.StartCoroutine(Fading(1f, speed, immediate));
 
         return co_showing;
     }
 
-    public Coroutine Hide()
+    public Coroutine Hide(float speed = 1f, bool immediate = false)
     {
         if (isHiding)
         {
@@ -55,18 +55,23 @@ public class CanvasGroupController
             co_showing = null;
         }
 
-        co_hiding = DialogueSystem.instance.StartCoroutine(Fading(0f));
+        co_hiding = DialogueSystem.instance.StartCoroutine(Fading(0f, speed, immediate));
 
         return co_hiding;
     }
 
-    private IEnumerator Fading(float alpha)
+    private IEnumerator Fading(float alpha, float speed, bool immediate)
     {
         CanvasGroup cg = rootCG;
 
+        if(immediate)
+        {
+            cg.alpha = alpha;
+        }
+
         while (cg.alpha != alpha)
         {
-            cg.alpha = Mathf.MoveTowards(cg.alpha, alpha, Time.deltaTime * DEFAULT_FADE_SPEED);
+            cg.alpha = Mathf.MoveTowards(cg.alpha, alpha, Time.deltaTime * DEFAULT_FADE_SPEED * speed);
             yield return null;
         }
 

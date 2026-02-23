@@ -12,8 +12,8 @@ namespace COMMANDS
             database.AddCommand("wait", new Func<string, IEnumerator>(Wait));
 
             // Dialogue System Controls
-            database.AddCommand("showui", new Func<IEnumerator>(ShowDialogueSystem));
-            database.AddCommand("hideui", new Func<IEnumerator>(HideDialogueSystem));
+            database.AddCommand("showui", new Func<string[], IEnumerator>(ShowDialogueSystem));
+            database.AddCommand("hideui", new Func<string[], IEnumerator>(HideDialogueSystem));
 
             // Dialogue Box Controls
             database.AddCommand("Showdb", new Func<IEnumerator>(ShowDialogueBox));
@@ -42,14 +42,30 @@ namespace COMMANDS
             yield return DialogueSystem.instance.dialogueContainer.Hide();
         }
 
-        private static IEnumerator ShowDialogueSystem()
+        private static IEnumerator ShowDialogueSystem(string[] data)
         {
-            yield return DialogueSystem.instance.Show();
+            float speed;
+            bool immediate;
+
+            var parameters = ConvertDataToParameters(data);
+
+            parameters.TryGetValue(PARAM_SPEED, out speed, defaultVallue: 1f);
+            parameters.TryGetValue(PARAM_IMMEDIATE, out immediate, defaultValue: false);
+
+            yield return DialogueSystem.instance.Show(speed, immediate);
         }
 
-        private static IEnumerator HideDialogueSystem()
+        private static IEnumerator HideDialogueSystem(string[] data)
         {
-            yield return DialogueSystem.instance.Hide();
+            float speed;
+            bool immediate;
+
+            var parameters = ConvertDataToParameters(data);
+
+            parameters.TryGetValue(PARAM_SPEED, out speed, defaultVallue: 1f);
+            parameters.TryGetValue(PARAM_IMMEDIATE, out immediate, defaultValue: false);
+
+            yield return DialogueSystem.instance.Hide(speed, immediate);
         }
     }
 }

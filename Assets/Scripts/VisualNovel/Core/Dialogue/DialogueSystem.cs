@@ -108,15 +108,9 @@ namespace DIALOGUE
         }
 
         public bool isVisible => cgController.isVisible;
-        public Coroutine Show()
-        {
-            return cgController.Show();
-        }
+        public Coroutine Show(float speed = 1f, bool immediate = false) => cgController.Show(speed, immediate);
 
-        public Coroutine Hide()
-        {
-            return cgController.Hide();
-        }
+        public Coroutine Hide(float speed = 1f, bool immediate = false) => cgController.Hide(speed, immediate);
 
     }
 }
