@@ -765,7 +765,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 2100000, guid: 79639ea486bc99a428f652bae3871eb1, type: 2}
-  m_Color: {r: 1, g: 1, b: 1, a: 0}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1705,10 +1705,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1059882830}
+  - component: {fileID: 1059882834}
   - component: {fileID: 1059882833}
   - component: {fileID: 1059882832}
   - component: {fileID: 1059882831}
-  - component: {fileID: 1059882834}
   m_Layer: 5
   m_Name: Canvas-Main
   m_TagString: Untagged
@@ -2160,7 +2160,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8556878287447792273, guid: e8149d422c34e9e48ae54a43bea1d59c, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -584.99994
+      value: -584.9999
       objectReference: {fileID: 0}
     - target: {fileID: 8556878287447792273, guid: e8149d422c34e9e48ae54a43bea1d59c, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -3285,8 +3285,8 @@ Camera:
   m_GameObject: {fileID: 1835681998}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 4
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 1, g: 1, b: 1, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0

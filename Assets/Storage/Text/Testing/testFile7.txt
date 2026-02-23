@@ -11,16 +11,19 @@ Mina "그래! 작동해야지!"
 [wait]Mina.Move(-1 -spd 0.7)
 
 
-[wait]HideDB()
 [wait]ClearLayerMedia(background -blend rightLeft)
+[wait]HideUI(-spd 0.5)
 
+wait(5)
 
-[wait]Mina.Move(0 -spd 0.7)
+[wait]ShowUI(-i true -spd 0.5))
 
 [wait]SetLayerMedia(background 01_2)
 wait(1)
 
-[wait]ShowDB()
+
+[wait]Mina.Move(0 -spd 0.7)
+
 
 "그래 작동하고 있어! 그러니까 최대한 길고 길게 끌자 이래야지 알겠지?"
 

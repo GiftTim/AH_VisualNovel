@@ -4,7 +4,7 @@ public class GraphicPanelManager : MonoBehaviour
 {
     public static GraphicPanelManager instance { get; private set; }
 
-    public const float DEFAULT_TRANSITION_SPEED = 3f;
+    public const float DEFAULT_TRANSITION_SPEED = 1f;
 
     [SerializeField] private GraphicPanel[] allPanels;
 
@@ -24,6 +24,7 @@ public class GraphicPanelManager : MonoBehaviour
                 return panel;
             }
         }
+
         Debug.LogError($"GraphicPanelManager: No panel found with name {name}");
         return null;
     }
