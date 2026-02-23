@@ -43,9 +43,9 @@ namespace COMMANDS
             var parameters = ConvertDataToParameters(data);
 
             parameters.TryGetValue(PARAM_SPEED, out speed, defaultValue: 1f);
-            parameters.TryGetValue(PARAM_IMMEDIATE, out immediate, defaultValue: false);
+            parameters.TryGetValue(PARAM_IMMEDIATE, out immediate, defaultValue: true);
 
-            yield return DialogueSystem.instance.Show(speed, immediate);
+            yield return DialogueSystem.instance.dialogueContainer.Show(speed, immediate);
         }
 
         private static IEnumerator HideDialogueBox(string[] data)
@@ -55,7 +55,7 @@ namespace COMMANDS
 
             var parameters = ConvertDataToParameters(data);
 
-            parameters.TryGetValue(PARAM_SPEED, out speed, defaultValue: 1f);
+            parameters.TryGetValue(PARAM_SPEED, out speed, defaultValue: 0f);
             parameters.TryGetValue(PARAM_IMMEDIATE, out immediate, defaultValue: false);
 
             yield return DialogueSystem.instance.dialogueContainer.Hide(speed, immediate);
@@ -69,9 +69,9 @@ namespace COMMANDS
             var parameters = ConvertDataToParameters(data);
 
             parameters.TryGetValue(PARAM_SPEED, out speed, defaultValue: 1f);
-            parameters.TryGetValue(PARAM_IMMEDIATE, out immediate, defaultValue: false);
+            parameters.TryGetValue(PARAM_IMMEDIATE, out immediate, defaultValue: true);
 
-            yield return DialogueSystem.instance.dialogueContainer.Show(speed, immediate);
+            yield return DialogueSystem.instance.Show(speed, immediate);
         }
 
         private static IEnumerator HideDialogueSystem(string[] data)
@@ -81,7 +81,7 @@ namespace COMMANDS
 
             var parameters = ConvertDataToParameters(data);
 
-            parameters.TryGetValue(PARAM_SPEED, out speed, defaultValue: 1f);
+            parameters.TryGetValue(PARAM_SPEED, out speed, defaultValue: 0f);
             parameters.TryGetValue(PARAM_IMMEDIATE, out immediate, defaultValue: false);
 
             yield return DialogueSystem.instance.Hide(speed, immediate);

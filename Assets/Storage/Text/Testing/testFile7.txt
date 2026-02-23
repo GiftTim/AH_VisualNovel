@@ -2,21 +2,24 @@
 PlayAmbience(RainyMood)
 PlaySong("Happy2")
 
-SetLayerMedia(background 01_1),
+SetLayerMedia(background 01_1)
 
 CreateCharacter(Mina -e true -i true)
-
+Mina.Move(0 -spd 1 -i true)
+CreateCharacter(Raelin -e true -i true)
+Raelin.Move(1 -spd 1 -e true -i true)
 
 Mina "그래! 작동해야지!"
-[wait]Mina.Move(-1 -spd 0.7)
+wait(5)
+[wait]Mina.Move(-0.7 -spd 0.7)
 
 
 [wait]ClearLayerMedia(background -blend rightLeft)
-[wait]HideUI(-spd 0.5)
+[wait]HideUI(-i true -spd 0.5)
 
 wait(5)
 
-[wait]ShowUI(-i true -spd 0.5))
+[wait]ShowUI(-i true -spd 0.5)
 
 [wait]SetLayerMedia(background 01_2)
 wait(1)
