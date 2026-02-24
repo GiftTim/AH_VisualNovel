@@ -939,7 +939,7 @@ namespace TESTING
             yield return null;
         }
     }*/
-
+    /*[Testing Dialogue Closing]
     public class DialogueClosingTesting : MonoBehaviour
     {
 
@@ -966,6 +966,44 @@ namespace TESTING
             {
                 DialogueSystem.instance.dialogueContainer.Show();
             }
+        }
+    }
+    */
+
+    public class TestCharacters : MonoBehaviour
+    {
+        public TMP_FontAsset tempFont;
+        private Character CreateCharacter(string name) => CharacterManager.instance.CreateCharacter(name);
+
+        private void Start()
+        {
+            StartCoroutine(Test7());
+        }
+
+
+        IEnumerator Test7()
+        {
+            Character Monk = CreateCharacter("Monk as Generic");
+
+            yield return Monk.Say("Normal dialogue configuration");
+
+            Monk.SetDialogueColor(Color.red);
+            Monk.SetNameColor(Color.blue);
+
+            yield return Monk.Say("Customized dialogue here");
+
+            Monk.ResetConfigurationData();
+
+            yield return Monk.Say("I should be back to normal");
+        }
+
+        void Update()
+        {
+            Character Mina = CharacterManager.instance.GetCharacter("Mina");
+            if (Input.GetKeyDown(KeyCode.DownArrow))
+                Mina.Hide();
+            else if (Input.GetKeyDown(KeyCode.UpArrow))
+                Mina.Show();
         }
     }
 }

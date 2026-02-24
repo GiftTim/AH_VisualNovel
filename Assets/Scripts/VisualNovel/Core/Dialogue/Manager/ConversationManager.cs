@@ -14,10 +14,14 @@ namespace DIALOGUE
         private TextArchitect architect = null;
         private bool userPrompt = false;
 
+        private TagManager tagManager;
+
         public ConversationManager(TextArchitect architect)
         {
             this.architect = architect;
             dialogueSystem.onUserPrompt_Next += onUserPrompt_Next;
+
+            tagManager = new TagManager();
         }
 
         private void onUserPrompt_Next()
@@ -86,6 +90,11 @@ namespace DIALOGUE
                 HandleSpeakerLogic(line.speakerData);
             }
 
+            if(!dialogueSystem.dialogueContainer.isVisible)
+            {
+                dialogueSystem.dialogueContainer.Show();
+            }
+
             //build dialogueData
             yield return BuildLineSegments(line.dialogueData);
         }
@@ -100,7 +109,7 @@ namespace DIALOGUE
                 character.Show();
 
             //Add character name to the UI.
-            dialogueSystem.ShowSpeakerName(speakerData.displayname);
+            dialogueSystem.ShowSpeakerName(tagManager.Inject(speakerData.displayname));
 
             //Now customize the dialogue for this character - if applicable.
             DialogueSystem.instance.ApplySpeakerDataToDialogueContainer(speakerData.name);
@@ -130,7 +139,7 @@ namespace DIALOGUE
                     CoroutineWrapper cw = CommandManager.instance.Execute(command.name, command.arguments);
                     while (!cw.IsDone)
                     {
-                        if (userPrompt) // <- ���� �� ���� ���°� �ƴѵ� �ѹ��� Ŭ���� ��쿡�� �ٷ� �ϼ��ǵ��� ó��
+                        if (userPrompt) 
                         {
                             CommandManager.instance.StopCurrentProcess();
                             userPrompt = false;
@@ -177,6 +186,8 @@ namespace DIALOGUE
 
         IEnumerator BuildDialogue(string dialogue, bool append = false)
         {
+            dialogue = tagManager.Inject(dialogue);
+
             //Build the dialogueData
             if (!append)
                 architect.Build(dialogue);

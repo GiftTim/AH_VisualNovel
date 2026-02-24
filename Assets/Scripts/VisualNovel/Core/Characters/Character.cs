@@ -104,7 +104,7 @@ namespace CHARACTERS
         public void SetDialogueColor(Color color)       => config.dialogueColor = color;
 
 
-        public void ResetConfigurationData() => config = CharacterManager.instance.GetCharacterConfig(name);
+        public void ResetConfigurationData() => config = CharacterManager.instance.GetCharacterConfig(name,getOriginal: true);
         public void UpdateTextCustomizationOnScreen() => dialogueSystem.ApplySpeakerDataToDialogueContainer(name);
 
         public virtual Coroutine Show()
