@@ -6,12 +6,14 @@ using UnityEngine;
 
 namespace DIALOGUE
 {
-    public class ConversationManager
+    public class 
+        
+        ConversationManager
     {
         private DialogueSystem dialogueSystem => DialogueSystem.instance;
         private Coroutine process = null;
         public bool isRunning => process != null;
-        private TextArchitect architect = null;
+        public TextArchitect architect = null;
         private bool userPrompt = false;
 
         private TagManager tagManager;

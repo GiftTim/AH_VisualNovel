@@ -14,6 +14,7 @@ namespace DIALOGUE
         public DialogueContainer dialogueContainer = new DialogueContainer();
         private ConversationManager conversationManager;
         private TextArchitect architect;
+        private AutoReader autoReader;
 
         public static DialogueSystem instance { get; private set; }
         
@@ -53,6 +54,11 @@ namespace DIALOGUE
 
             cgController = new CanvasGroupController(this, mainCanvas);
             dialogueContainer.Initialize();
+
+            if(TryGetComponent(out autoReader))
+            {
+                autoReader.Initialize(conversationManager);
+            }
         }
 
         public void OnUserPrompt_Next()

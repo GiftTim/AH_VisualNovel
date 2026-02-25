@@ -1,0 +1,57 @@
+{
+    "version": 1,
+    "name": "VisualNovelInput",
+    "maps": [
+        {
+            "name": "General",
+            "id": "408b5b77-c9a6-4c32-b595-e0b359428c52",
+            "actions": [
+                {
+                    "name": "Next",
+                    "type": "Button",
+                    "id": "ac10643c-038f-434e-8412-24bbaca06f40",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "9ea852cf-8b5b-4032-8dd5-0c5e46bfa61e",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Next",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "cbe86107-01ab-4cdc-bda4-34c715fdf99a",
+                    "path": "<Keyboard>/enter",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Next",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "60267f70-c599-4579-9f75-055dadc5baf1",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Next",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
