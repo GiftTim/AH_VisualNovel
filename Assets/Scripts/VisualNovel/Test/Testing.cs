@@ -535,11 +535,11 @@ namespace TESTING
             yield return new WaitForSeconds(1);
 
             //Raelin.layers[1].SetColor(Color.red);
-            yield return Raelin.TransitionToColor(Color.red, speed: 0.2f);
-            yield return Raelin.TransitionToColor(Color.blue);
-            yield return Raelin.TransitionToColor(Color.yellow);
-            yield return Raelin.TransitionToColor(Color.black);
-            yield return Raelin.TransitionToColor(Color.white);
+            yield return Raelin.TransitionColor(Color.red, speed: 0.2f);
+            yield return Raelin.TransitionColor(Color.blue);
+            yield return Raelin.TransitionColor(Color.yellow);
+            yield return Raelin.TransitionColor(Color.black);
+            yield return Raelin.TransitionColor(Color.white);
 
             yield return null;
         }
@@ -972,12 +972,22 @@ namespace TESTING
 
     public class TestCharacters : MonoBehaviour
     {
-        public TMP_FontAsset tempFont;
+        //public TMP_FontAsset tempFont;
         private Character CreateCharacter(string name) => CharacterManager.instance.CreateCharacter(name);
+
+        [SerializeField] private TextAsset fileToRoad = null;
+
 
         private void Start()
         {
-            StartCoroutine(Test7());
+            //StartCoroutine(Test7());
+            StartConversation();
+        }
+
+        void StartConversation()
+        {
+            List<string> lines = FileManager.ReadTextAsset(fileToRoad);
+            DialogueSystem.instance.Say(lines);
         }
 
 

@@ -1,7 +1,5 @@
 using UnityEngine;
 using System.Collections;
-using System.Collections.Generic;
-using TMPro;
 
 namespace DIALOGUE
 {
@@ -11,8 +9,6 @@ namespace DIALOGUE
         private const float READ_TIME_PADDING = 0.5f;
         private const float MAX_READ_TIME = 99f;
         private const float MIN_READ_TIME = 1f;
-        private const string STATUS_TEXT_AUTO = "Auto";
-        private const string STATUS_TEXT_SKIP = "Skipping";
 
         private ConversationManager conversationManager;
         private TextArchitect architect => conversationManager.architect;
@@ -22,23 +18,30 @@ namespace DIALOGUE
         public bool isOn => co_running != null;
         private Coroutine co_running = null;
 
-        [SerializeField] private TextMeshProUGUI statusText;
+        [Header("Auto UI")]
+        [SerializeField] private GameObject autoStop;     // Auto-Stop 오브젝트
+        [SerializeField] private GameObject autoPlay;     // Auto-Play 오브젝트
+        [SerializeField] private Animator autoPlayAnimator; // Auto-Play에 붙은 Animator
+        [SerializeField] private string autoPlayStateName = "Play_Auto";
 
         public void Initialize(ConversationManager conversationManager)
         {
             this.conversationManager = conversationManager;
 
-            statusText.text = string.Empty;
+            // Animator 자동 연결(Inspector에 안 넣었을 때 대비)
+            if (autoPlayAnimator == null && autoPlay != null)
+                autoPlayAnimator = autoPlay.GetComponent<Animator>();
+
+            SetAutoVisual(false);
         }
 
         public void Enable()
         {
-            if (isOn)
-            {
-                return;
-            }
-
+            if (isOn) return;
             co_running = StartCoroutine(AutoRead());
+
+            // Enable은 Skip에서도 호출되므로, 실제 표시 여부는 아래 SetAutoVisual에서 skip 고려
+            SetAutoVisual(isOn && !skip);
         }
 
         public void Disable()
@@ -51,12 +54,12 @@ namespace DIALOGUE
             StopCoroutine(co_running);
             skip = false;
             co_running = null;
-            statusText.text = string.Empty;
+
+            SetAutoVisual(false);
         }
 
         private IEnumerator AutoRead()
         {
-            //Do nothing if there is no conversation to monitor
             if (!conversationManager.isRunning)
             {
                 Disable();
@@ -64,41 +67,44 @@ namespace DIALOGUE
             }
 
             if (!architect.isBuilding && architect.currentText != string.Empty)
-            {
-                DialogueSystem.instance.OnUserPrompt_Next();
-            }
+                DialogueSystem.instance.OnSystemPrompt_Next();
 
             while (conversationManager.isRunning)
             {
-                // Read and wait
                 if (!skip)
                 {
-                    while (!architect.isBuilding)
+                    while (!architect.isBuilding && !conversationManager.isWaitingOnSegmentTimer)
                     {
                         yield return null;
                     }
 
                     float timeStarted = Time.time;
 
-                    while (architect.isBuilding)
+                    while (architect.isBuilding || conversationManager.isWaitingOnSegmentTimer)
                     {
                         yield return null;
                     }
 
-                    float timeToRead = Mathf.Clamp(((float)architect.tmpro.textInfo.characterCount / DEFAULT_CHARACTERS_READ_PER_SECOND), MIN_READ_TIME, MIN_READ_TIME);
+
+                    // (기존 코드의 Clamp 오타 수정: MAX_READ_TIME로)
+                    float timeToRead = Mathf.Clamp(
+                        (float)architect.tmpro.textInfo.characterCount / DEFAULT_CHARACTERS_READ_PER_SECOND,
+                        MIN_READ_TIME,
+                        MAX_READ_TIME
+                    );
+
                     timeToRead = Mathf.Clamp((timeToRead - (Time.time - timeStarted)), MIN_READ_TIME, MAX_READ_TIME);
                     timeToRead = (timeToRead / speed) + READ_TIME_PADDING;
 
                     yield return new WaitForSeconds(timeToRead);
                 }
-                //Skip
                 else
                 {
                     architect.ForceComplete();
                     yield return new WaitForSeconds(0.05f);
                 }
 
-                DialogueSystem.instance.OnUserPrompt_Next();
+                DialogueSystem.instance.OnSystemPrompt_Next();
             }
 
             Disable();
@@ -108,26 +114,19 @@ namespace DIALOGUE
         {
             if (skip)
             {
+                // Skip -> Auto 전환
                 Enable();
             }
             else
             {
-                if (!isOn)
-                {
-                    Enable();
-                }
-                else
-                {
-                    Disable();
-                }
+                if (!isOn) Enable();
+                else Disable();
             }
 
             skip = false;
 
-            if(isOn)
-            {
-                statusText.text = STATUS_TEXT_AUTO;
-            }
+            // Auto 모드 ON일 때만 Auto-Play 표시 + 애니 재생
+            SetAutoVisual(isOn && !skip);
         }
 
         public void Toggle_Skip()
@@ -145,17 +144,26 @@ namespace DIALOGUE
                 else
                 {
                     Disable();
-                }
 
+                }
             }
 
             skip = true;
 
-            if (isOn)
-            {
-                statusText.text = STATUS_TEXT_SKIP;
-            }
+            // Skip일 때는 Auto-Play 애니 안 돌리고 Auto-Stop 상태로 표시(원하면 별도 Skip UI 추가)
+            SetAutoVisual(isOn && !skip);
+        }
 
+        private void SetAutoVisual(bool autoPlaying)
+        {
+            if (autoStop != null) autoStop.SetActive(!autoPlaying);
+            if (autoPlay != null) autoPlay.SetActive(autoPlaying);
+
+            if (autoPlaying && autoPlayAnimator != null)
+            {
+                // 클릭할 때마다/켜질 때마다 처음부터 재생
+                autoPlayAnimator.Play(autoPlayStateName, 0, 0f);
+            }
         }
     }
 }

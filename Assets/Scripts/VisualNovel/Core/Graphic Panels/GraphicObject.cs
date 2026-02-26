@@ -205,6 +205,10 @@ public class GraphicObject
         {
             layer.currentGraphic = null;
         }
+        if(layer.oldGraphics.Contains(this))
+        {
+            layer.oldGraphics.Remove(this);
+        }
 
         Object.Destroy(renderer.gameObject);
     }

@@ -4,9 +4,9 @@ PlaySong("Happy2")
 
 SetLayerMedia(background 01_1)
 
-CreateCharacter(Mina -e true -i true)
+CreateCharacter(Mina -e true -i false)
 Mina.Move(0 -spd 1 -i true)
-CreateCharacter(Raelin -e true -i true)
+CreateCharacter(Raelin -e true -i false)
 Raelin.Move(1 -spd 1 -e true -i true)
 
 Mina "그래! 작동해야지!"
@@ -15,11 +15,11 @@ wait(5)
 
 
 [wait]ClearLayerMedia(background -blend rightLeft)
-[wait]HideUI(-i true -spd 0.5)
+[wait]HideUI(-i false -spd 0.5)
 
 wait(5)
 
-[wait]ShowUI(-i true -spd 0.5)
+[wait]ShowUI(-i false -spd 0.5)
 
 [wait]SetLayerMedia(background 01_2)
 wait(1)
@@ -28,7 +28,7 @@ wait(1)
 [wait]Mina.Move(0 -spd 0.7)
 
 
-"그래 작동하고 있어! 그러니까 최대한 길고 길게 끌자 이래야지 알겠지?"
+"그래 작동하고 있어! {wa 5} 그러니까 최대한 길고 길게 끌자 이래야지 알겠지?"
 
 "뒤돌아보지 마 "
 
@@ -55,7 +55,7 @@ wait(100)
 StopSong("Happy2")
 StopAmbience(RainyMood)
 
-
+ 
 
 Raelin.Animate(Hop), Raelin.Move(0.7 -spd 0.7)
 Raelin [0:B1,1:B_Scold] "좋아, 우선 말인데…{wa 0.5} 차가운 샤워는 <i>절대</i> 좋지 않아. 누가 뭐래도 난 그렇게 생각해.{c}"

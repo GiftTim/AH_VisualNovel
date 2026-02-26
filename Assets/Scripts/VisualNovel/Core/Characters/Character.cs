@@ -107,33 +107,41 @@ namespace CHARACTERS
         public void ResetConfigurationData() => config = CharacterManager.instance.GetCharacterConfig(name,getOriginal: true);
         public void UpdateTextCustomizationOnScreen() => dialogueSystem.ApplySpeakerDataToDialogueContainer(name);
 
-        public virtual Coroutine Show()
+        public virtual Coroutine Show(float speedMultiplier = 1f)
         {
             if (isRevealing)
-                return co_revealing;
+            {
+                characterManager.StopCoroutine(co_revealing);
+            }
 
             if (isHiding)
+            {
                 characterManager.StopCoroutine(co_hiding);
+            }
 
-            co_revealing = characterManager.StartCoroutine(ShowingOrHiding(true));
+            co_revealing = characterManager.StartCoroutine(ShowingOrHiding(true, speedMultiplier));
 
             return co_revealing;
         }
 
-        public virtual Coroutine Hide()
+        public virtual Coroutine Hide(float speedMultiplier = 1f)
         {
             if (isHiding)
-                return co_hiding;
+            {
+                characterManager.StopCoroutine(co_hiding);
+            }
 
             if (isRevealing)
+            {
                 characterManager.StopCoroutine(co_revealing);
+            }
 
-            co_hiding = characterManager.StartCoroutine(ShowingOrHiding(false));
+            co_hiding = characterManager.StartCoroutine(ShowingOrHiding(false, speedMultiplier));
 
             return co_hiding;
         }
 
-        public virtual IEnumerator ShowingOrHiding(bool show)
+        public virtual IEnumerator ShowingOrHiding(bool show, float speedMultiplier = 1f)
         {
             Debug.Log("Show/Hide cannot be called from a base character type.");
             yield return null;
@@ -217,7 +225,7 @@ namespace CHARACTERS
             this.color = color;
         }
 
-        public Coroutine TransitionToColor(Color color, float speed =1f)
+        public Coroutine TransitionColor(Color color, float speed =1f)
         {
             this.color = color;
 
@@ -238,11 +246,10 @@ namespace CHARACTERS
         // 단간론파 할 때, 제거해야 할 부분
         public Coroutine Highlight(float speed = 1f, bool immediate = false)
         {
-            if (isHighlighting)
-                return co_highlighting;
-
-            if (isUnHighlighting)
+            if (isHighlighting || isUnHighlighting) 
+            {
                 characterManager.StopCoroutine(co_highlighting);
+            }
 
             highlighted = true;
             co_highlighting = characterManager.StartCoroutine(Highlighting(speed, immediate));
@@ -253,11 +260,10 @@ namespace CHARACTERS
         // 단간론파 할 때, 제거해야 할 부분
         public Coroutine UnHighlight(float speed = 1f, bool immediate = false)
         {
-            if (isUnHighlighting)
-                return co_highlighting;
-
-            if (isHighlighting)
+            if (isHighlighting || isUnHighlighting)
+            {
                 characterManager.StopCoroutine(co_highlighting);
+            }
 
             highlighted = false;
             co_highlighting = characterManager.StartCoroutine(Highlighting(speed, immediate));
