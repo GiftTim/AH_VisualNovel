@@ -453,7 +453,7 @@ namespace COMMANDS
             else
             {
                 CommandManager.instance.AddTerminationActionToCurrentProcess(() => { character?.SetColor(color); });
-                character.TransitionToColor(color, speed);
+                character.TransitionColor(color, speed);
             }
 
             yield break;

@@ -169,6 +169,8 @@ namespace DIALOGUE
             }
         }
 
+        public bool isWaitingOnSegmentTimer { get; private set; } = false;
+
         IEnumerator WaitForDialogueSegmentSignalToBeTriggered(DL_DIALOGUE_DATA.DIALOGUE_SEGMENT segment)
         {
             switch (segment.startSignal)
@@ -179,7 +181,9 @@ namespace DIALOGUE
                     break;
                 case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.WC:
                 case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.WA:
+                    isWaitingOnSegmentTimer = true;
                     yield return new WaitForSeconds(segment.signalDelay);
+                    isWaitingOnSegmentTimer = false;
                     break;
                 default:
                     break;
