@@ -182,11 +182,23 @@ namespace DIALOGUE
                 case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.WC:
                 case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.WA:
                     isWaitingOnSegmentTimer = true;
-                    yield return new WaitForSeconds(segment.signalDelay);
+                    float timer = 0f;
+                    while (timer < segment.signalDelay)
+                    {
+                        // Skip / Auto 진행 신호가 들어오면 대기 즉시 종료
+                        if (userPrompt)
+                        { 
+                            userPrompt = false; // 신호 소비
+                            break;
+                        }
+
+                        timer += Time.deltaTime; // 필요하면 Time.unscaledDeltaTime 로 변경 가능
+                        yield return null;
+                    }
+
                     isWaitingOnSegmentTimer = false;
                     break;
-                default:
-                    break;
+
             }
         }
 

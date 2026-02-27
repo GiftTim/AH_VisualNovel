@@ -114,7 +114,6 @@ namespace DIALOGUE
         {
             if (skip)
             {
-                // Skip -> Auto 전환
                 Enable();
             }
             else
@@ -131,6 +130,8 @@ namespace DIALOGUE
 
         public void Toggle_Skip()
         {
+            skip = true;
+            
             if (!skip)
             {
                 Enable();
@@ -144,11 +145,8 @@ namespace DIALOGUE
                 else
                 {
                     Disable();
-
                 }
             }
-
-            skip = true;
 
             // Skip일 때는 Auto-Play 애니 안 돌리고 Auto-Stop 상태로 표시(원하면 별도 Skip UI 추가)
             SetAutoVisual(isOn && !skip);
