@@ -969,7 +969,7 @@ namespace TESTING
         }
     }
     */
-
+    /*[Testing Character Show/Hide]
     public class TestCharacters : MonoBehaviour
     {
         //public TMP_FontAsset tempFont;
@@ -1014,6 +1014,38 @@ namespace TESTING
                 Mina.Hide();
             else if (Input.GetKeyDown(KeyCode.UpArrow))
                 Mina.Show();
+        }
+    }
+    */
+
+    public class InputPanelTesting : MonoBehaviour
+    {
+        public InputPanel inputPanel;
+
+        private void Start()
+        {
+            StartCoroutine(Running());
+        }
+
+        IEnumerator Running()
+        {
+            Character Mina = CharacterManager.instance.CreateCharacter("Mina"); //revealAfterCreationAfterCreation: true);
+            
+            Mina.Show();
+
+            yield return Mina.Say("What is your name?");
+
+            inputPanel.Show("What is Your Name?");
+
+            while (inputPanel.isWaitingOnUserInput)
+            {
+                yield return null;
+            }
+
+            string characterName = inputPanel.lastInput;
+
+            yield return Mina.Say($"It's very nice to meet you, {characterName}!");
+
         }
     }
 }
