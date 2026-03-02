@@ -1017,7 +1017,7 @@ namespace TESTING
         }
     }
     */
-
+    /*[Testing Input Panel]
     public class InputPanelTesting : MonoBehaviour
     {
         public InputPanel inputPanel;
@@ -1047,5 +1047,22 @@ namespace TESTING
             yield return Mina.Say($"It's very nice to meet you, {characterName}!");
 
         }
+    }
+    */
+    public class InputConversationTesting : MonoBehaviour
+    {
+        [SerializeField] private TextAsset fileToRoad = null;
+
+        private void Start()
+        {
+            StartConversation();
+        }
+
+        void StartConversation()
+        {
+            List<string> lines = FileManager.ReadTextAsset(fileToRoad);
+            DialogueSystem.instance.Say(lines);
+        }
+
     }
 }

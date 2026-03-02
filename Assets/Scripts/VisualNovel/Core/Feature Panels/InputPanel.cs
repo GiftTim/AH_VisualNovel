@@ -4,6 +4,8 @@ using TMPro;
 
 public class InputPanel : MonoBehaviour
 {
+    public static InputPanel instance { get; private set; } = null;
+
     [Header("UI References")]
     [SerializeField] private CanvasGroup    canvasGroup;
     [SerializeField] private TMP_Text       titleText;
@@ -17,6 +19,8 @@ public class InputPanel : MonoBehaviour
 
     private void Awake()
     {
+        instance = this;
+
         // 필수 참조 누락 방지
         if (canvasGroup == null) Debug.LogError($"{nameof(InputPanel)}: canvasGroup is not assigned.", this);
         if (titleText == null) Debug.LogError($"{nameof(InputPanel)}: titleText is not assigned.", this);
