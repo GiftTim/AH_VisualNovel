@@ -1,0 +1,28 @@
+CreateCharacter(Mina -i false -e true), CreateCharacter("Guard as Generic" -i false -e true), Guard.SetSprite("Guard")
+
+Guard.SetPosition(1)
+Mina.SetPosition(0)
+
+
+
+Guard "좋은 아침이네, 아가야.{n}이곳엔 무슨 일로 왔지?"
+
+choice "무슨 일로 왔나요?"
+{
+	- 니가 알아서 뭐하게
+	 Guard "죽어 임마!"
+	 narrator "가드가 갑자기 화를 내며 미나를 공격했다."
+
+	- 지금 밖에 이상한 게 있어서 신고하려고 왔어
+	 Guard "그래? 대체 뭐야?"
+
+		choice "무었인가요?"
+		{
+		- 이상한 소리가 들려
+		 Guard "뭐? 어디서 들려?"
+
+		- 이상한 인형이 있어
+		 Mina "이상한 인형이 있어요. 그 인형이 움직이는 것 같아요."
+		}
+}
+

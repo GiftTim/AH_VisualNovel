@@ -9,7 +9,7 @@ namespace DIALOGUE
         public string rawData { get; private set; } = string.Empty;
 
         public List<DIALOGUE_SEGMENT> segments;
-        private const string segmentIdentifierPattern = @"\{[ca]\}|\{w[ca]\s\d*\.?\d*\}";
+        private const string segmentIdentifierPattern = @"\{[can]\}|\{w[ca]\s\d*\.?\d*\}";
 
         public DL_DIALOGUE_DATA(string rawDialogue)
         {
@@ -70,9 +70,13 @@ namespace DIALOGUE
             public StartSignal startSignal;
             public float signalDelay;
 
-            public enum StartSignal { NONE, C, A, WA, WC }
 
-            public bool appendText => startSignal == StartSignal.A || startSignal == StartSignal.WA;
+            // N(Linebreak)을 추가했습니다.
+            public enum StartSignal { NONE, C, A, WA, WC, N }  
+
+           
+            // 줄바꿈도 텍스트를 초기화하지 않고 이어 붙이는(Append) 동작이므로 N을 추가했습니다.
+            public bool appendText => startSignal == StartSignal.A || startSignal == StartSignal.WA || startSignal == StartSignal.N;
         }
     }
 }

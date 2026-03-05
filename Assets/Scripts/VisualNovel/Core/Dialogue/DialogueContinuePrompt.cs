@@ -11,6 +11,7 @@ namespace DIALOGUE
 
         [SerializeField] private Animator anim;
         [SerializeField] private TextMeshProUGUI tmpro;
+        [SerializeField] private float yOffset = 10f;
 
         public bool isShowing => anim.gameObject.activeSelf;
 
@@ -35,12 +36,20 @@ namespace DIALOGUE
 
             anim.gameObject.SetActive(true);
             root.transform.SetParent(tmpro.transform);
+            int lastCharIndex = tmpro.textInfo.characterCount - 1;
 
-            TMP_CharacterInfo finalCharacter = tmpro.textInfo.characterInfo[tmpro.textInfo.characterCount - 1];
+            while (lastCharIndex > 0 &&
+                  (tmpro.textInfo.characterInfo[lastCharIndex].character == ' ' ||
+                   tmpro.textInfo.characterInfo[lastCharIndex].character == '\n'))
+            {
+                lastCharIndex--;
+            }
+
+            TMP_CharacterInfo finalCharacter = tmpro.textInfo.characterInfo[lastCharIndex];
             Vector3 targetPos = finalCharacter.bottomRight;
             float characterWidth = finalCharacter.pointSize * 0.5f;
 
-            targetPos = new Vector3(targetPos.x + characterWidth, targetPos.y * -2f, 0f);
+            targetPos = new Vector3(targetPos.x + characterWidth, targetPos.y + yOffset, 0f);
 
             root.localPosition = targetPos;
         }

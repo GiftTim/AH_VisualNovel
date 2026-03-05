@@ -19,6 +19,7 @@ public class CanvasGroupController
     public bool isHiding => co_hiding != null;      // 대화창이 숨겨지는 중인지 여부
     public bool isFading => isShowing || isHiding;  // 둘 중 하나라도 실행 중인지 여부
     public bool isVisible => co_showing != null || rootCG.alpha > 0f; // 대화창이 보이는 중이거나 투명도가 0보다 큰 경우
+    public float alpha { get { return rootCG.alpha; } set { rootCG.alpha = value; } }
 
     public CanvasGroupController(MonoBehaviour owner, CanvasGroup rootCG)
     {
@@ -77,6 +78,12 @@ public class CanvasGroupController
 
         co_showing = null;
         co_hiding = null;
+    }
+
+    public void SetInteractableState(bool active)
+    {
+        rootCG.interactable = active;
+        rootCG.blocksRaycasts = active;
     }
 
 }
