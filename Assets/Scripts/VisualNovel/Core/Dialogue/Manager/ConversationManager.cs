@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using DIALOGUE.LogicalLines;
+using Unity.VisualScripting;
 
 namespace DIALOGUE
 {
@@ -15,7 +16,7 @@ namespace DIALOGUE
         public TextArchitect architect = null;
         private bool userPrompt = false;
 
-        private TagManager tagManager;
+
         private LogicalLineManager logicalLineManager;
 
         public Conversation conversation => (conversationQueue.IsEmpty() ? null : conversationQueue.top);
@@ -27,7 +28,6 @@ namespace DIALOGUE
             this.architect = architect;
             dialogueSystem.onUserPrompt_Next += onUserPrompt_Next;
 
-            tagManager = new TagManager();
             logicalLineManager = new LogicalLineManager();
             
             conversationQueue = new ConversationQueue();
@@ -44,6 +44,7 @@ namespace DIALOGUE
         public Coroutine StartConversation(Conversation conversation)
         {
             StopConversation();
+            conversationQueue.Clear();
 
             Enqueue(conversation);
 
@@ -148,7 +149,7 @@ namespace DIALOGUE
                 character.Show();
 
             //Add character name to the UI.
-            dialogueSystem.ShowSpeakerName(tagManager.Inject(speakerData.displayname));
+            dialogueSystem.ShowSpeakerName(TagManager.Inject(speakerData.displayname));
 
             //Now customize the dialogue for this character - if applicable.
             DialogueSystem.instance.ApplySpeakerDataToDialogueContainer(speakerData.name);
@@ -252,7 +253,7 @@ namespace DIALOGUE
 
         IEnumerator BuildDialogue(string dialogue, bool append = false)
         {
-            dialogue = tagManager.Inject(dialogue);
+            dialogue = TagManager.Inject(dialogue);
 
             //Build the dialogueData
             if (!append)

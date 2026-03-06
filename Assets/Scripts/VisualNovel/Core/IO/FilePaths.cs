@@ -17,12 +17,15 @@ public class FilePaths
     public static readonly string resources_music    = $"{resources_audio}Music/";
     public static readonly string resources_ambience = $"{resources_audio}Ambience/";
 
+    public static readonly string resources_dialogueFiles = $"Dialogue Files/";
+
     /// <summary>
-    /// Retruns the path to the resource using the default path or the root of the resources folder. If the file is not found in the default path, it will try to find it in the root of the resources folder.
+    /// 기본 경로 또는 리소스 폴더의 루트를 사용하여 리소스 경로를 반환합니다. 
+    /// 기본 경로에서 파일을 찾을 수 없는 경우, 리소스 폴더의 루트에서 파일을 찾으려고 시도합니다.
     /// </summary>
-    /// <param name="defaultPath"></param>
-    /// <param name="resourceName"></param>
-    /// <returns></returns>
+    /// <param name="defaultPath">기본 경로</param>
+    /// <param name="resourceName">리소스 이름</param>
+    /// <returns>찾은 리소스의 경로</returns>
     public static string GetPathToResource(string defaultPath, string resourceName)
     {
         if (resourceName.StartsWith(HOME_DIRECTORY_SYMBOL))

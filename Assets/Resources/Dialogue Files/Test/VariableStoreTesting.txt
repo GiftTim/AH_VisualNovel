@@ -1,0 +1,9 @@
+
+
+
+
+
+$San
+
+if($Valery.Affinity > $Susan.Affinity)
+	narrator "You have a higher affinity with Valery than with Susan."

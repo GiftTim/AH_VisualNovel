@@ -1,6 +1,7 @@
 using DIALOGUE;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace COMMANDS
@@ -9,6 +10,10 @@ namespace COMMANDS
     {
         private static readonly string[] PARAM_SPEED = new string[] { "-s", "-spd" };
         private static readonly string[] PARAM_IMMEDIATE = new string[] { "-i", "-immediate" };
+        private static readonly string[] PARAM_FILEPATH = new string[] { "-f", "-file", "-filepath" };
+        private static readonly string[] PARAM_ENQUEUE = new string[] { "-e", "-enqueue" };
+
+
 
         new public static void Extend(CommandDatabase database)
         {
@@ -21,6 +26,8 @@ namespace COMMANDS
             // Dialogue Box Controls
             database.AddCommand("Showdb", new Func<string[], IEnumerator>(ShowDialogueBox));
             database.AddCommand("Hidedb", new Func<string[], IEnumerator>(HideDialogueBox));
+
+            database.AddCommand("load", new Action<string[]>(LoadNewDialogueFile));
         }
 
         private static IEnumerator Wait(string data)
@@ -85,6 +92,38 @@ namespace COMMANDS
             parameters.TryGetValue(PARAM_IMMEDIATE, out immediate, defaultValue: false);
 
             yield return DialogueSystem.instance.Hide(speed, immediate);
+        }
+
+        private static void LoadNewDialogueFile(string[] data)
+        {
+            string fileName = string.Empty;
+            bool enqueue = false;
+
+            var parameters = ConvertDataToParameters(data);
+
+            parameters.TryGetValue(PARAM_FILEPATH, out fileName);
+            parameters.TryGetValue(PARAM_ENQUEUE, out enqueue, defaultValue: false);
+
+            string filePath = FilePaths.GetPathToResource(FilePaths.resources_dialogueFiles, fileName);
+            TextAsset file = Resources.Load<TextAsset>(filePath);
+
+            if (file == null)
+            {
+                Debug.LogError($"대화 파일에서 '{filePath}' 파일을 불러올 수 없습니다. 해당 파일이 '{FilePaths.resources_dialogueFiles}' 리소스 폴더 안에 있는지 확인해 주세요.");
+                return;
+            }
+
+            List<string> lines = FileManager.ReadTextAsset(file, includeBlackLines: true);
+            Conversation newComversation = new Conversation(lines);
+
+            if (enqueue)
+            {
+                DialogueSystem.instance.conversationManager.Enqueue(newComversation);
+            }
+            else
+            {
+                DialogueSystem.instance.conversationManager.StartConversation(newComversation);
+            }
         }
     }
 }
