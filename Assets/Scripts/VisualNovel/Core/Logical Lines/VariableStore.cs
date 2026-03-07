@@ -9,6 +9,8 @@ public class VariableStore
 {
     private const string DEFAULT_DATABASE_NAME = "Default";
     private const char DATABASE_VARIABLE_RELATIONAL_ID = '.';
+    public static readonly string REGEX_VARIABLE_IDS = @"[!]?\$[a-zA-Z0-9_.]+";
+    public const char VARIABLE_ID = '$';
 
     public class Database
     {
@@ -147,6 +149,16 @@ public class VariableStore
         return (parts, db, variableName);
     }
 
+    public static bool HasVariable(string name)
+    {
+        string[] parts = name.Split(DATABASE_VARIABLE_RELATIONAL_ID);
+        Database db = parts.Length > 1 ? GetDatabase(parts[0]) : defaultDatabase;
+        string variableName = parts.Length > 1 ? parts[1] : parts[0];
+
+        return db.variables.ContainsKey(variableName);
+
+    }
+
     public static void RemoveVariable(string name)
     {
         (string[] parts, Database db, string variableName) = ExtractInfo(name);
@@ -156,6 +168,7 @@ public class VariableStore
             db.variables.Remove(variableName);
         }
     }
+
 
     public static void RemoveAllVariables()
     {
