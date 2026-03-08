@@ -100,7 +100,7 @@ namespace DIALOGUE.LogicalLines
                 }
 
                 CalculateValue_DivisionAndMultiplication(operatorStrings, operands);
-            
+
                 CalculateValue_AdditionAndSubtraction(operatorStrings, operands);
 
                 return operands[0];
@@ -125,9 +125,9 @@ namespace DIALOGUE.LogicalLines
                         {
                             if (rightOperand == 0)
                             {
-                                if (rightOperand == 0) // 0À¸·Î ³ª´©´Â Áö È®ÀÎ
+                                if (rightOperand == 0) // 0ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ È®ï¿½ï¿½
                                 {
-                                    Debug.LogError("0À¸·Î ³ª´­ ¼ö ¾ø½À´Ï´Ù!");
+                                    Debug.LogError("0ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½!");
                                     return;
                                 }
                                 operands[i] = leftOperand / rightOperand;
@@ -143,15 +143,15 @@ namespace DIALOGUE.LogicalLines
 
             private static void CalculateValue_AdditionAndSubtraction(List<string> operatorStrings, List<object> operands)
             {
-                for(int i = 0; i < operatorStrings.Count; i++)
+                for (int i = 0; i < operatorStrings.Count; i++)
                 {
                     string operatorString = operatorStrings[i];
 
                     if (operatorString == "+" || operatorString == "-")
                     {
-                        double leftOperand  = Convert.ToDouble(operands[i]);
+                        double leftOperand = Convert.ToDouble(operands[i]);
                         double rightOperand = Convert.ToDouble(operands[i + 1]);
-                        
+
                         if (operatorString == "+")
                         {
                             operands[i] = leftOperand + rightOperand;
@@ -171,16 +171,16 @@ namespace DIALOGUE.LogicalLines
             {
                 bool negate = false;
 
-                if(value.StartsWith('!'))
+                if (value.StartsWith('!'))
                 {
                     negate = true;
                     value = value.Substring(1);
                 }
 
-                if(value.StartsWith(VariableStore.VARIABLE_ID))
+                if (value.StartsWith(VariableStore.VARIABLE_ID))
                 {
                     string variableName = value.TrimStart(VariableStore.VARIABLE_ID);
-                    if (!VariableStore.HasVariable(variableName)) 
+                    if (!VariableStore.HasVariable(variableName))
                     {
                         Debug.LogError($"Variable {variableName} does not exist.");
                         return null;
@@ -188,7 +188,7 @@ namespace DIALOGUE.LogicalLines
 
                     VariableStore.TryGetValue(variableName, out object val);
 
-                    if(val is bool boolVal && negate)
+                    if (val is bool boolVal && negate)
                     {
                         return !boolVal;
                     }
@@ -202,7 +202,7 @@ namespace DIALOGUE.LogicalLines
                 }
                 else
                 {
-                    if(int.TryParse(value, out int intvalue))
+                    if (int.TryParse(value, out int intvalue))
                     {
                         return intvalue;
                     }
@@ -222,6 +222,41 @@ namespace DIALOGUE.LogicalLines
 
                 }
             }
+        }
+
+        public static class Conditions
+        {
+            public static readonly string REGEX_CONDITION_LINE = @"(==|!=|<=|>=|<\>|&&|\|\|)";
+
+            public static bool EvaluateCondition(string condition)
+            {
+                condition = TagManager.Inject(condition, injectTags: true, injectVariable: true);
+
+                string[] parts = Regex.Split(condition, REGEX_CONDITION_LINE)
+                    .Select(p => p.Trim()).ToArray();
+
+                for (int i = 0; i < parts.Length; i++)
+                {
+                    if (parts[i].StartsWith("\"") && parts[i].EndsWith("\""))
+                    {
+                        parts[i] = parts[i].Substring(1, parts[i].Length - 2);
+                    }
+                }
+
+                if(parts.Length == 1)
+                {
+                    if(bool.TryParse(parts[0], out bool result))
+                    {
+                        return result;
+                    }
+                    else
+                    {
+                        Debug.LogError($"Could not parse condition : {condition}");
+                        return false;
+                    }
+                }    
+
+            }      
         }
     }
 }

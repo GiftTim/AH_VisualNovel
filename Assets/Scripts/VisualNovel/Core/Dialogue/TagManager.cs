@@ -64,12 +64,18 @@ public class TagManager
         for(int i = matchesList.Count - 1; i >= 0; i--)
         {
             var match = matchesList[i];
-            string variableName = match.Value.TrimStart(VariableStore.VARIABLE_ID);
+            string variableName = match.Value.TrimStart(VariableStore.VARIABLE_ID, '!');
+            bool negate = match.Value.StartsWith('!');
 
-            if(!VariableStore.TryGetValue(variableName, out object variableValue))
+            if (!VariableStore.TryGetValue(variableName, out object variableValue))
             {
                 UnityEngine.Debug.LogError($"문자열 할당(Assignment) 과정에서 변수 '{variableName}'을(를) 찾을 수 없습니다");
                 continue;
+            }
+            
+            if(negate && variableValue is bool)
+            {
+                variableValue = !(bool)variableValue;
             }
 
             int lengthToBeRemoved = match.Index + match.Length > value.Length ? value.Length - match.Index : match.Length;
