@@ -8,7 +8,7 @@ using UnityEngine;
 public class VariableStore
 {
     private const string DEFAULT_DATABASE_NAME = "Default";
-    private const char DATABASE_VARIABLE_RELATIONAL_ID = '.';
+    public const char DATABASE_VARIABLE_RELATIONAL_ID = '.';
     public static readonly string REGEX_VARIABLE_IDS = @"[!]?\$[a-zA-Z0-9_.]+";
     public const char VARIABLE_ID = '$';
 

@@ -23,7 +23,7 @@ namespace DIALOGUE.LogicalLines
                 yield break;
             }
 
-            string variable = parts[0].TrimStart(VariableStore.VARIABLE_ID);
+            string variable = parts[0].Trim().TrimStart(VariableStore.VARIABLE_ID);
             string op = parts[1].Trim();
             string[] remainingParts = new string[parts.Length - 2];
             Array.Copy(parts, 2, remainingParts, 0, parts.Length - 2);
@@ -62,7 +62,7 @@ namespace DIALOGUE.LogicalLines
                     VariableStore.TrySetValue(variable, value);
                     break;
                 case "+=":
-                    VariableStore.TrySetValue(variable, Convert.ToDouble(currentValue) + Convert.ToDouble(value));
+                    VariableStore.TrySetValue(variable, ConcatenateOrAdd(value, currentValue));
                     break;
                 case "-=":
                     VariableStore.TrySetValue(variable, Convert.ToDouble(currentValue) - Convert.ToDouble(value));
@@ -82,6 +82,13 @@ namespace DIALOGUE.LogicalLines
                     Debug.LogError($"알 수 없는 연산자(Unknown operator): {op}");
                     break;
             }
+        }
+        private object ConcatenateOrAdd(object value, object currentValue)
+        {
+            if (value is string)
+                return currentValue.ToString() + value;
+
+            return Convert.ToDouble(currentValue) + Convert.ToDouble(value);
         }
 
         bool ILogicalLine.Matches(DIALOGUE_LINE line)

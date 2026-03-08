@@ -67,6 +67,12 @@ public class TagManager
             string variableName = match.Value.TrimStart(VariableStore.VARIABLE_ID, '!');
             bool negate = match.Value.StartsWith('!');
 
+            bool endsInIllegalCharacter = variableName.EndsWith(VariableStore.DATABASE_VARIABLE_RELATIONAL_ID);
+            if(endsInIllegalCharacter)
+            {
+                variableName = variableName.Substring(0, variableName.Length - 1);
+            }
+
             if (!VariableStore.TryGetValue(variableName, out object variableValue))
             {
                 UnityEngine.Debug.LogError($"문자열 할당(Assignment) 과정에서 변수 '{variableName}'을(를) 찾을 수 없습니다");
@@ -79,6 +85,10 @@ public class TagManager
             }
 
             int lengthToBeRemoved = match.Index + match.Length > value.Length ? value.Length - match.Index : match.Length;
+            if(endsInIllegalCharacter)
+            {
+                lengthToBeRemoved -= 1;
+            }
 
             value = value.Remove(match.Index, lengthToBeRemoved);
             value = value.Insert(match.Index, variableValue.ToString());

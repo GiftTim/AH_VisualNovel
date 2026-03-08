@@ -1,0 +1,167 @@
+$boolTrue = true
+$boolFalse = false
+$numberOne = 1
+$numberTwo = 2
+$numberThree = 3
+$numberFive = 5
+$stringOne = "Hello"
+$stringTwo = "World"
+$stringHello = "Hello"
+
+narrator "Variable one is $numberOne"
+
+narrator "Again, I say it is $numberOne."
+
+input "What is your name?"
+
+narrator "The input is <input>"
+
+$myName = <input>
+$myName += " Gunk"
+
+narrator "It is wonderful to meet you, $myName"
+
+$myVar = $numberOne + $numberFive + $numberTwo + 1000
+
+narrator "myVar = $myVar"
+
+$Raelin.love = 32
+$Stella.love = 27
+
+choice "Give flowers to who?"
+{
+	-Raelin
+		$Raelin.love += 10
+	-Stella
+		$Stella.love += 10
+}
+
+if ($Raelin.love > $Stella.love)
+{
+	narrator "Your affection with Raelin is higher than Stella"
+}
+else
+{
+	narrator "Your affection with Stella is higher than Raelin"
+}
+
+
+# Test comparisons
+if ($boolTrue == $boolFalse)
+{
+	narrator "boolTrue is equal to boolFalse. This should not be the case."
+}
+else
+{
+	narrator "boolTrue is not equal to boolFalse. This is correct."
+}
+
+if ($numberOne != $numberTwo)
+{
+	narrator "numberOne is not equal to numberTwo. This is correct."
+}
+else
+{
+	narrator "numberOne is equal to numberTwo. This should not be the case."
+}
+
+if ($numberThree > $numberTwo)
+{
+	narrator "numberThree is greater than numberTwo. This is correct."
+}
+else
+{
+	narrator "numberThree is not greater than numberTwo. This should not be the case."
+}
+
+if ($numberOne < $numberTwo)
+{
+	narrator "numberOne is less than numberTwo. This is correct."
+}
+else
+{
+	narrator "numberOne is not less than numberTwo. This should not be the case."
+}
+
+if ($numberThree <= $numberThree)
+{
+	narrator "numberThree is less than or equal to numberThree. This is correct."
+}
+else
+{
+	narrator "numberThree is not less than or equal to numberThree. This should not be the case."
+}
+
+if ($numberFive >= $numberThree)
+{
+	narrator "numberFive is greater than or equal to numberThree. This is correct."
+}
+else
+{
+	narrator "numberFive is not greater than or equal to numberThree. This should not be the case."
+}
+
+# Test logical operators
+if ($boolTrue && $boolFalse)
+{
+	narrator "boolTrue AND boolFalse is true. This should not be the case."
+}
+else
+{
+	narrator "boolTrue AND boolFalse is false. This is correct."
+}
+
+if ($boolTrue || $boolFalse)
+{
+	narrator "boolTrue OR boolFalse is true. This is correct."
+}
+else
+{
+	narrator "boolTrue OR boolFalse is false. This should not be the case."
+}
+
+# Test arithmetic operators
+$numberOne += 1
+narrator "numberOne plus 1 is $numberOne. This should be 2."
+
+$numberTwo -= 1
+narrator "numberTwo minus 1 is $numberTwo. This should be 1."
+
+$numberThree *= 2
+narrator "numberThree multiplied by 2 is $numberThree. This should be 6."
+
+$numberFive /= $numberOne
+narrator "numberFive divided by numberOne is $numberFive. This should be 2.5."
+
+# Test unary operator
+if (!$boolFalse)
+{
+	narrator "The negation of boolFalse is true. This is correct."
+}
+else
+{
+	narrator "The negation of boolFalse is false. This should not be the case."
+}
+
+# Test string comparisons
+if ($stringOne == $stringHello)
+{
+	narrator "stringOne is equal to stringHello. This is correct."
+}
+else
+{
+	narrator "stringOne is not equal to stringHello. This should not be the case."
+}
+
+if ($stringOne != $stringTwo)
+{
+	narrator "stringOne is not equal to stringTwo. This is correct."
+}
+else
+{
+	narrator "stringOne is equal to stringTwo. This should not be the case."
+}
+
+
+$stringHello = "Hello $stringTwo"
+narrator "stringHello + \" stringTwo\" = $stringHello"

@@ -1412,7 +1412,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7937c27bce4f4d044ba7e6737ffb1e68, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TESTING.ChoicePanelTesting
-  fileToRoad: {fileID: 4900000, guid: c2842bb06c4024b45a3461ed88b06a29, type: 3}
+  fileToRoad: {fileID: 4900000, guid: 1da66a45104af944cb38a22b79470c7c, type: 3}
 --- !u!114 &640725166
 MonoBehaviour:
   m_ObjectHideFlags: 0

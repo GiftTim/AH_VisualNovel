@@ -1,0 +1,15 @@
+
+
+
+$money = 14
+
+if($money > 45)
+{
+	narrator "You have enough money to buy the item."
+}
+else
+{
+	narrator "You broke"
+}
+
+narrator "You have $money dollars."
