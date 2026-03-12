@@ -138,30 +138,30 @@ MonoBehaviour:
     sprites:
       _serializedList:
       - Key: Body1
-        Value: {fileID: 300936156, guid: a68522e3a3a15234ebbd8d3951210679, type: 3}
+        Value: {fileID: 1841983972, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
       - Key: Body2
-        Value: {fileID: -553993942, guid: a68522e3a3a15234ebbd8d3951210679, type: 3}
+        Value: {fileID: -201716440, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
       - Key: Body3
-        Value: {fileID: -1178005886, guid: a68522e3a3a15234ebbd8d3951210679, type: 3}
+        Value: {fileID: 1482013343, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
       - Key: Body4
-        Value: {fileID: 266317752, guid: a68522e3a3a15234ebbd8d3951210679, type: 3}
+        Value: {fileID: 773461436, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
       - Key: Serious
-        Value: {fileID: 1523676144, guid: a68522e3a3a15234ebbd8d3951210679, type: 3}
+        Value: {fileID: -1936686314, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
       - Key: Flustered
-        Value: {fileID: 1199296532, guid: a68522e3a3a15234ebbd8d3951210679, type: 3}
+        Value: {fileID: 351965661, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
       - Key: Cheerful
-        Value: {fileID: -417930475, guid: 214dc29fc78140e419ad9a103f2cfe99, type: 3}
+        Value: {fileID: 2074779287, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
       - Key: WrySmile
-        Value: {fileID: 1995525216, guid: 214dc29fc78140e419ad9a103f2cfe99, type: 3}
+        Value: {fileID: 1039146553, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
       - Key: Laugh
-        Value: {fileID: 1895747912, guid: 214dc29fc78140e419ad9a103f2cfe99, type: 3}
+        Value: {fileID: 2121122538, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
       - Key: Indifferent
-        Value: {fileID: 1793782840, guid: 214dc29fc78140e419ad9a103f2cfe99, type: 3}
+        Value: {fileID: -2004975479, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
       - Key: Scary
-        Value: {fileID: 703954378, guid: 214dc29fc78140e419ad9a103f2cfe99, type: 3}
+        Value: {fileID: -1302198332, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
       - Key: Suprised
-        Value: {fileID: -191729924, guid: 214dc29fc78140e419ad9a103f2cfe99, type: 3}
+        Value: {fileID: -1451243083, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
       - Key: Shy
-        Value: {fileID: 22282447, guid: 214dc29fc78140e419ad9a103f2cfe99, type: 3}
+        Value: {fileID: 367810928, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
       - Key: Smile
-        Value: {fileID: 1599832832, guid: 214dc29fc78140e419ad9a103f2cfe99, type: 3}
+        Value: {fileID: 1357544450, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
