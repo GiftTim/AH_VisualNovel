@@ -7,7 +7,7 @@ namespace DIALOGUE
     [CreateAssetMenu(fileName = "Dialogue System Configuration", menuName ="Dialogue System/Dialogue Configuration Asset")]
     public class DialogueSystemConfigurationSO : ScriptableObject
     {
-        public CharacterConfigurationSO CharacterConfigurationAsset;
+        public CharacterConfigSO CharacterConfigurationAsset;
         
         public Color defaultTextColor = Color.white;
         public TMP_FontAsset defaultFont;

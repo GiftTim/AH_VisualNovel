@@ -1,12 +1,13 @@
-CreateCharacter(Mina -e true), CreateCharacter("Guard as Generic" -e true), Guard.SetSprite("Guard")
+CreateCharacter("Guard as Generic" -e true), Guard.SetSprite("Guard")
+CreateCharacter("Mina" -e true), Mina.setSprite(-s 6 -l 0), Mina.setSprite(-s Smile -l 1)
 
 Guard.SetPosition(1.4), Guard.Move(1), Mina.Move(0)
 
-Guard "좋은 아침이네, 아가야. {a}이곳엔 무슨 일로 왔지?"
+Guard "좋은 아침이네, 아가야. {n}이곳엔 무슨 일로 왔지?"
 
 input "무슨 일로 온 거야, 엉?"
 
-Mina "<input>가 이유인가요?{a} 제가 몇 살로 보이시는데요, 성직자님?"
+Mina "<input>가 이유인가요? {n}제가 몇 살로 보이시는데요, 성직자님?"
 
 Guard "..."
 

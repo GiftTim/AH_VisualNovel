@@ -10,7 +10,7 @@ namespace CHARACTERS
         public static CharacterManager instance { get; private set; }
 
 
-        private CharacterConfigurationSO config => DialogueSystem.instance.config.CharacterConfigurationAsset;
+        private CharacterConfigSO config => DialogueSystem.instance.config.CharacterConfigurationAsset;
 
         public Character[] allCharacters => characters.Values.ToArray();
         private Dictionary<string, Character> characters = new Dictionary<string, Character>();

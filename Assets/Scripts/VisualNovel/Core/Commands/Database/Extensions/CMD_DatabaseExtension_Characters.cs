@@ -13,8 +13,11 @@ namespace COMMANDS
         private static string[] PARAM_IMMEDIATE => new string[] { "-immediate", "-i" };
         private static string[] PARAM_SPEED     => new string[] { "-speed", "-spd" };
         private static string[] PARAM_SMOOTH    => new string[] { "-smooth", "-smt" };
+        private static string[] PARAM_ANIM      => new string[] { "-a", "-anim", "-animation" };
+        private static string[] PARAM_STATE     => new string[] { "-s", "-state" };
         private static string PARAM_XPOS => "-x";
         private static string PARAM_YPOS => "-y";
+
 
 
         new public static void Extend(CommandDatabase database)
@@ -33,6 +36,7 @@ namespace COMMANDS
 
             baseCommands.AddCommand("setpriority",   new Action<string[]> (SetPriority));
             baseCommands.AddCommand("setposition",   new Action<string[]> (SetPosition));
+            baseCommands.AddCommand("animate",       new Action<string[]> (Animate));
 
             baseCommands.AddCommand("move",          new Func<string[],   IEnumerator>(MoveCharacter));
             baseCommands.AddCommand("show",          new Func<string[],   IEnumerator>(Show));
@@ -40,6 +44,11 @@ namespace COMMANDS
             baseCommands.AddCommand("setColor",      new Func<string[],   IEnumerator>(SetColor));
             baseCommands.AddCommand("highlight",     new Func<string[],   IEnumerator>(Highlight));
             baseCommands.AddCommand("unhighlight",   new Func<string[],   IEnumerator>(Unhighlight));
+            baseCommands.AddCommand("faceleft",      new Func<string[],   IEnumerator>(FaceLeft));
+            baseCommands.AddCommand("faceright",     new Func<string[],   IEnumerator>(FaceRight));
+
+
+
 
             //Add character specific databases
             CommandDatabase spriteCommands = CommandManager.instance.CreateSubDatabase(CommandManager.DATABASE_CHARACTERS_SPRITE);
@@ -338,7 +347,6 @@ namespace COMMANDS
         
         #endregion
 
-
         #region BASE CHARACTER COMMANDS
 
         public static void SetPriority(string[] data)
@@ -372,6 +380,33 @@ namespace COMMANDS
             character.SetPosition(new Vector2(x, y));
         }
 
+        private static void Animate(string[] data)
+        {
+            string characterName = data[0];
+            Character character = CharacterManager.instance.GetCharacter(characterName);
+
+            if (character == null)
+            {
+                Debug.LogError($"No character called '{data[0]}' was found. Can not animate.");
+                return;
+            }
+
+            string animation;
+            bool state;
+
+            var parameters = ConvertDataToParameters(data, 1);
+
+            //Try to get the speed of the flip
+            parameters.TryGetValue(PARAM_ANIM, out animation);
+
+            //Try to see if this is an immediate effect or not.
+            bool hasState = parameters.TryGetValue(PARAM_STATE, out state, defaultValue: true);
+
+            if (hasState)
+                character.Animate(animation, state);
+            else
+                character.Animate(animation);
+        }
 
         private static IEnumerator Show(string[] data)
         {
@@ -508,7 +543,47 @@ namespace COMMANDS
             }
 
         }
+        private static IEnumerator FaceLeft(string[] data)
+        {
+            yield return FaceDirection(left: true, data);
+        }
 
+        private static IEnumerator FaceRight(string[] data)
+        {
+            yield return FaceDirection(left: false, data);
+        }
+
+        private static IEnumerator FaceDirection(bool left, string[] data)
+        {
+            string characterName = data[0];
+            Character character = CharacterManager.instance.GetCharacter(characterName);
+
+            if (character == null)
+                yield break;
+
+            float speed = 1;
+            bool immediate = false;
+
+            var parameters = ConvertDataToParameters(data);
+
+            //Try to get the speed of the flip
+            parameters.TryGetValue(PARAM_SPEED, out speed, defaultValue: 1f);
+
+            //Try to see if this is an immediate effect or not.
+            parameters.TryGetValue(PARAM_IMMEDIATE, out immediate, defaultValue: false);
+
+            if (left)
+            {
+                CommandManager.instance.AddTerminationActionToCurrentProcess(() => { character?.FaceLeft(immediate: true); });
+                yield return character.FaceLeft(speed, immediate);
+            }
+            else
+            {
+                CommandManager.instance.AddTerminationActionToCurrentProcess(() => { character?.FaceRight(immediate: true); });
+                yield return character.FaceRight(speed, immediate);
+            }
+
+        }
         #endregion
 
         #region SPRITE CHARACTER COMMANDS

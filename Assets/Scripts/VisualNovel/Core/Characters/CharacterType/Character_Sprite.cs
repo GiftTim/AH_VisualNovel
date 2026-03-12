@@ -64,29 +64,37 @@ namespace CHARACTERS
 
         public Sprite GetSprite(string spriteName)
         {
-            if(config.characterType == CharacterType.SpriteSheet)
+            if (config.sprites.Count > 0)
+            {
+                if (config.sprites.TryGetValue(spriteName, out Sprite sprite))
+                {
+                    return sprite;
+                }
+            }
+
+            if (config.characterType == CharacterType.SpriteSheet)
             {
                 string[] data = spriteName.Split(SPRITESHEET_TEX_SPRITE_DELIMITER);
                 Sprite[] spriteArray = new Sprite[0];
 
-                if(data.Length == 2)
+                if (data.Length == 2)
                 {
                     string texturename = data[0];
                     spriteName = data[1];
                     spriteArray = Resources.LoadAll<Sprite>($"{artAssetsDirectory}/{texturename}");
 
                     if (spriteArray.Length == 0)
-                        Debug.LogWarning($"Character '{name}' does not have an art asset called '{texturename}'");
+                        Debug.LogWarning($"'{name}'캐릭터에게 입힐 '{texturename}' 아트 에셋(이미지)가 등록되어 있지 않습니다.");
                 }
                 else
                 {
                     spriteArray = Resources.LoadAll<Sprite>($"{artAssetsDirectory}/{SPRITESHEET_DEFAULT_SHEETNAME}");
 
                     if (spriteArray.Length == 0)
-                        Debug.LogWarning($"Character '{name}' does not have a default art asset called '{SPRITESHEET_DEFAULT_SHEETNAME}'");
+                        Debug.LogWarning($"'{name}'캐릭터에게 입힐 '{SPRITESHEET_DEFAULT_SHEETNAME}'라는 이름의 기본이미지(SpriteSheet)가 등록되어 있지 않습니다.");
                 }
 
-        
+
                 return Array.Find(spriteArray, sprite => sprite.name == spriteName);
             }
             else
