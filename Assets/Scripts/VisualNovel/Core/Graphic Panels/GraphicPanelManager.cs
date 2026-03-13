@@ -6,7 +6,7 @@ public class GraphicPanelManager : MonoBehaviour
 
     public const float DEFAULT_TRANSITION_SPEED = 1f;
 
-    [SerializeField] private GraphicPanel[] allPanels;
+    [field:SerializeField] public GraphicPanel[] allPanels { get; private set; }
 
     private void Awake()
     {

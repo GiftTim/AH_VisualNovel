@@ -10,7 +10,8 @@ namespace DIALOGUE
     public class NameContainer
     {
         [SerializeField] private GameObject dialogueNameBox;
-        [SerializeField] private TMPro.TextMeshProUGUI nameText;
+        [field: SerializeField] public TextMeshProUGUI nameText { get; private set; }
+        
         // Start is called once before the first execution of Update after the MonoBehaviour is created
         public void Show(string nameToShow = "")
         {

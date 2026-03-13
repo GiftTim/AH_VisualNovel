@@ -102,10 +102,13 @@ namespace DIALOGUE
         public void ShowSpeakerName(string speakerName = "")
         {
             if(speakerName.ToLower() != "narrator")
+            {
                 dialogueContainer.nameContainer.Show(speakerName);
+            }
             else
             {
                 HideSpeakerName();
+                dialogueContainer.nameContainer.nameText.text = "";
             }
         }
 

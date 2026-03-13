@@ -34,11 +34,10 @@ namespace CHARACTERS
                          color.a);
         public bool highlighted { get; protected set; } = true; 
 
-
         protected bool facingLeft = DEFAULT_ORIENTATION_IS_FACING_LEFT;
 
-
         public int priority { get; protected set; }
+        public Vector2 targetPosition { get; private set; }
 
 
         //Coroutines
@@ -160,9 +159,9 @@ namespace CHARACTERS
             root.anchorMin = minAnchorTarget;
             root.anchorMax = maxAnchorTarget;
 
+            targetPosition = position;
         }
 
-        // 단간론파 할 때, 제거해야 할 부분
         public virtual Coroutine MoveToPosition(Vector2 position, float speed = 2f, bool smooth = false)
         {
             if (root == null)
@@ -173,10 +172,11 @@ namespace CHARACTERS
 
             co_moving = characterManager.StartCoroutine(MovingToPosition(position, speed, smooth));
 
+            targetPosition = position;
+
             return co_moving;
         }
 
-        // 단간론파 할 때, 제거해야 할 부분
         private IEnumerator MovingToPosition(Vector2 position, float speed, bool smooth)
         {
             (Vector2 minAnchorTarget, Vector2 maxAnchorTarget) =

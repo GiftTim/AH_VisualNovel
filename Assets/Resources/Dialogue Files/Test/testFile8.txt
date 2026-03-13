@@ -1,15 +1,26 @@
+
+PlayAmbience(RainyMood)
+PlaySong("Happy2")
+SetLayerMedia(background "classroom")
+
 CreateCharacter("Guard as Generic" -e true), Guard.SetSprite("Guard")
-CreateCharacter("Mina" -e true), Mina.setSprite(-s Body6 -l 0), Mina.setSprite(-s Smile -l 1)
 CreateCharacter("Lia" -e true), Lia.setSprite(-s 1 -l 0), Lia.setSprite(-s B03 -l 1)
 
-Guard.SetPosition(1.4), Guard.Move(1), Mina.Move(0)
+Guard.SetPosition(1.4), Guard.Move(1), Lia.Move(0)
 
 Guard "좋은 아침이네, 아가야. {n}이곳엔 무슨 일로 왔지?"
 
-input "무슨 일로 온 거야, 엉?"
+choice "준비되셨나요?"
+{
+    -너를 꼬시기 위해서 왔어요
+        "좋아요! 바로 시작하죠!"
+    -지금 이렇게 된다고 했다.
+        "아쉽네요, 그래도 어쨌든 시작할 거예요!"
+}
 
-Mina "<input>가 이유인가요? {n}제가 몇 살로 보이시는데요, 성직자님?"
+
+Lia "그게 이유인가요? {n}제가 몇 살로 보이시는데요, 성직자님?"
 
 Guard "..."
 
-Mina "아, 그게… 그냥 지나가던 길이었어요."
+Lia "아, 그게… 그냥 지나가던 길이었어요."

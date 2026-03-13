@@ -1,16 +1,19 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-public class HistoryState : MonoBehaviour
+namespace History
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    [System.Serializable]
+    public class HistoryState
     {
-        
-    }
+        public DialogueData dialogue;
+        public List<CharacterData> characters;
+        public List<AudioData> audio;
+        public List<GraphicData> graphics;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+        public void Load()
+        {
+
+        }
     }
 }
