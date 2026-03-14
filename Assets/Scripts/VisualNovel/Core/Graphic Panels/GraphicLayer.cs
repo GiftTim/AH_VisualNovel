@@ -21,7 +21,7 @@ public class GraphicLayer
             return null;
         }
 
-        return SetTexture(tex, transitionSpeed, blendingTexture, filePath);
+        return SetTexture(tex, transitionSpeed, blendingTexture, filePath, immediate);
     }
 
     public Coroutine SetTexture(Texture tex, float transitionSpeed = 1f, Texture blendingTexture = null, string filePath = "", bool immediate = false)

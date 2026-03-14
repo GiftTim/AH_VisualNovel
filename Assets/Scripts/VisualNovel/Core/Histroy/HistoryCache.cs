@@ -35,17 +35,17 @@ namespace History
                 }
                 else
                 {
-                    Debug.LogWarning($"캐시(Cache)에서 '{key}' 오브젝트를 로드했지만, 타입이 일치하지 않습니다. 기대한 타입: {typeof(T)}, 실제 타입: {resource.GetType()}");
+                    Debug.LogWarning($"ĳ??(Cache)???? '{key}' ????????? ?ε???????, ????? ??????? ??????. ????? ???: {typeof(T)}, ???? ???: {resource.GetType()}");
                 }
             }
-            Debug.LogWarning($"캐시(Cache)에서 '{key}' 오브젝트를 로드할 수 없습니다.\"");
+            Debug.LogWarning($"ĳ??(Cache)???? '{key}' ????????? ?ε??? ?? ???????.\"");
             return default(T);
         }
 
         public static TMP_FontAsset LoadFont(string key) => TryLoadObject<TMP_FontAsset>(key);
         public static AudioClip LoadAudio(string key) => TryLoadObject<AudioClip>(key);
         public static Texture2D LoadImage(string key) => TryLoadObject<Texture2D>(key);
-        public static VideoClip LoadVideos(string key) => TryLoadObject<VideoClip>(key);
+        public static VideoClip LoadVideo(string key) => TryLoadObject<VideoClip>(key);
 
 
 

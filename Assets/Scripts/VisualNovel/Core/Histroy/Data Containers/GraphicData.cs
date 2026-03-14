@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using UnityEngine;
+using UnityEngine.Video;
 
 namespace History
 {
@@ -60,5 +62,42 @@ namespace History
 
             return graphicPanels;
         }
+
+
+        public static void Apply(List<GraphicData> data)
+        {
+            List<string> cache = new List<string>();
+
+            foreach (var panelData in data)
+            {
+                var Panel = GraphicPanelManager.instance.GetPanel(panelData.panelName);
+
+                foreach (var layerData in panelData.layers)
+                {
+                    var layer = Panel.GetLayer(layerData.depth, createIfDoesNotExist: true);
+                    if (layer.currentGraphic == null || layer.currentGraphic.graphicName != layerData.graphicName)
+                    {
+                        if (!layerData.isVideo)
+                        {
+                            Texture tex = HistoryCache.LoadImage(layerData.graphicPath);
+                            if (tex != null)
+                            {
+                                layer.SetTexture(tex, filePath: layerData.graphicPath, immediate: true);
+                            }
+                            else
+                            {
+                                VideoClip clip = HistoryCache.LoadVideo(layerData.graphicPath);
+                                if (clip != null)
+                                {
+                                    layer.SetVideo(clip, filePath: layerData.graphicPath, immediate: true);
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
     }
 }
