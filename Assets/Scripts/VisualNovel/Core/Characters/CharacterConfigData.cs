@@ -41,6 +41,11 @@ namespace CHARACTERS
             result.dialogueFontScale = dialogueFontScale;
             result.nameFontScale = nameFontScale;
 
+            foreach (var kvp in sprites)
+            {
+                result.sprites.Add(kvp.Key, kvp.Value);
+            }
+
             return result;
         }
 

@@ -6,15 +6,19 @@ namespace TESTING
 {
     public class TestHistory : MonoBehaviour
     {
-        public DialogueData data;
-        public List<AudioData> audioData;
-        public List<GraphicData> graphicData;
+        public HistoryState state = new HistoryState();
 
         private void Update()
         {
-            data = DialogueData.Capture();
-            audioData = AudioData.Capture();
-            graphicData = GraphicData.Capture();
+            if (Input.GetKeyDown(KeyCode.H))
+            {
+                state = HistoryState.Capture();
+            }
+
+            if(Input.GetKeyDown(KeyCode.R))
+            {
+                state.Load();
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEditor.Timeline.Actions;
 using UnityEngine;
 
 namespace History
@@ -40,12 +41,28 @@ namespace History
                     continue;
                 }
 
-
                 AudioData data = new AudioData(channel.Value);
                 audioChannels.Add(data);
             }
 
             return audioChannels;
+        }
+
+        public static void Apply(List<AudioData> data)
+        {
+            foreach(var channelData in data)
+            {
+                AudioChannel channel = AudioManager.instance.TryGetChannel(channelData.channel, createIfNotExists: true);
+                if(channel.activeTrack == null || channel.activeTrack.name != channelData.trackName)
+                {
+                    AudioClip clip = HistoryCache.LoadAudio(channelData.trackPath);
+                    if( clip != null)
+                    {
+                        channel.StopTrack(immediate: true);
+                        channel.PlayTrack(clip, channelData.loop, channelData.trackVolume, channelData.trackVolume, channelData.trackPitch, channelData.trackPath);
+                    }
+                }
+            }
         }
     }
 }

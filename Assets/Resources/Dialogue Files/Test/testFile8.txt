@@ -4,7 +4,7 @@ PlaySong("Happy2")
 SetLayerMedia(background "classroom")
 
 CreateCharacter("Guard as Generic" -e true), Guard.SetSprite("Guard")
-CreateCharacter("Lia" -e true), Lia.setSprite(-s 1 -l 0), Lia.setSprite(-s B03 -l 1)
+CreateCharacter("Lia" -e true), Lia.setSprite(-s Body4 -l 0), Lia.setSprite(-s Scary -l 1)
 
 Guard.SetPosition(1.4), Guard.Move(1), Lia.Move(0)
 

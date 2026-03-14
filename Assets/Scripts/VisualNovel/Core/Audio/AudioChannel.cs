@@ -121,11 +121,22 @@ public class AudioChannel
         Object.Destroy(track.root);
     }
 
-    internal void StopTrack()
+    internal void StopTrack(bool immediate = false)
     {
         if (activeTrack == null)
         {
             return;
+        }
+
+        if(immediate)
+        {
+            DestroyTrack(activeTrack);
+            activeTrack = null;
+        }
+        else
+        {
+            activeTrack = null;
+            TryStartVolumeLeveling();
         }
 
         activeTrack = null;

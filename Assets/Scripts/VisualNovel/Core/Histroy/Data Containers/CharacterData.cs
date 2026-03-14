@@ -93,12 +93,20 @@ namespace History
                         entry.dataJSON = JsonUtility.ToJson(sData);
                         break;
                     case Character.CharacterType.Live2D:
+                        Live2DData l2Data = new Live2DData();
+                        Character_Live2D lc = character as Character_Live2D;
+                        
+                        //l2Data.expression = lc.currentExpression;
+                        //l2Data.motion = lc.currentMotion;
+
                         break;
                     case Character.CharacterType.Model3D:
                         break;
                 }
 
+                characters.Add(entry);
             }
+
             return characters;
         }
 
@@ -114,6 +122,13 @@ namespace History
                 public Color color;
             }
 
+        }
+
+        [System.Serializable]
+        public class Live2DData
+        {
+            public string expression;
+            public string motion;
         }
     }
 }
