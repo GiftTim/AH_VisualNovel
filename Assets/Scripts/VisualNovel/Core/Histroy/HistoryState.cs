@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Data.Common;
+using CHARACTERS;
 using UnityEngine;
 
 namespace History
@@ -27,9 +28,9 @@ namespace History
         public void Load()
         {
             DialogueData.Apply(dialogue);
-            //characters.Apply();
+            CharacterData.Apply(characters);
             AudioData.Apply(audio);
-            //graphics.Apply();
+            GraphicData.Apply(graphics);
         }
     }
 }

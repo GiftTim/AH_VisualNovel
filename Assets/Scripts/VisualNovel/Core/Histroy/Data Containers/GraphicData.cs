@@ -63,7 +63,6 @@ namespace History
             return graphicPanels;
         }
 
-
         public static void Apply(List<GraphicData> data)
         {
             List<string> cache = new List<string>();
@@ -91,13 +90,30 @@ namespace History
                                 {
                                     layer.SetVideo(clip, filePath: layerData.graphicPath, immediate: true);
                                 }
+                                else
+                                {
+                                    Debug.LogWarning($"History State : Could not load video from path '{layerData.graphicPath}'");
+                                }
                             }
                         }
-
                     }
+
+                    cache.Add(Panel.panelName);                    
+                
                 }
+            }
+
+            foreach (var panel in GraphicPanelManager.instance.allPanels)
+            {
+                if (!cache.Contains(panel.panelName))
+                {
+                    panel.Clear(immediate: true);
+                }
+
             }
         }
 
     }
+
 }
+
