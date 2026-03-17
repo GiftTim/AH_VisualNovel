@@ -9,26 +9,29 @@ namespace DIALOGUE
         private const float READ_TIME_PADDING = 0.5f;
         private const float MAX_READ_TIME = 99f;
         private const float MIN_READ_TIME = 1f;
+        private const string STATUS_TEXT_AUTO = "Auto";
+        private const string STATUS_TEXT_SKIP = "Skipping";
 
         private ConversationManager conversationManager;
         private TextArchitect architect => conversationManager.architect;
 
         public bool skip { get; set; } = false;
         public float speed { get; set; } = 1f;
+        
         public bool isOn => co_running != null;
         private Coroutine co_running = null;
 
         [Header("Auto UI")]
-        [SerializeField] private GameObject autoStop;     // Auto-Stop ¿ÀºêÁ§Æ®
-        [SerializeField] private GameObject autoPlay;     // Auto-Play ¿ÀºêÁ§Æ®
-        [SerializeField] private Animator autoPlayAnimator; // Auto-Play¿¡ ºÙÀº Animator
+        [SerializeField] private GameObject autoStop;     // Auto-Stop ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
+        [SerializeField] private GameObject autoPlay;     // Auto-Play ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
+        [SerializeField] private Animator autoPlayAnimator; // Auto-Playï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Animator
         [SerializeField] private string autoPlayStateName = "Play_Auto";
 
         public void Initialize(ConversationManager conversationManager)
         {
             this.conversationManager = conversationManager;
 
-            // Animator ÀÚµ¿ ¿¬°á(Inspector¿¡ ¾È ³Ö¾úÀ» ¶§ ´ëºñ)
+            // Animator ï¿½Úµï¿½ ï¿½ï¿½ï¿½ï¿½(Inspectorï¿½ï¿½ ï¿½ï¿½ ï¿½Ö¾ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½)
             if (autoPlayAnimator == null && autoPlay != null)
                 autoPlayAnimator = autoPlay.GetComponent<Animator>();
 
@@ -40,7 +43,7 @@ namespace DIALOGUE
             if (isOn) return;
             co_running = StartCoroutine(AutoRead());
 
-            // EnableÀº Skip¿¡¼­µµ È£ÃâµÇ¹Ç·Î, ½ÇÁ¦ Ç¥½Ã ¿©ºÎ´Â ¾Æ·¡ SetAutoVisual¿¡¼­ skip °í·Á
+            // Enableï¿½ï¿½ Skipï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ È£ï¿½ï¿½Ç¹Ç·ï¿½, ï¿½ï¿½ï¿½ï¿½ Ç¥ï¿½ï¿½ ï¿½ï¿½ï¿½Î´ï¿½ ï¿½Æ·ï¿½ SetAutoVisualï¿½ï¿½ï¿½ï¿½ skip ï¿½ï¿½ï¿½ï¿½
             SetAutoVisual(isOn && !skip);
         }
 
@@ -86,7 +89,7 @@ namespace DIALOGUE
                     }
 
 
-                    // (±âÁ¸ ÄÚµåÀÇ Clamp ¿ÀÅ¸ ¼öÁ¤: MAX_READ_TIME·Î)
+                    // (ï¿½ï¿½ï¿½ï¿½ ï¿½Úµï¿½ï¿½ï¿½ Clamp ï¿½ï¿½Å¸ ï¿½ï¿½ï¿½ï¿½: MAX_READ_TIMEï¿½ï¿½)
                     float timeToRead = Mathf.Clamp(
                         (float)architect.tmpro.textInfo.characterCount / DEFAULT_CHARACTERS_READ_PER_SECOND,
                         MIN_READ_TIME,
@@ -118,13 +121,20 @@ namespace DIALOGUE
             }
             else
             {
-                if (!isOn) Enable();
-                else Disable();
+                if (!isOn) 
+                {
+                    Enable();
+                }
+                else
+                {
+                    Disable();
+                }
             }
+
+            statusText.text = STATUS_TEXT_AUTO;
 
             skip = false;
 
-            // Auto ¸ðµå ONÀÏ ¶§¸¸ Auto-Play Ç¥½Ã + ¾Ö´Ï Àç»ý
             SetAutoVisual(isOn && !skip);
         }
 
@@ -148,7 +158,7 @@ namespace DIALOGUE
                 }
             }
 
-            // SkipÀÏ ¶§´Â Auto-Play ¾Ö´Ï ¾È µ¹¸®°í Auto-Stop »óÅÂ·Î Ç¥½Ã(¿øÇÏ¸é º°µµ Skip UI Ãß°¡)
+            // Skipï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Auto-Play ï¿½Ö´ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Auto-Stop ï¿½ï¿½ï¿½Â·ï¿½ Ç¥ï¿½ï¿½(ï¿½ï¿½ï¿½Ï¸ï¿½ ï¿½ï¿½ï¿½ï¿½ Skip UI ï¿½ß°ï¿½)
             SetAutoVisual(isOn && !skip);
         }
 
@@ -159,7 +169,7 @@ namespace DIALOGUE
 
             if (autoPlaying && autoPlayAnimator != null)
             {
-                // Å¬¸¯ÇÒ ¶§¸¶´Ù/ÄÑÁú ¶§¸¶´Ù Ã³À½ºÎÅÍ Àç»ý
+                // Å¬ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
                 autoPlayAnimator.Play(autoPlayStateName, 0, 0f);
             }
         }

@@ -110,16 +110,22 @@ namespace DIALOGUE
                         yield return WaitForUserInput();
 
                         CommandManager.instance.StopAllProcesses();
-                    }
+
+                        dialogueSystem.onSystemPrompt_Clear();
                 }
 
-                //TryAdvanceConversation(currentConversation);
-                currentConversation.IncrementProgress();
+                TryAdvanceConversation(currentConversation);
 
             }
 
             process = null;
 
+        }
+    }
+
+        private void TryAdvanceConversation(Conversation conversation)
+        {
+            conversation.IncrementProgress();
         }
 
         IEnumerator Line_RunDialogue(DIALOGUE_LINE line)// 대사 한 줄을 실행하는 코루틴
@@ -221,14 +227,35 @@ namespace DIALOGUE
             switch (segment.startSignal)
             {
                 case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.C:
+                    yield return WaitForUserInput();
+                    dialogueSystem.onSystemPrompt_Clear();
+                    break;
                 case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.A:
                     yield return WaitForUserInput();
                     break;
 
                 case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.WC:
-                case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.WA:
                     isWaitingOnSegmentTimer = true;
                     float timer = 0f;
+                    while (timer < segment.signalDelay)
+                    {
+                        // Skip / Auto 진행 신호가 들어오면 대기 즉시 종료
+                        if (userPrompt)
+                        { 
+                            userPrompt = false; // 신호 소비
+                            break;
+                        }
+
+                        timer += Time.deltaTime; // 필요하면 Time.unscaledDeltaTime 로 변경 가능
+                        yield return null;
+                    }
+
+                    isWaitingOnSegmentTimer = false;
+                    dialogueSystem.onSystemPrompt_Clear();
+                    break;
+                case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.WA:
+                    isWaitingOnSegmentTimer = true;
+                    timer = 0f;
                     while (timer < segment.signalDelay)
                     {
                         // Skip / Auto 진행 신호가 들어오면 대기 즉시 종료

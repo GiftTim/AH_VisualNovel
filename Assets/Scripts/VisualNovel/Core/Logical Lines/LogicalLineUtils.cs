@@ -14,7 +14,6 @@ namespace DIALOGUE.LogicalLines
 
             public struct EncapsulatedData
             {
-                public bool isNull => lines == null;
                 public List<string> lines;
                 public int startingIndex;
                 public int endingIndex;
@@ -126,9 +125,9 @@ namespace DIALOGUE.LogicalLines
                         {
                             if (rightOperand == 0)
                             {
-                                if (rightOperand == 0) // 0���� ������ �� Ȯ��
+                                if (rightOperand == 0) // 0???? ?????? ?? ???
                                 {
-                                    Debug.LogError("0���� ���� �� �����ϴ�!");
+                                    Debug.LogError("0???? ???? ?? ???????!");
                                     return;
                                 }
                                 operands[i] = leftOperand / rightOperand;

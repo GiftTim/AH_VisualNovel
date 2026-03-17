@@ -50,6 +50,16 @@ namespace History
             dialogueText.fontSize = data.dialogueScale;
 
             nameText.text = data.currentSpeaker;
+            
+            if(nameText.text != string.Empty)
+            {
+                ds.dialogueContainer.nameContainer.Show();
+            }
+            else
+            {
+                ds.dialogueContainer.nameContainer.Hide();
+            }
+
             nameText.color = data.speakerNameColor;
             nameText.fontSize = data.speakerScale;
 
