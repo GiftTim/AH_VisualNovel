@@ -4,18 +4,23 @@ using UnityEngine;
 
 namespace History
 {
+    [RequireComponent(typeof(HistoryLogManager))]
     [RequireComponent(typeof(HistoryNavigation))]
     public class HistoryManager : MonoBehaviour
     {
+        public const int HISTORY_CACHE_LIMIT = 15;
+
         public static HistoryManager instance { get; private set; }
         public List<HistoryState> history = new List<HistoryState>();
 
         private HistoryNavigation navigation;
+        public HistoryLogManager logManager{get; private set;}
 
         void Awake()
         {
             instance = this;
             navigation = GetComponent<HistoryNavigation>();
+            logManager = GetComponentInChildren<HistoryLogManager>();
         }
 
         void Start()
@@ -27,6 +32,12 @@ namespace History
         {
             HistoryState state = HistoryState.Capture();
             history.Add(state);
+            logManager.AddLog(state);
+
+            if(history.Count > HISTORY_CACHE_LIMIT)
+            {
+                history.RemoveAt(0);
+            }
         }
 
         public void LoadState(HistoryState state)

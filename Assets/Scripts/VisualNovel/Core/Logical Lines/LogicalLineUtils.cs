@@ -11,9 +11,9 @@ namespace DIALOGUE.LogicalLines
     {
         public static class Encapsulation
         {
-
             public struct EncapsulatedData
             {
+                public bool isNull => lines == null;
                 public List<string> lines;
                 public int startingIndex;
                 public int endingIndex;
@@ -48,7 +48,7 @@ namespace DIALOGUE.LogicalLines
                         encapsulationDepth--;
                         if (encapsulationDepth == 0)
                         {
-                            data.endingIndex = i;
+                            data.endingIndex = i+1;//이거 이상한데 일단 진행한다
                             break;
                         }
                     }

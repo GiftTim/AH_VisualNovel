@@ -4,4 +4,5 @@
   <Project Path="Assembly-CSharp-firstpass.csproj" />
   <Project Path="AYellowpaper.SerializedCollections.Editor.csproj" />
   <Project Path="Assembly-CSharp-Editor-firstpass.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
 </Solution>

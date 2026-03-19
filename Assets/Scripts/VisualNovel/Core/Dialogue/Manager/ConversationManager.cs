@@ -13,6 +13,7 @@ namespace DIALOGUE
         private DialogueSystem dialogueSystem => DialogueSystem.instance;
         private Coroutine process = null;
         public bool isRunning => process != null;
+        public bool isOnLogicalLine {get; private set;} = false;
         public TextArchitect architect = null;
         private bool userPrompt = false;
 
@@ -20,8 +21,10 @@ namespace DIALOGUE
         private LogicalLineManager logicalLineManager;
 
         public Conversation conversation => (conversationQueue.IsEmpty() ? null : conversationQueue.top);
-        public int conversationProgress => (conversationQueue.IsEmpty()? -1:conversationQueue.top.GetProgress());
+        public int conversationProgress => (conversationQueue.IsEmpty() ? -1 : conversationQueue.top.GetProgress());
         private ConversationQueue conversationQueue;
+
+        public bool allowUserPrompts = true;
 
         public ConversationManager(TextArchitect architect)
         {
@@ -38,7 +41,8 @@ namespace DIALOGUE
 
         private void onUserPrompt_Next()
         {
-            userPrompt = true;
+            if(allowUserPrompts)
+                userPrompt = true;
         }
 
         public Coroutine StartConversation(Conversation conversation)
@@ -79,7 +83,7 @@ namespace DIALOGUE
                 // 빈 줄일 경우 건너뛰기
                 if (string.IsNullOrWhiteSpace(rawLine))
                 {
-                    currentConversation.IncrementProgress();
+                    TryAdvanceConversation(currentConversation);
                     continue;
                 }
 
@@ -87,7 +91,9 @@ namespace DIALOGUE
 
                 if(logicalLineManager.TryGetLogic(line, out Coroutine logic))
                 {
+                    isOnLogicalLine = true;
                     yield return logic;
+
                 }
                 else
                 {
@@ -115,7 +121,7 @@ namespace DIALOGUE
                 }
 
                 TryAdvanceConversation(currentConversation);
-
+                isOnLogicalLine = false;
             }
 
             process = null;
@@ -126,6 +132,15 @@ namespace DIALOGUE
         private void TryAdvanceConversation(Conversation conversation)
         {
             conversation.IncrementProgress();
+        
+            if (conversation != conversationQueue.top)
+            {
+                return;
+            }
+            if (conversation.HasReachedEnd())
+            {
+                conversationQueue.Dequeue();
+            }
         }
 
         IEnumerator Line_RunDialogue(DIALOGUE_LINE line)// 대사 한 줄을 실행하는 코루틴
@@ -220,7 +235,7 @@ namespace DIALOGUE
             }
         }
 
-        public bool isWaitingOnSegmentTimer { get; private set; } = false;
+        public bool isWaitingOnAutoTimer { get; private set; } = false;
 
         IEnumerator WaitForDialogueSegmentSignalToBeTriggered(DL_DIALOGUE_DATA.DIALOGUE_SEGMENT segment)
         {
@@ -235,7 +250,7 @@ namespace DIALOGUE
                     break;
 
                 case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.WC:
-                    isWaitingOnSegmentTimer = true;
+                    isWaitingOnAutoTimer = true;
                     float timer = 0f;
                     while (timer < segment.signalDelay)
                     {
@@ -250,11 +265,11 @@ namespace DIALOGUE
                         yield return null;
                     }
 
-                    isWaitingOnSegmentTimer = false;
+                    isWaitingOnAutoTimer = false;
                     dialogueSystem.onSystemPrompt_Clear();
                     break;
                 case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.WA:
-                    isWaitingOnSegmentTimer = true;
+                    isWaitingOnAutoTimer = true;
                     timer = 0f;
                     while (timer < segment.signalDelay)
                     {
@@ -269,7 +284,7 @@ namespace DIALOGUE
                         yield return null;
                     }
 
-                    isWaitingOnSegmentTimer = false;
+                    isWaitingOnAutoTimer = false;
                     break;
 
                 case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.N:

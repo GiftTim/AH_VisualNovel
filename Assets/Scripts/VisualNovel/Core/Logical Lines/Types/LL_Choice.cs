@@ -89,7 +89,7 @@ namespace DIALOGUE.LogicalLines
 
         private void AddLineToResults(string line, ref Choice choice, ref int encapsulationDepth)
         {
-            line.Trim();
+            line = line.Trim();
 
             if (IsEncapsulationStart(line))
             {
@@ -99,7 +99,6 @@ namespace DIALOGUE.LogicalLines
                 }
 
                 encapsulationDepth++;
-
                 return;
             }
 

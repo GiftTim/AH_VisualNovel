@@ -50,7 +50,7 @@ namespace DIALOGUE
             if (_initialized)
                 return;
 
-            architect = new TextArchitect(dialogueContainer.dialogueText);
+            architect = new TextArchitect(dialogueContainer.dialogueText, TABuilder.BuilderTypes.Typewriter);
             conversationManager = new ConversationManager(architect);
 
             cgController = new CanvasGroupController(this, mainCanvas);
@@ -85,6 +85,9 @@ namespace DIALOGUE
         public void OnStartViewingHistory()
         {
             prompt.Hide();
+            autoReader.allowToggle = false;
+            conversationManager.allowUserPrompts = false;
+
             if (autoReader.isOn)
             {
                 autoReader.Disable();
@@ -94,6 +97,8 @@ namespace DIALOGUE
         public void OnStopViewingHistory()
         {
             prompt.Show();
+            autoReader.allowToggle = true;
+            conversationManager.allowUserPrompts = true;
         }
 
         public void ApplySpeakerDataToDialogueContainer(string speakerName)

@@ -165,3 +165,23 @@ MonoBehaviour:
         Value: {fileID: 367810928, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
       - Key: Smile
         Value: {fileID: 1357544450, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
+      - Key: A01
+        Value: {fileID: 2111671816, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
+      - Key: A02
+        Value: {fileID: -1894705149, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
+      - Key: A03
+        Value: {fileID: 325271249, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
+      - Key: A04
+        Value: {fileID: 2022578763, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
+      - Key: A05
+        Value: {fileID: 1245242027, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
+      - Key: A06
+        Value: {fileID: 972859150, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
+      - Key: A07
+        Value: {fileID: -654811724, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
+      - Key: A08
+        Value: {fileID: -110353568, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
+      - Key: A09
+        Value: {fileID: -904361304, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}
+      - Key: A10
+        Value: {fileID: -1366965734, guid: 0f2d6dac6e2d0534e8835fbb2438564b, type: 3}

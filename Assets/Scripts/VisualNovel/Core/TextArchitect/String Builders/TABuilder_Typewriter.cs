@@ -11,6 +11,7 @@ public class TABuilder_Typewriter : TABuilder
 
     public override void ForceComplete()
     {
+        architect.tmpro.ForceMeshUpdate();
         architect.tmpro.maxVisibleCharacters = architect.tmpro.textInfo.characterCount;
     }
 

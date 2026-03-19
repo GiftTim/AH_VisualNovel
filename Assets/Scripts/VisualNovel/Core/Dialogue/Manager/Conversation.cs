@@ -8,29 +8,10 @@ namespace DIALOGUE
         private List<string> lines = new List<string>();
         private int progress = 0;
 
-        public string file { get; private set; }
-        public int fileStartIndex { get; private set; }
-        public int fileEndIndex { get; private set; }
-
         public Conversation(List<string> lines, int progress = 0)
         {
             this.lines = lines;
             this.progress = progress;
-            this.file = file;
-
-            if (fileStartIndex == -1)
-            {
-                fileStartIndex = 0;
-            }
-
-            if (fileEndIndex == -1)
-            {
-                fileEndIndex = lines.Count - 1;
-            }
-            
-
-            this.fileStartIndex = fileStartIndex;
-            this.fileEndIndex = fileEndIndex;
         }
 
         public int GetProgress() => progress;
