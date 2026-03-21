@@ -5,6 +5,9 @@ public class FilePaths
     private const string HOME_DIRECTORY_SYMBOL = "~/";
     public static readonly string root = $"{Application.dataPath}/gameData/";
 
+    // Runtime Paths
+    public static readonly string gameSaves = $"{runtimePath}Save Files/";
+
     // Resources Paths
     public static readonly string resources_font = "Fonts/";
 
@@ -22,12 +25,12 @@ public class FilePaths
     public static readonly string resources_dialogueFiles = $"Dialogue Files/";
 
     /// <summary>
-    /// ±âº» °æ·Î ¶Ç´Â ¸®¼Ò½º Æú´õÀÇ ·çÆ®¸¦ »ç¿ëÇÏ¿© ¸®¼Ò½º °æ·Î¸¦ ¹İÈ¯ÇÕ´Ï´Ù. 
-    /// ±âº» °æ·Î¿¡¼­ ÆÄÀÏÀ» Ã£À» ¼ö ¾ø´Â °æ¿ì, ¸®¼Ò½º Æú´õÀÇ ·çÆ®¿¡¼­ ÆÄÀÏÀ» Ã£À¸·Á°í ½ÃµµÇÕ´Ï´Ù.
+    /// ê¸°ë³¸ ê²½ë¡œ ë˜ëŠ” ë¦¬ì†ŒìŠ¤ í´ë”ì˜ ë£¨íŠ¸ë¥¼ ì‚¬ìš©í•˜ì—¬ ë¦¬ì†ŒìŠ¤ ê²½ë¡œë¥¼ ë°˜í™˜í•©ë‹ˆë‹¤. 
+    /// ê¸°ë³¸ ê²½ë¡œì—ì„œ íŒŒì¼ì„ ì°¾ì„ ìˆ˜ ì—†ëŠ” ê²½ìš°, ë¦¬ì†ŒìŠ¤ í´ë”ì˜ ë£¨íŠ¸ì—ì„œ íŒŒì¼ì„ ì°¾ìœ¼ë ¤ê³  ì‹œë„í•©ë‹ˆë‹¤.
     /// </summary>
-    /// <param name="defaultPath">±âº» °æ·Î</param>
-    /// <param name="resourceName">¸®¼Ò½º ÀÌ¸§</param>
-    /// <returns>Ã£Àº ¸®¼Ò½ºÀÇ °æ·Î</returns>
+    /// <param name="defaultPath">ê¸°ë³¸ ê²½ë¡œ</param>
+    /// <param name="resourceName">ë¦¬ì†ŒìŠ¤ ì´ë¦„</param>
+    /// <returns>ì°¾ì€ ë¦¬ì†ŒìŠ¤ì˜ ê²½ë¡œ</returns>
     public static string GetPathToResource(string defaultPath, string resourceName)
     {
         if (resourceName.StartsWith(HOME_DIRECTORY_SYMBOL))
@@ -36,6 +39,18 @@ public class FilePaths
         }
 
         return defaultPath + resourceName;
+    }
+
+    public static string runtimePath
+    {
+        get
+        {
+            #if UNITY_EDITOR
+                return "Assets/appdata";
+            #else
+                return Application.persistentDataPath + "/appdata/";
+            #endif
+        }
     }
 
 }

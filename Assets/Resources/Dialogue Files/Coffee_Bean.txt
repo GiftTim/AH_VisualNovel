@@ -1,2 +1,5 @@
 
-narrator "커피콩은 커피를 좋아하는 소녀입니다. 그녀는 매일 아침마다 커피를 마시며 하루를 시작합니다."
+SetLayerMedia(background "training")
+PlayAmbience(RainyMood)
+
+narrator "번개가 친다."

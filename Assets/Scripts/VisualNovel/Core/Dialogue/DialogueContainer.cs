@@ -7,17 +7,17 @@ namespace DIALOGUE
     [System.Serializable]
     public class DialogueContainer
     {
-        // ´ëÈ­ ¿µ¿ª
+        // ëŒ€í™” ì˜ì—­
         public GameObject root;
 
-        //´ëÈ­ »ó´ë
+        //ëŒ€í™” ìƒëŒ€
         public NameContainer nameContainer;
 
-        //´ëÈ­ Ã¢
+        //ëŒ€í™” ì°½
         public GameObject dialogueBox;
         public TextMeshProUGUI dialogueText;
 
-        // ´ëÈ­Ã¢ ½Ã°¢(ÆäÀÌµå ÀÎ, ¾Æ¿ô) ÄÁÆ®·Ñ·¯
+        // ëŒ€í™”ì°½ ì‹œê°(í˜ì´ë“œ ì¸, ì•„ì›ƒ) ì»¨íŠ¸ë¡¤ëŸ¬
         private CanvasGroupController cgController;
 
 

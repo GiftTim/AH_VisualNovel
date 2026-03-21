@@ -21,7 +21,7 @@ public class InputPanel : MonoBehaviour
     {
         instance = this;
 
-        // ÇÊ¼ö ÂüÁ¶ ´©¶ô ¹æÁö
+        // í•„ìˆ˜ ì°¸ì¡° ëˆ„ë½ ë°©ì§€
         if (canvasGroup == null) Debug.LogError($"{nameof(InputPanel)}: canvasGroup is not assigned.", this);
         if (titleText == null) Debug.LogError($"{nameof(InputPanel)}: titleText is not assigned.", this);
         if (acceptButton == null) Debug.LogError($"{nameof(InputPanel)}: acceptButton is not assigned.", this);
@@ -32,22 +32,22 @@ public class InputPanel : MonoBehaviour
     {
         cg = new CanvasGroupController(this, canvasGroup);
 
-        // ÃÊ±â »óÅÂ
+	    // ì´ˆê¸° ìƒíƒœ
         cg.alpha = 0f;
         cg.SetInteractableState(active: false);
         inputField.text = string.Empty;
         acceptButton.interactable = false;
         isWaitingOnUserInput = false;
 
-        // ¸®½º³Ê µî·Ï
+        // ë¦¬ìŠ¤ë„ˆ ë“±ë¡
         inputField.onValueChanged.AddListener(OnInputChanged);
-        inputField.onSubmit.AddListener(OnInputSubmitted); // ¿£ÅÍ ÀÔ·Â Áö¿ø (TMP_InputField ¼³Á¤¿¡ µû¶ó µ¿ÀÛ)
+        inputField.onSubmit.AddListener(OnInputSubmitted); // ì—”í„° ì…ë ¥ ì§€ì› (TMP_InputField ì„¤ì •ì— ë”°ë¼ ë™ì‘)
         acceptButton.onClick.AddListener(OnAcceptInput);
     }
 
     private void OnDestroy()
     {
-        // ¸®½º³Ê Á¤¸® (Àç»ı¼º/¾À ÀüÈ¯ ½Ã ¾ÈÀü)
+        // ë¦¬ìŠ¤ë„ˆ ì •ë¦¬ (ì¬ìƒì„±/ì”¬ ì „í™˜ ì‹œ ì•ˆì „)
         inputField.onValueChanged.RemoveListener(OnInputChanged);
         inputField.onSubmit.RemoveListener(OnInputSubmitted);
         acceptButton.onClick.RemoveListener(OnAcceptInput);
@@ -57,7 +57,7 @@ public class InputPanel : MonoBehaviour
     {
         titleText.text = title;
 
-        // ¸Å¹ø ¿­¸± ¶§ »óÅÂ ÃÊ±âÈ­
+        // ë§¤ë²ˆ ì—´ë¦´ ë•Œ ìƒíƒœ ì´ˆê¸°í™”
         inputField.text = string.Empty;
         acceptButton.interactable = false;
 
@@ -66,7 +66,7 @@ public class InputPanel : MonoBehaviour
 
         isWaitingOnUserInput = true;
 
-        // ÀÔ·Â Æ÷Ä¿½º (´ÙÀ½ ÇÁ·¹ÀÓ¿¡¼­ ¾ÈÁ¤ÀûÀ¸·Î Àû¿ë)
+        // ì…ë ¥ í¬ì»¤ìŠ¤ (ë‹¤ìŒ í”„ë ˆì„ì—ì„œ ì•ˆì •ì ìœ¼ë¡œ ì ìš©)
         inputField.ActivateInputField();
         inputField.Select();
     }
@@ -84,14 +84,14 @@ public class InputPanel : MonoBehaviour
         if (!HasValidText())
             return;
 
-        // ¾ÕµÚ °ø¹é Á¦°ÅÇØ¼­ ÀúÀå (¿ø¹® À¯Áö°¡ ÇÊ¿äÇÏ¸é Trim Á¦°Å)
+        // ì•ë’¤ ê³µë°± ì œê±°í•´ì„œ ì €ì¥ (ì›ë¬¸ ìœ ì§€ê°€ í•„ìš”í•˜ë©´ Trim ì œê±°)
         lastInput = inputField.text.Trim();
         Hide();
     }
 
     private void OnInputSubmitted(string value)
     {
-        // ¿£ÅÍ·Î Á¦Ãâ °¡´ÉÇÏ°Ô Ã³¸®
+        // ì—”í„°ë¡œ ì œì¶œ ê°€ëŠ¥í•˜ê²Œ ì²˜ë¦¬
         if (isWaitingOnUserInput && HasValidText())
         {
             OnAcceptInput();
@@ -110,7 +110,7 @@ public class InputPanel : MonoBehaviour
         return !string.IsNullOrWhiteSpace(inputField.text);
     }
 
-    // ÇÊ¿ä ½Ã ¿ÜºÎ¿¡¼­ ÀÌÀü ÀÔ·Â°ª ÃÊ±âÈ­ÇÒ ¼ö ÀÖµµ·Ï Á¦°ø
+    // í•„ìš” ì‹œ ì™¸ë¶€ì—ì„œ ì´ì „ ì…ë ¥ê°’ ì´ˆê¸°í™”í•  ìˆ˜ ìˆë„ë¡ ì œê³µ
     public void ClearLastInput()
     {
         lastInput = string.Empty;

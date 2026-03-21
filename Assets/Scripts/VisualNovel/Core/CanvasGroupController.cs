@@ -7,18 +7,18 @@ public class CanvasGroupController
     private MonoBehaviour owner;
     private CanvasGroup   rootCG;
 
-    // ´ëÈ­Ã¢ ÆäÀÌµå ¼Óµµ
+    // ëŒ€í™”ì°½ í˜ì´ë“œ ì†ë„
     private const float DEFAULT_FADE_SPEED = 3f;
 
-    // ÄÚ·çÆ¾ Áßº¹ ½ÇÇà ¹æÁö¿ë ÂüÁ¶ °ü¸® ÆĞÅÏ
+    // ì½”ë£¨í‹´ ì¤‘ë³µ ì‹¤í–‰ ë°©ì§€ìš© ì°¸ì¡° ê´€ë¦¬ íŒ¨í„´
     private Coroutine co_showing = null;
     private Coroutine co_hiding = null;
 
-    //ÀĞ±â Àü¿ë ÇÁ·ÎÆÛÆ¼ (Read-only Property)
-    public bool isShowing => co_showing != null;    // ´ëÈ­Ã¢ÀÌ º¸ÀÌ´Â ÁßÀÎÁö ¿©ºÎ
-    public bool isHiding => co_hiding != null;      // ´ëÈ­Ã¢ÀÌ ¼û°ÜÁö´Â ÁßÀÎÁö ¿©ºÎ
-    public bool isFading => isShowing || isHiding;  // µÑ Áß ÇÏ³ª¶óµµ ½ÇÇà ÁßÀÎÁö ¿©ºÎ
-    public bool isVisible => co_showing != null || rootCG.alpha > 0f; // ´ëÈ­Ã¢ÀÌ º¸ÀÌ´Â ÁßÀÌ°Å³ª Åõ¸íµµ°¡ 0º¸´Ù Å« °æ¿ì
+    //ì½ê¸° ì „ìš© í”„ë¡œí¼í‹° (Read-only Property)
+    public bool isShowing => co_showing != null;    // ëŒ€í™”ì°½ì´ ë³´ì´ëŠ” ì¤‘ì¸ì§€ ì—¬ë¶€
+    public bool isHiding => co_hiding != null;      // ëŒ€í™”ì°½ì´ ìˆ¨ê²¨ì§€ëŠ” ì¤‘ì¸ì§€ ì—¬ë¶€
+    public bool isFading => isShowing || isHiding;  // ë‘˜ ì¤‘ í•˜ë‚˜ë¼ë„ ì‹¤í–‰ ì¤‘ì¸ì§€ ì—¬ë¶€
+    public bool isVisible => co_showing != null || rootCG.alpha > 0f; // ëŒ€í™”ì°½ì´ ë³´ì´ëŠ” ì¤‘ì´ê±°ë‚˜ íˆ¬ëª…ë„ê°€ 0ë³´ë‹¤ í° ê²½ìš°
     public float alpha { get { return rootCG.alpha; } set { rootCG.alpha = value; } }
 
     public CanvasGroupController(MonoBehaviour owner, CanvasGroup rootCG)

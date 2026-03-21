@@ -1,26 +1,36 @@
 
-PlayAmbience(RainyMood)
 PlaySong("Happy2")
-SetLayerMedia(background "classroom")
+SetLayerMedia(background "bg dungeon_entrance")
 
-CreateCharacter("Guard as Generic" -e true), Guard.SetSprite("Guard")
-CreateCharacter("Lia" -e true), Lia.setSprite(-s Body4 -l 0), Lia.setSprite(-s Scary -l 1)
+CreateCharacter("Man as Generic" -e true), Man.SetSprite("Man")
+CreateCharacter("Mina" -e true), Mina.setSprite(-s Body3 -l 0), Mina.setSprite(-s Smile -l 1)
 
-Guard.SetPosition(1.4), Guard.Move(1), Lia.Move(0)
+Man.SetPosition(1.4), Man.Move(1), Mina.Move(0)
+Mina.FaceRight()
 
-Guard "좋은 아침이네, 아가야. {n}이곳엔 무슨 일로 왔지?"
+Man "좋은 아침이네, 아가야. {n}이곳엔 무슨 일로 왔지?"
 
 choice "준비되셨나요?"
 {
     -너를 꼬시기 위해서 왔어요
-        Guard "확실히 미쳤지만 좋아! {n}오늘부터 1일이다!"
+        Man  "그게 이유인가요? {n}제가 몇 살로 보이시는데요?"
+        Mina "몇 살인가요?"
+        Man "..."
+        Mina "아, 알겠어요 그냥 지나갈게요..."
+        Load(Coffee_Bean -enqueue true)
 
     -이 길을 통과하기 위해서 왔습니다.
-        Guard "아쉽겠군, 오늘부터 이 문은 출입 퉁제가 된다!"
+        Man "아쉽겠군, 오늘부터 이 문은 출입 퉁제가 된다!"
+        Load(Coffee_Bean)
 }
 
-Lia "그게 이유인가요? {n}제가 몇 살로 보이시는데요, 성직자님?"
 
-Guard "..."
+Man.Move(2 -spd 2), Mina.Move(2 -spd 2)
+Man.Hide(), Mina.Hide()
+wait(5)
+ClearLayerMedia(background -blend leftRight -spd 0.5)
+wait(1)
+StopSong("Happy2")
+wait(1)
 
-Lia "아, 그게… 그냥 지나가던 길이었어요."
+

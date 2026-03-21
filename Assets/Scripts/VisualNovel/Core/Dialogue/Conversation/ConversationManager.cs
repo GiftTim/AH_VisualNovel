@@ -68,7 +68,7 @@ namespace DIALOGUE
 
         IEnumerator RunningConversation()
         {
-            while(!conversationQueue.IsEmpty())
+            while (!conversationQueue.IsEmpty())
             {
                 Conversation currentConversation = conversation;
 
@@ -89,7 +89,7 @@ namespace DIALOGUE
 
                 DIALOGUE_LINE line = DialogueParser.Parse(rawLine);
 
-                if(logicalLineManager.TryGetLogic(line, out Coroutine logic))
+                if (logicalLineManager.TryGetLogic(line, out Coroutine logic))
                 {
                     isOnLogicalLine = true;
                     yield return logic;
@@ -118,15 +118,14 @@ namespace DIALOGUE
                         CommandManager.instance.StopAllProcesses();
 
                         dialogueSystem.onSystemPrompt_Clear();
+                    }
                 }
 
-                TryAdvanceConversation(currentConversation);
-                isOnLogicalLine = false;
+                    TryAdvanceConversation(currentConversation);
+                    isOnLogicalLine = false;
             }
 
             process = null;
-
-        }
     }
 
         private void TryAdvanceConversation(Conversation conversation)

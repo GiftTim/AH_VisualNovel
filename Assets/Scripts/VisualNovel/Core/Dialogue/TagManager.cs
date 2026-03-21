@@ -36,17 +36,17 @@ public class TagManager
 
     private static string InjectTags(string value)
     {
-        // ÅØ½ºÆ®¿¡ ÅÂ±× ÆĞÅÏ(<...>)ÀÌ ÀÖ´ÂÁö ¸ÕÀú È®ÀÎ
+        // í…ìŠ¤íŠ¸ì— íƒœê·¸ íŒ¨í„´(<...>)ì´ ìˆëŠ”ì§€ ë¨¼ì € í™•ì¸
         if (tagRegex.IsMatch(value))
         {
-            // ¹ß°ßµÈ ¸ğµç ÆĞÅÏ(Match)¿¡ ´ëÇØ ¹İº¹
+            // ë°œê²¬ëœ ëª¨ë“  íŒ¨í„´(Match)ì— ëŒ€í•´ ë°˜ë³µ
             foreach (Match match in tagRegex.Matches(value))
             {
-                // match.Value´Â "<mainChar>"¿Í °°ÀÌ ÃßÃâµÈ ¹®ÀÚ¿­ÀÓ
-                // µñ¼Å³Ê¸®¿¡ ÇØ´ç Å°°¡ ÀÖ´ÂÁö È®ÀÎ ÈÄ Ä¡È¯
+                // match.ValueëŠ” "<mainChar>"ì™€ ê°™ì´ ì¶”ì¶œëœ ë¬¸ìì—´ì„
+                // ë”•ì…”ë„ˆë¦¬ì— í•´ë‹¹ í‚¤ê°€ ìˆëŠ”ì§€ í™•ì¸ í›„ ì¹˜í™˜
                 if (tags.TryGetValue(match.Value, out var tagValueRequest))
                 {
-                    // µñ¼Å³Ê¸®¿¡ µî·ÏµÈ ÇÔ¼ö(tagValueRequest)¸¦ ½ÇÇàÇØ °á°ú¸¦ ¾ò°í Replace ÇÔ
+                    // ë”•ì…”ë„ˆë¦¬ì— ë“±ë¡ëœ í•¨ìˆ˜(tagValueRequest)ë¥¼ ì‹¤í–‰í•´ ê²°ê³¼ë¥¼ ì–»ê³  Replace í•¨
                     value = value.Replace(match.Value, tagValueRequest());
                 }
             }
@@ -75,7 +75,7 @@ public class TagManager
 
             if (!VariableStore.TryGetValue(variableName, out object variableValue))
             {
-                UnityEngine.Debug.LogError($"¹®ÀÚ¿­ ÇÒ´ç(Assignment) °úÁ¤¿¡¼­ º¯¼ö '{variableName}'À»(¸¦) Ã£À» ¼ö ¾ø½À´Ï´Ù");
+                UnityEngine.Debug.LogError($"ë¬¸ìì—´ í• ë‹¹(Assignment) ê³¼ì •ì—ì„œ ë³€ìˆ˜ '{variableName}'ì„(ë¥¼) ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤");
                 continue;
             }
             

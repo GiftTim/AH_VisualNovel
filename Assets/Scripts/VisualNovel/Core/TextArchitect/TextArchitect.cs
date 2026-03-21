@@ -6,8 +6,8 @@ using System.Linq;
 using System;
 
 /// <summary>
-/// ¿©·¯ ¼³Á¤µÈ ¹æ½Ä Áß ÇÏ³ª·Î È­¸é¿¡ ÅØ½ºÆ®¸¦ »ı¼ºÇÏ´Â ¿ªÇÒÀ» ÇÕ´Ï´Ù. 
-/// ´ëÈ­ »ı¼º °úÁ¤À» °£¼ÒÈ­ÇÏ±â À§ÇØ ¼³°èµÇ¾ú½À´Ï´Ù.
+/// ì—¬ëŸ¬ ì„¤ì •ëœ ë°©ì‹ ì¤‘ í•˜ë‚˜ë¡œ í™”ë©´ì— í…ìŠ¤íŠ¸ë¥¼ ìƒì„±í•˜ëŠ” ì—­í• ì„ í•©ë‹ˆë‹¤. 
+/// ëŒ€í™” ìƒì„± ê³¼ì •ì„ ê°„ì†Œí™”í•˜ê¸° ìœ„í•´ ì„¤ê³„ë˜ì—ˆìŠµë‹ˆë‹¤.
 /// </summary>
 public class TextArchitect
 {
@@ -15,82 +15,82 @@ public class TextArchitect
     private TextMeshPro tmpro_world;
 
     /// <summary>
-    /// ÀÌ ¾ÆÅ°ÅØÆ®¿¡ ÇÒ´çµÈ TextMeshPro ÄÄÆ÷³ÍÆ®ÀÔ´Ï´Ù. (UI ¶Ç´Â ¿ùµå °ø°£¿ë)
+    /// ì´ ì•„í‚¤í…íŠ¸ì— í• ë‹¹ëœ TextMeshPro ì»´í¬ë„ŒíŠ¸ì…ë‹ˆë‹¤. (UI ë˜ëŠ” ì›”ë“œ ê³µê°„ìš©)
     /// </summary>
     public TMP_Text tmpro => tmpro_ui != null ? tmpro_ui : tmpro_world;
 
     /// <summary>
-    /// ÇöÀç ¾ÆÅ°ÅØÆ®¿¡ ÀÇÇØ È­¸é¿¡ Ç¥½ÃµÇ°í ÀÖ´Â ÅØ½ºÆ®ÀÔ´Ï´Ù.
+    /// í˜„ì¬ ì•„í‚¤í…íŠ¸ì— ì˜í•´ í™”ë©´ì— í‘œì‹œë˜ê³  ìˆëŠ” í…ìŠ¤íŠ¸ì…ë‹ˆë‹¤.
     /// </summary>
     public string currentText => tmpro.text;
 
     /// <summary>
-    /// ¾ÆÅ°ÅØÆ®°¡ ÇöÀç ¸¸µé·Á°í ÇÏ´Â ¸ñÇ¥ ÅØ½ºÆ®ÀÔ´Ï´Ù. 
-    /// ÀÌ¾î¾²±â(Append) ½Ã Ãß°¡µÇ´Â ÀÌÀü ÅØ½ºÆ®(preText)´Â Á¦¿ÜÇÑ ¼ø¼ö ¸ñÇ¥ ¹®ÀÚ¿­ÀÔ´Ï´Ù.
+    /// ì•„í‚¤í…íŠ¸ê°€ í˜„ì¬ ë§Œë“¤ë ¤ê³  í•˜ëŠ” ëª©í‘œ í…ìŠ¤íŠ¸ì…ë‹ˆë‹¤. 
+    /// ì´ì–´ì“°ê¸°(Append) ì‹œ ì¶”ê°€ë˜ëŠ” ì´ì „ í…ìŠ¤íŠ¸(preText)ëŠ” ì œì™¸í•œ ìˆœìˆ˜ ëª©í‘œ ë¬¸ìì—´ì…ë‹ˆë‹¤.
     /// </summary>
     public string targetText { get; private set; } = "";
 
     /// <summary>
-    /// ¾ÆÅ°ÅØÆ®°¡ ÃÖÁ¾ÀûÀ¸·Î Ç¥½ÃÇÏ·Á´Â ÀüÃ¼ ÅØ½ºÆ®ÀÔ´Ï´Ù.
-    /// ÀÌ¾î¾²±â ½Ã ÀÌÀü ÅØ½ºÆ®¿Í ÇöÀç ¸ñÇ¥ ÅØ½ºÆ®¸¦ ÇÕÄ£ °á°ú¹°ÀÔ´Ï´Ù.
+    /// ì•„í‚¤í…íŠ¸ê°€ ìµœì¢…ì ìœ¼ë¡œ í‘œì‹œí•˜ë ¤ëŠ” ì „ì²´ í…ìŠ¤íŠ¸ì…ë‹ˆë‹¤.
+    /// ì´ì–´ì“°ê¸° ì‹œ ì´ì „ í…ìŠ¤íŠ¸ì™€ í˜„ì¬ ëª©í‘œ í…ìŠ¤íŠ¸ë¥¼ í•©ì¹œ ê²°ê³¼ë¬¼ì…ë‹ˆë‹¤.
     /// </summary>
     public string fullTargetText => preText + targetText;
 
     /// <summary>
-    /// ÀÌ¾î¾²±â(Append) ºôµå ÀÌÀü¿¡ ÀÌ¹Ì Á¸ÀçÇØ¾ß ÇÏ´Â ÅØ½ºÆ®ÀÔ´Ï´Ù.
+    /// ì´ì–´ì“°ê¸°(Append) ë¹Œë“œ ì´ì „ì— ì´ë¯¸ ì¡´ì¬í•´ì•¼ í•˜ëŠ” í…ìŠ¤íŠ¸ì…ë‹ˆë‹¤.
     /// </summary>
     public string preText { get; private set; } = "";
 
     /// <summary>
-    /// ÇöÀç TextMeshPro ÄÄÆ÷³ÍÆ®¿¡¼­ ·»´õ¸µ ÁßÀÎ ÅØ½ºÆ®ÀÇ »ö»óÀÔ´Ï´Ù.
+    /// í˜„ì¬ TextMeshPro ì»´í¬ë„ŒíŠ¸ì—ì„œ ë Œë”ë§ ì¤‘ì¸ í…ìŠ¤íŠ¸ì˜ ìƒ‰ìƒì…ë‹ˆë‹¤.
     /// </summary>
     public Color textColor { get { return tmpro.color; } set { tmpro.color = value; } }
 
     /// <summary>
-    /// ÅØ½ºÆ®°¡ »ı¼ºµÇ´Â ¼Óµµ¸¦ °áÁ¤ÇÕ´Ï´Ù.
+    /// í…ìŠ¤íŠ¸ê°€ ìƒì„±ë˜ëŠ” ì†ë„ë¥¼ ê²°ì •í•©ë‹ˆë‹¤.
     /// </summary>
     public float speed { get { return baseSpeed * speedMultiplier; } set { speedMultiplier = value; } }
     private const float baseSpeed = 1;
     private float speedMultiplier = 1;
 
     /// <summary>
-    /// ÇÑ ÇÁ·¹ÀÓ(¶Ç´Â »çÀÌÅ¬)´ç »ı¼ºµÉ ±ÛÀÚ ¼öÀÔ´Ï´Ù. 
-    /// ÆäÀÌµå(Fade) ±â¹ıÀ» »ç¿ëÇÒ ¶§´Â ÀÌ °ªÀÌ ¼Óµµ ¹è¼ö ¿ªÇÒÀ» ÇÕ´Ï´Ù.
+    /// í•œ í”„ë ˆì„(ë˜ëŠ” ì‚¬ì´í´)ë‹¹ ìƒì„±ë  ê¸€ì ìˆ˜ì…ë‹ˆë‹¤. 
+    /// í˜ì´ë“œ(Fade) ê¸°ë²•ì„ ì‚¬ìš©í•  ë•ŒëŠ” ì´ ê°’ì´ ì†ë„ ë°°ìˆ˜ ì—­í• ì„ í•©ë‹ˆë‹¤.
     /// </summary>
     public int charactersPerCycle { get { return speed <= 2f ? characterMultiplier : speed <= 2.5f ? characterMultiplier * 2 : characterMultiplier * 3; } }
     private int characterMultiplier = 1;
 
     /// <summary>
-    /// trueÀÏ °æ¿ì, ÅØ½ºÆ®¸¦ Æò¼Òº¸´Ù ÈÎ¾À ºü¸£°Ô Ç¥½ÃÇÕ´Ï´Ù. (À¯ÀúÀÇ Å¬¸¯/½ºÅµ ½Ã »ç¿ë)
+    /// trueì¼ ê²½ìš°, í…ìŠ¤íŠ¸ë¥¼ í‰ì†Œë³´ë‹¤ í›¨ì”¬ ë¹ ë¥´ê²Œ í‘œì‹œí•©ë‹ˆë‹¤. (ìœ ì €ì˜ í´ë¦­/ìŠ¤í‚µ ì‹œ ì‚¬ìš©)
     /// </summary>
     public bool hurryUp = false;
 
     /// <summary>
-    /// ¾ÆÅ°ÅØÆ®¿¡¼­ »ç¿ëÇÒ ¼ö ÀÖ´Â ¸ğµç TABuilder Å¬·¡½ºµéÀÇ ¸ñ·ÏÀÔ´Ï´Ù. 
-    /// TABuilder´Â ¼±ÅÃµÈ ¹æ½Ä¿¡ µû¶ó °íÀ¯ÇÑ ¹æ¹ıÀ¸·Î ¹®ÀÚ¿­À» È­¸é¿¡ ±×¸³´Ï´Ù.
+    /// ì•„í‚¤í…íŠ¸ì—ì„œ ì‚¬ìš©í•  ìˆ˜ ìˆëŠ” ëª¨ë“  TABuilder í´ë˜ìŠ¤ë“¤ì˜ ëª©ë¡ì…ë‹ˆë‹¤. 
+    /// TABuilderëŠ” ì„ íƒëœ ë°©ì‹ì— ë”°ë¼ ê³ ìœ í•œ ë°©ë²•ìœ¼ë¡œ ë¬¸ìì—´ì„ í™”ë©´ì— ê·¸ë¦½ë‹ˆë‹¤.
     /// </summary>
     private Dictionary<string, Type> builders = new Dictionary<string, Type>();
 
     /// <summary>
-    /// ½ÇÁ¦ ÅØ½ºÆ® »ı¼ºÀ» ¼öÇàÇÏ´Â ºô´õ °´Ã¼ÀÔ´Ï´Ù. ¼³Á¤µÈ ºôµå ¹æ½Ä¿¡ µû¶ó ±³Ã¼µË´Ï´Ù.
+    /// ì‹¤ì œ í…ìŠ¤íŠ¸ ìƒì„±ì„ ìˆ˜í–‰í•˜ëŠ” ë¹Œë” ê°ì²´ì…ë‹ˆë‹¤. ì„¤ì •ëœ ë¹Œë“œ ë°©ì‹ì— ë”°ë¼ êµì²´ë©ë‹ˆë‹¤.
     /// </summary>
     private TABuilder builder = null;
     private TABuilder.BuilderTypes _builderType;
 
     /// <summary>
-    /// ÇöÀç ¾ÆÅ°ÅØÆ®°¡ ÅØ½ºÆ®¸¦ ³ªÅ¸³»±â À§ÇØ »ç¿ë ÁßÀÎ ºô´õÀÇ Å¸ÀÔÀÔ´Ï´Ù.
+    /// í˜„ì¬ ì•„í‚¤í…íŠ¸ê°€ í…ìŠ¤íŠ¸ë¥¼ ë‚˜íƒ€ë‚´ê¸° ìœ„í•´ ì‚¬ìš© ì¤‘ì¸ ë¹Œë”ì˜ íƒ€ì…ì…ë‹ˆë‹¤.
     /// </summary>
     public TABuilder.BuilderTypes builderType => _builderType;
 
     private Coroutine buildProcess = null;
 
     /// <summary>
-    /// ÇöÀç ¾ÆÅ°ÅØÆ®°¡ ½Ç½Ã°£À¸·Î ÅØ½ºÆ®¸¦ ºôµå(Ãâ·Â)ÇÏ°í ÀÖ´Â ÁßÀÎÁö ¿©ºÎÀÔ´Ï´Ù.
+    /// í˜„ì¬ ì•„í‚¤í…íŠ¸ê°€ ì‹¤ì‹œê°„ìœ¼ë¡œ í…ìŠ¤íŠ¸ë¥¼ ë¹Œë“œ(ì¶œë ¥)í•˜ê³  ìˆëŠ” ì¤‘ì¸ì§€ ì—¬ë¶€ì…ë‹ˆë‹¤.
     /// </summary>
     public bool isBuilding => buildProcess != null;
 
     /// <summary>
-    /// UI¿ë TextMeshProUGUI °´Ã¼¸¦ »ç¿ëÇÏ¿© ÅØ½ºÆ® ¾ÆÅ°ÅØÆ®¸¦ »ı¼ºÇÕ´Ï´Ù.
+    /// UIìš© TextMeshProUGUI ê°ì²´ë¥¼ ì‚¬ìš©í•˜ì—¬ í…ìŠ¤íŠ¸ ì•„í‚¤í…íŠ¸ë¥¼ ìƒì„±í•©ë‹ˆë‹¤.
     /// </summary>
     public TextArchitect(TextMeshProUGUI uiTextObject, TABuilder.BuilderTypes builderType = TABuilder.BuilderTypes.Instant)
     {
@@ -100,7 +100,7 @@ public class TextArchitect
     }
 
     /// <summary>
-    /// ¿ùµå °ø°£¿ë TextMeshPro °´Ã¼¸¦ »ç¿ëÇÏ¿© ÅØ½ºÆ® ¾ÆÅ°ÅØÆ®¸¦ »ı¼ºÇÕ´Ï´Ù.
+    /// ì›”ë“œ ê³µê°„ìš© TextMeshPro ê°ì²´ë¥¼ ì‚¬ìš©í•˜ì—¬ í…ìŠ¤íŠ¸ ì•„í‚¤í…íŠ¸ë¥¼ ìƒì„±í•©ë‹ˆë‹¤.
     /// </summary>
     public TextArchitect(TextMeshPro worldTextObject, TABuilder.BuilderTypes builderType = TABuilder.BuilderTypes.Instant)
     {
@@ -110,7 +110,7 @@ public class TextArchitect
     }
 
     /// <summary>
-    /// ÇÁ·ÎÁ§Æ® ³»ÀÇ ¸ğµç TABuilder ÇÏÀ§ Å¬·¡½º¸¦ Ã£¾Æ µñ¼Å³Ê¸®¿¡ µî·ÏÇÕ´Ï´Ù. (¸®ÇÃ·º¼Ç »ç¿ë)
+    /// í”„ë¡œì íŠ¸ ë‚´ì˜ ëª¨ë“  TABuilder í•˜ìœ„ í´ë˜ìŠ¤ë¥¼ ì°¾ì•„ ë”•ì…”ë„ˆë¦¬ì— ë“±ë¡í•©ë‹ˆë‹¤. (ë¦¬í”Œë ‰ì…˜ ì‚¬ìš©)
     /// </summary>
     private void AddBuilderTypes()
     {
@@ -121,51 +121,51 @@ public class TextArchitect
     }
 
     /// <summary>
-    /// ÁöÁ¤µÈ ºôµå Å¸ÀÔ¿¡ ¸Â´Â ¿Ã¹Ù¸¥ TABuilder °´Ã¼·Î ¾÷µ¥ÀÌÆ®ÇÕ´Ï´Ù.
+    /// ì§€ì •ëœ ë¹Œë“œ íƒ€ì…ì— ë§ëŠ” ì˜¬ë°”ë¥¸ TABuilder ê°ì²´ë¡œ ì—…ë°ì´íŠ¸í•©ë‹ˆë‹¤.
     /// </summary>
     public void SetBuilderType(TABuilder.BuilderTypes builderType)
     {
         string name = TABuilder.CLASS_NAME_PREFIX + builderType.ToString();
         Type classType = builders[name];
 
-        // µ¿ÀûÀ¸·Î Å¬·¡½º ÀÎ½ºÅÏ½º »ı¼º
+        // ë™ì ìœ¼ë¡œ í´ë˜ìŠ¤ ì¸ìŠ¤í„´ìŠ¤ ìƒì„±
         builder = Activator.CreateInstance(classType) as TABuilder;
         builder.architect = this;
-        builder.onComplete += OnComplete; // ¿Ï·á ÀÌº¥Æ® ¿¬°á
+        builder.onComplete += OnComplete; // ì™„ë£Œ ì´ë²¤íŠ¸ ì—°ê²°
 
         _builderType = builderType;
     }
 
     /// <summary>
-    /// Àü´Ş¹ŞÀº ÅØ½ºÆ®¸¦ Ã³À½ºÎÅÍ »õ·Î ºôµåÇÏ¿© Ç¥½ÃÇÕ´Ï´Ù.
+    /// ì „ë‹¬ë°›ì€ í…ìŠ¤íŠ¸ë¥¼ ì²˜ìŒë¶€í„° ìƒˆë¡œ ë¹Œë“œí•˜ì—¬ í‘œì‹œí•©ë‹ˆë‹¤.
     /// </summary>
     public Coroutine Build(string text)
     {
         preText = "";
         targetText = text;
 
-        Stop(); // ÁøÇà ÁßÀÎ ÀÛ¾÷ Áß´Ü
+        Stop(); // ì§„í–‰ ì¤‘ì¸ ì‘ì—… ì¤‘ë‹¨
 
         buildProcess = builder.Build();
         return buildProcess;
     }
 
     /// <summary>
-    /// ÇöÀç Ç¥½ÃµÈ ÅØ½ºÆ® µÚ¿¡ »õ·Î¿î ÅØ½ºÆ®¸¦ ÀÌ¾î¼­ ºôµåÇÕ´Ï´Ù.
+    /// í˜„ì¬ í‘œì‹œëœ í…ìŠ¤íŠ¸ ë’¤ì— ìƒˆë¡œìš´ í…ìŠ¤íŠ¸ë¥¼ ì´ì–´ì„œ ë¹Œë“œí•©ë‹ˆë‹¤.
     /// </summary>
     public Coroutine Append(string text)
     {
         preText = currentText;
         targetText = text;
 
-        Stop(); // ÁøÇà ÁßÀÎ ÀÛ¾÷ Áß´Ü
+        Stop(); // ì§„í–‰ ì¤‘ì¸ ì‘ì—… ì¤‘ë‹¨
 
         buildProcess = builder.Build();
         return buildProcess;
     }
 
     /// <summary>
-    /// ¿¬Ãâ ¾øÀÌ ÅØ½ºÆ®¸¦ Áï½Ã ¿ÀºêÁ§Æ®¿¡ Àû¿ëÇÕ´Ï´Ù.
+    /// ì—°ì¶œ ì—†ì´ í…ìŠ¤íŠ¸ë¥¼ ì¦‰ì‹œ ì˜¤ë¸Œì íŠ¸ì— ì ìš©í•©ë‹ˆë‹¤.
     /// </summary>
     public void SetText(string text)
     {
@@ -179,7 +179,7 @@ public class TextArchitect
     }
 
     /// <summary>
-    /// ÅØ½ºÆ® ºôµå °úÁ¤À» Áß´ÜÇÕ´Ï´Ù. ÅØ½ºÆ®¸¦ ¿Ï¼º½ÃÅ°Áö ¾Ê°í ±× ÀÚ¸®¿¡¼­ Áï½Ã ¸ØÃä´Ï´Ù.
+    /// í…ìŠ¤íŠ¸ ë¹Œë“œ ê³¼ì •ì„ ì¤‘ë‹¨í•©ë‹ˆë‹¤. í…ìŠ¤íŠ¸ë¥¼ ì™„ì„±ì‹œí‚¤ì§€ ì•Šê³  ê·¸ ìë¦¬ì—ì„œ ì¦‰ì‹œ ë©ˆì¶¥ë‹ˆë‹¤.
     /// </summary>
     public void Stop()
     {
@@ -190,7 +190,7 @@ public class TextArchitect
     }
 
     /// <summary>
-    /// È°¼ºÈ­µÈ ºôµå °úÁ¤À» Áï½Ã Áß´ÜÇÏ°í ÅØ½ºÆ®¸¦ ³¡±îÁö ¿Ï¼º½ÃÅµ´Ï´Ù.
+    /// í™œì„±í™”ëœ ë¹Œë“œ ê³¼ì •ì„ ì¦‰ì‹œ ì¤‘ë‹¨í•˜ê³  í…ìŠ¤íŠ¸ë¥¼ ëê¹Œì§€ ì™„ì„±ì‹œí‚µë‹ˆë‹¤.
     /// </summary>
     public void ForceComplete()
     {
@@ -203,7 +203,7 @@ public class TextArchitect
     }
 
     /// <summary>
-    /// ÅØ½ºÆ® Ãâ·ÂÀÌ ¿ÏÀüÈ÷ ³¡³µÀ» ¶§ È£ÃâµÇ´Â ³»ºÎ ¸Ş¼­µåÀÔ´Ï´Ù.
+    /// í…ìŠ¤íŠ¸ ì¶œë ¥ì´ ì™„ì „íˆ ëë‚¬ì„ ë•Œ í˜¸ì¶œë˜ëŠ” ë‚´ë¶€ ë©”ì„œë“œì…ë‹ˆë‹¤.
     /// </summary>
     private void OnComplete()
     {

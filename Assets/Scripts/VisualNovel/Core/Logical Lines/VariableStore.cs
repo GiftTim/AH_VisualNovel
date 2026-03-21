@@ -79,7 +79,7 @@ public class VariableStore
             return true;
         }
 
-        Debug.LogWarning($"ÀÌ¸§ÀÌ {name}ÀÎ µ¥ÀÌÅÍº£ÀÌ½º°¡ ÀÌ¹Ì Á¸ÀçÇÕ´Ï´Ù");
+        Debug.LogWarning($"ì´ë¦„ì´ {name}ì¸ ë°ì´í„°ë² ì´ìŠ¤ê°€ ì´ë¯¸ ì¡´ì¬í•©ë‹ˆë‹¤");
         return false;
     }
 
@@ -104,7 +104,7 @@ public class VariableStore
 
         if (db.variables.ContainsKey(variableName)) 
         {
-            Debug.LogWarning($"ÀÌ¸§ÀÌ {variableName}ÀÎ º¯¼ö°¡ ÀÌ¹Ì Á¸ÀçÇÕ´Ï´Ù");
+            Debug.LogWarning($"ì´ë¦„ì´ {variableName}ì¸ ë³€ìˆ˜ê°€ ì´ë¯¸ ì¡´ì¬í•©ë‹ˆë‹¤");
             return false;
         }
 

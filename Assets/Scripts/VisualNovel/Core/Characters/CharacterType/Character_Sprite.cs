@@ -84,15 +84,13 @@ namespace CHARACTERS
                     spriteArray = Resources.LoadAll<Sprite>($"{artAssetsDirectory}/{texturename}");
 
                     if (spriteArray.Length == 0)
-                        Debug.LogWarning($"'{name}'Ä³¸¯ÅÍ¿¡°Ô ÀÔÈú '{texturename}' ¾ÆÆ® ¿¡¼Â(ÀÌ¹ÌÁö)°¡ µî·ÏµÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.");
-                }
+                        Debug.LogWarning($"'{name}'ìºë¦­í„°ì—ê²Œ ì…í '{texturename}' ì•„íŠ¸ ì—ì…‹(ì´ë¯¸ì§€)ê°€ ë“±ë¡ë˜ì–´ ìˆì§€ ì•ŠìŠµë‹ˆë‹¤.");                }
                 else
                 {
                     spriteArray = Resources.LoadAll<Sprite>($"{artAssetsDirectory}/{SPRITESHEET_DEFAULT_SHEETNAME}");
 
                     if (spriteArray.Length == 0)
-                        Debug.LogWarning($"'{name}'Ä³¸¯ÅÍ¿¡°Ô ÀÔÈú '{SPRITESHEET_DEFAULT_SHEETNAME}'¶ó´Â ÀÌ¸§ÀÇ ±âº»ÀÌ¹ÌÁö(SpriteSheet)°¡ µî·ÏµÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.");
-                }
+                        Debug.LogWarning($"'{name}'ìºë¦­í„°ì—ê²Œ ì…í '{SPRITESHEET_DEFAULT_SHEETNAME}'ë¼ëŠ” ì´ë¦„ì˜ ê¸°ë³¸ì´ë¯¸ì§€(SpriteSheet)ê°€ ë“±ë¡ë˜ì–´ ìˆì§€ ì•ŠìŠµë‹ˆë‹¤.");                }
 
 
                 return Array.Find(spriteArray, sprite => sprite.name == spriteName);

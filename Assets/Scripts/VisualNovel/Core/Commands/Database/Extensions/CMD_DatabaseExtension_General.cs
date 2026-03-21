@@ -109,7 +109,7 @@ namespace COMMANDS
 
             if (file == null)
             {
-                Debug.LogError($"´ëÈ­ ÆÄÀÏ¿¡¼­ '{filePath}' ÆÄÀÏÀ» ºÒ·¯¿Ã ¼ö ¾ø½À´Ï´Ù. ÇØ´ç ÆÄÀÏÀÌ '{FilePaths.resources_dialogueFiles}' ¸®¼Ò½º Æú´õ ¾È¿¡ ÀÖ´ÂÁö È®ÀÎÇØ ÁÖ¼¼¿ä.");
+                Debug.LogError($"ëŒ€í™” íŒŒì¼ì—ì„œ '{filePath}' íŒŒì¼ì„ ë¶ˆëŸ¬ì˜¬ ìˆ˜ ì—†ìŠµë‹ˆë‹¤. í•´ë‹¹ íŒŒì¼ì´ '{FilePaths.resources_dialogueFiles}' ë¦¬ì†ŒìŠ¤ í´ë” ì•ˆì— ìžˆëŠ”ì§€ í™•ì¸í•´ ì£¼ì„¸ìš”.");
                 return;
             }
 

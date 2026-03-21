@@ -71,11 +71,11 @@ namespace DIALOGUE
             public float signalDelay;
 
 
-            // N(Linebreak)À» Ãß°¡Çß½À´Ï´Ù.
+            // N(Linebreak)ì„ ì¶”ê°€í–ˆìŠµë‹ˆë‹¤.
             public enum StartSignal { NONE, C, A, WA, WC, N }  
 
            
-            // ÁÙ¹Ù²Þµµ ÅØ½ºÆ®¸¦ ÃÊ±âÈ­ÇÏÁö ¾Ê°í ÀÌ¾î ºÙÀÌ´Â(Append) µ¿ÀÛÀÌ¹Ç·Î NÀ» Ãß°¡Çß½À´Ï´Ù.
+            // ì¤„ë°”ê¿ˆë„ í…ìŠ¤íŠ¸ë¥¼ ì´ˆê¸°í™”í•˜ì§€ ì•Šê³  ì´ì–´ ë¶™ì´ëŠ”(Append) ë™ìž‘ì´ë¯€ë¡œ Nì„ ì¶”ê°€í–ˆìŠµë‹ˆë‹¤.
             public bool appendText => startSignal == StartSignal.A || startSignal == StartSignal.WA || startSignal == StartSignal.N;
         }
     }

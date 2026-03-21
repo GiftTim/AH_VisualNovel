@@ -17,16 +17,15 @@ namespace DIALOGUE.LogicalLines
                 public List<string> lines;
                 public int startingIndex;
                 public int endingIndex;
-
             }
 
             private const char ENCAPSULATION_START = '{';
             private const char ENCAPSULATION_END = '}';
 
-            public static EncapsulatedData RipEncapsulationData(Conversation conversation, int startingIndex, bool ripHeaderAndEncapsulators = false)
+            public static EncapsulatedData RipEncapsulationData(Conversation conversation, int startingIndex, bool ripHeaderAndEncapsulators = false, int parentStartingIndex = 0)
             {
                 int encapsulationDepth = 0;
-                EncapsulatedData data = new EncapsulatedData { lines = new List<string>(), startingIndex = startingIndex, endingIndex = 0 };
+                EncapsulatedData data = new EncapsulatedData { lines = new List<string>(), startingIndex = (startingIndex + parentStartingIndex), endingIndex = 0 };
 
                 for (int i = startingIndex; i < conversation.Count; i++)
                 {
@@ -48,7 +47,7 @@ namespace DIALOGUE.LogicalLines
                         encapsulationDepth--;
                         if (encapsulationDepth == 0)
                         {
-                            data.endingIndex = i+1;//이거 이상한데 일단 진행한다
+                            data.endingIndex = (i + parentStartingIndex);
                             break;
                         }
                     }

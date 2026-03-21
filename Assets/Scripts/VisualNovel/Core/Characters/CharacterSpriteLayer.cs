@@ -219,7 +219,7 @@ namespace CHARACTERS
 
         private IEnumerator FaceDirection(bool faceLeft, float speedMultiplier, bool immediate)
         {
-            // 1) ±âÁØ ½ºÄÉÀÏ: ±âÁ¸ rendererÀÇ localScale À¯Áö + XÃà¸¸ ºÎÈ£ ¹İÀü
+            // 1) ê¸°ì¤€ ìŠ¤ì¼€ì¼: ê¸°ì¡´ rendererì˜ localScale ìœ ì§€ + Xì¶•ë§Œ ë¶€í˜¸ ë°˜ì „
             Vector3 baseScale = renderer.transform.localScale;
 
             float xAbs = Mathf.Abs(baseScale.x);
@@ -229,8 +229,9 @@ namespace CHARACTERS
 
             if (!immediate)
             {
-                // 2) ¼­¼­È÷ ÀüÈ¯ÇÏ´Â °æ¿ì¿¡¸¸ »õ ·»´õ·¯ »ı¼º (¾ËÆÄ ºí·»µù)
-                Image newRenderer = CreateRenderer(renderer.transform.parent); // renderer ±³Ã¼ + »õ alpha=0
+                // 2) ì„œì„œíˆ ì „í™˜í•˜ëŠ” ê²½ìš°ì—ë§Œ ìƒˆ ë Œë”ëŸ¬ ìƒì„± (ì•ŒíŒŒ ë¸”ë Œë”©)
+                Image newRenderer = CreateRenderer(renderer.transform.parent); // renderer êµì²´ + ìƒˆ alpha=0
+
 
                 newRenderer.transform.localScale = newScale;
 
@@ -242,7 +243,7 @@ namespace CHARACTERS
             }
             else
             {
-                // 3) Áï½Ã ÀüÈ¯Àº »õ ·»´õ·¯ ¸¸µéÁö ¸»°í ÇöÀç °Í¸¸ ½ºÄÉÀÏ º¯°æ
+                // 3) ì¦‰ì‹œ ì „í™˜ì€ ìƒˆ ë Œë”ëŸ¬ ë§Œë“¤ì§€ ë§ê³  í˜„ì¬ ê²ƒë§Œ ìŠ¤ì¼€ì¼ ë³€ê²½
                 renderer.transform.localScale = newScale;
             }
 

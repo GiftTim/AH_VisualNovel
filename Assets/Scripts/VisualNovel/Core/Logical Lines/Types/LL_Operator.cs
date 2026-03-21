@@ -19,7 +19,7 @@ namespace DIALOGUE.LogicalLines
 
             if (parts.Length < 3)
             {
-                Debug.LogError($"À¯È¿ÇÏÁö ¾ÊÀº ¸í·É¾î(Invalid command): {trimmedLine}");
+                Debug.LogError($"ìœ íš¨í•˜ì§€ ì•Šì€ ëª…ë ¹ì–´(Invalid command): {trimmedLine}");
                 yield break;
             }
 
@@ -50,7 +50,7 @@ namespace DIALOGUE.LogicalLines
             }
             else
             {
-                Debug.LogWarning($"º¯¼ö '{variable}'ÀÌ Á¸ÀçÇÏÁö ¾Ê½À´Ï´Ù. '=' ¿¬»êÀÚ¸¸ »ç¿ëÇÒ ¼ö ÀÖ½À´Ï´Ù. (Variable '{variable}' does not exist. Only '=' operator can be used.)");
+                Debug.LogWarning($"ë³€ìˆ˜ '{variable}'ì´ ì¡´ìž¬í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤. '=' ì—°ì‚°ìžë§Œ ì‚¬ìš©í•  ìˆ˜ ìžˆìŠµë‹ˆë‹¤. (Variable '{variable}' does not exist. Only '=' operator can be used.)");
             }    
         }
 
@@ -73,13 +73,13 @@ namespace DIALOGUE.LogicalLines
                 case "/=":
                     if (Convert.ToDouble(value) == 0)
                     {
-                        Debug.LogError("0À¸·Î ³ª´­ ¼ö ¾ø½À´Ï´Ù!");
+                        Debug.LogError("0ìœ¼ë¡œ ë‚˜ëˆŒ ìˆ˜ ì—†ìŠµë‹ˆë‹¤!");
                         return;
                     }
                     VariableStore.TrySetValue(variable, Convert.ToDouble(currentValue) / Convert.ToDouble(value));
                     break;
                 default:
-                    Debug.LogError($"¾Ë ¼ö ¾ø´Â ¿¬»êÀÚ(Unknown operator): {op}");
+                    Debug.LogError($"ì•Œ ìˆ˜ ì—†ëŠ” ì—°ì‚°ìž(Unknown operator): {op}");
                     break;
             }
         }

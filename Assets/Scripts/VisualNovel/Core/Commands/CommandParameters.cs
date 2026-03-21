@@ -39,7 +39,7 @@ namespace COMMANDS
 
         public bool TryGetValue<T>(string[] parameterNames, out T value, T defaultValue = default(T))
         {
-            // ÆÄ¶ó¹ÌÅÍ ¾øÀ½ ´ëºñ: ¸ÕÀú ±âº»°ªÀ¸·Î ÃÊ±âÈ­
+            // íŒŒë¼ë¯¸í„° ì—†ìŒ ëŒ€ë¹„: ë¨¼ì € ê¸°ë³¸ê°’ìœ¼ë¡œ ì´ˆê¸°í™”
             value = defaultValue;
 
             foreach (string parameterName in parameterNames)
