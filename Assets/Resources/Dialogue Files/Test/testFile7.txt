@@ -4,10 +4,10 @@ PlaySong("Happy2")
 
 SetLayerMedia(background 01_1)
 
-CreateCharacter(Mina -e true -i false)
+CreateCharacter("Mina" -e true), Mina.setSprite(-s Body3 -l 0), Mina.setSprite(-s Smile -l 1)
 Mina.Move(0 -spd 1 -i true)
-CreateCharacter(Raelin -e true -i false)
-Raelin.Move(1 -spd 1 -e true -i true)
+CreateCharacter("Man as Generic" -e true), Man.SetSprite("Man")
+Man.Move(1 -spd 1 -e true -i true)
 
 Mina "그래! 작동해야지!"
 wait(5)
@@ -57,26 +57,26 @@ StopAmbience(RainyMood)
 
  
 
-Raelin.Animate(Hop), Raelin.Move(0.7 -spd 0.7)
-Raelin [0:B1,1:B_Scold] "좋아, 우선 말인데…{wa 0.5} 차가운 샤워는 <i>절대</i> 좋지 않아. 누가 뭐래도 난 그렇게 생각해.{c}"
+Man.Animate(Hop), Man.Move(0.7 -spd 0.7)
+Man [0:B1,1:B_Scold] "좋아, 우선 말인데…{wa 0.5} 차가운 샤워는 <i>절대</i> 좋지 않아. 누가 뭐래도 난 그렇게 생각해.{c}"
 
 Mina.Move(0.3 -spd 0.7)
 Mina [1:default 3] "저기 봐! 뭔가 보이는 것 같아!"
 
-Raelin "오두막이다! 가자!"
+Man "오두막이다! 가자!"
 
-Mina.Move(1.5 -spd 2), Raelin.Move(1.5 -spd 2), Raelin.FaceRight(), Mina.Hide(), Raelin.Hide()
+Mina.Move(1.5 -spd 2), Man.Move(1.5 -spd 2), Man.FaceRight(), Mina.Hide(), Man.Hide()
 wait(0.75)
 ClearLayerMedia(background), wait(1)
 StopSong(), StopAmbience()
 wait(1)
 
 SetLayerMedia(background inn_night_1), PlaySong(Calm2)
-Mina.Show(), Raelin.Show(), Mina.SetPosition(-0.5), Raelin.SetPosition(-0.5), Mina.FaceRight(), Raelin.FaceRight()
-Mina.Move(0.3 -spd 1.5), Raelin.Move(0 -spd 1.5)
+Mina.Show(), Man.Show(), Mina.SetPosition(-0.5), Man.SetPosition(-0.5), Mina.FaceRight(), Man.FaceRight()
+Mina.Move(0.3 -spd 1.5), Man.Move(0 -spd 1.5)
 wait(1)
 
-Raelin "휴, 그 폭풍에서 드디어 벗어났네.{c} 이제 여기 방이 있기를 바라자."
+Man "휴, 그 폭풍에서 드디어 벗어났네.{c} 이제 여기 방이 있기를 바라자."
 
 Mina "들어가 보자.{c} 실례합니다?{a} 누구 계세요?"
 

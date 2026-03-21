@@ -2,8 +2,8 @@
 PlaySong("Happy2")
 SetLayerMedia(background "bg dungeon_entrance")
 
-CreateCharacter("Man as Generic" -e true), Man.SetSprite("Man")
 CreateCharacter("Mina" -e true), Mina.setSprite(-s Body3 -l 0), Mina.setSprite(-s Smile -l 1)
+CreateCharacter("Man as Generic" -e true), Man.SetSprite("Man")
 
 Man.SetPosition(1.4), Man.Move(1), Mina.Move(0)
 Mina.FaceRight()
@@ -32,5 +32,6 @@ ClearLayerMedia(background -blend leftRight -spd 0.5)
 wait(1)
 StopSong("Happy2")
 wait(1)
+
 
 

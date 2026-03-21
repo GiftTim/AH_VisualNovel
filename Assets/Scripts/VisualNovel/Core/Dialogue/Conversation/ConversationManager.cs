@@ -11,12 +11,13 @@ namespace DIALOGUE
     public class ConversationManager
     {
         private DialogueSystem dialogueSystem => DialogueSystem.instance;
+
         private Coroutine process = null;
         public bool isRunning => process != null;
         public bool isOnLogicalLine {get; private set;} = false;
+
         public TextArchitect architect = null;
         private bool userPrompt = false;
-
 
         private LogicalLineManager logicalLineManager;
 
@@ -95,7 +96,6 @@ namespace DIALOGUE
                 {
                     isOnLogicalLine = true;
                     yield return logic;
-
                 }
                 else
                 {
@@ -168,7 +168,9 @@ namespace DIALOGUE
             Character character = CharacterManager.instance.GetCharacter(speakerData.name, createIfDoesNotExist: characterMustBeCreated);
 
             if (speakerData.makeCharacerEnter && (!character.isVisible && !character.isRevealing))
+            {
                 character.Show();
+            }
 
             //Add character name to the UI.
             dialogueSystem.ShowSpeakerName(TagManager.Inject(speakerData.displayname));

@@ -33,7 +33,7 @@ namespace DIALOGUE.LogicalLines
             Choice selectedChoice = choice[panel.lastDecision.answerIndex];
 
             Conversation newConversation = new Conversation(selectedChoice.resultLines, file: currentConversation.file, fileStartIndex: selectedChoice.startIndex, fileEndIndex: selectedChoice.endIndex);
-            DialogueSystem.instance.conversationManager.conversation.SetProgress(data.endingIndex);
+            DialogueSystem.instance.conversationManager.conversation.SetProgress(data.endingIndex - currentConversation.fileStartIndex);
             DialogueSystem.instance.conversationManager.EnqueuePriority(newConversation);
 
         }

@@ -27,18 +27,18 @@ namespace DIALOGUE
 
         private const string NAMECAST_ID = " as ";
         private const string POSITIONCAST_ID = " at ";
-        private const string EXPRESSIONCAST_ID = @" ["; // Example: [1:happy]
+        private const string EXPRESSIONCAST_ID = " [";
         private const char AXISDELIMITER_ID = ':';
         private const char EXPRESSIONLAYER_JOINER = ',';
         private const char EXPRESSIONLAYER_DELIMITER = ':';
 
-        private const string ENTER_KEYWORD = "enter";
+        private const string ENTER_KEYWORD = "enter ";
         
         private string ProcessKeywords(string rawSpeaker)
         {
-            if (rawSpeaker.StartsWith(ENTER_KEYWORD))
+            if (rawSpeaker.ToLower().StartsWith(ENTER_KEYWORD))
             {
-                rawSpeaker = rawSpeaker.Substring(ENTER_KEYWORD.Length).Trim();
+                rawSpeaker = rawSpeaker.Substring(ENTER_KEYWORD.Length);
                 makeCharacerEnter = true;
             }
             return rawSpeaker;

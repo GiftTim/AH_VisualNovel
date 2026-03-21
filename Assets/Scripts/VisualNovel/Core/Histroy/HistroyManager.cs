@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DIALOGUE;
 using UnityEngine;
@@ -49,7 +50,6 @@ namespace History
         public void GoForward() => navigation.GoForward();
         public void GoBack() => navigation.GoBack();
 
-        
     }
 
 }
