@@ -51,7 +51,7 @@ public class FileManager
         List<string> lines = new List<string>();
         using (StringReader sr = new StringReader(asset.text))
         {
-            while(sr.Peek() > -1)
+            while (sr.Peek() > -1)
             {
                 string line = sr.ReadLine();
                 if (includeBlackLines || !string.IsNullOrWhiteSpace(line))
@@ -59,5 +59,54 @@ public class FileManager
             }
         }
         return lines;
+    }
+    
+    public static bool TryCreateDirectoryFromPath(string path)
+    {
+        if (Directory.Exists(path) || File.Exists(path))
+        {
+            return true;
+        }
+
+        if (path.Contains("."))
+        {
+            path = Path.GetDirectoryName(path);
+            if (Directory.Exists(path))
+            {
+                return true;
+            }
+        }
+
+        if (path == string.Empty)
+        {
+            Debug.LogError("Cannot create directory from empty path.");
+            return false;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(path);
+            return true;
+        }
+        catch(System.Exception ex)
+        {
+            Debug.LogError($"Could not create directory! {ex}");
+            return false;
+        }
+    }
+
+    public static void Save(string filePath, string JSONData)
+    {
+        if (!TryCreateDirectoryFromPath(filePath))
+        {
+            Debug.LogError($"FAILED TO SAVE FILE '{filePath}' Please see the console for error details.");
+            return;
+        }
+
+        StreamWriter sw = new StreamWriter(filePath);
+        sw.Write(JSONData);
+        sw.Close();
+
+        Debug.Log($"Saved data to '{filePath}'");
     }
 }

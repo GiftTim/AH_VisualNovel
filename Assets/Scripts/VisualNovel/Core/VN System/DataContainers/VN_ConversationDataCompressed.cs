@@ -1,16 +1,12 @@
 using UnityEngine;
 
-public class VN_ConversationDataCompressed : MonoBehaviour
+namespace VISUALNOVEL
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    [System.Serializable]
+    public class VN_ConversationDataCompressed
     {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
+        public string fileName;
+        public int startIndex, endIndex;
+        public int progress;
     }
 }

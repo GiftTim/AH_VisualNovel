@@ -32,9 +32,11 @@ namespace DIALOGUE
             dialogueSystem.onUserPrompt_Next += onUserPrompt_Next;
 
             logicalLineManager = new LogicalLineManager();
-            
+
             conversationQueue = new ConversationQueue();
         }
+        
+        public Conversation[] GetConversationQueue() => conversationQueue.GetReadOnly();
 
         public void Enqueue(Conversation conversation) => conversationQueue.Enqueue(conversation);
         public void EnqueuePriority(Conversation conversation) => conversationQueue.EnqueuePriority(conversation);
