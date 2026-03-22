@@ -11,13 +11,22 @@ namespace DIALOGUE
 
         public static DIALOGUE_LINE Parse(string rawLine)
         {
-            //Debug.Log($"Parsing line - '{rawLine}'");
-
             (string speaker, string dialogue, string commands) = RipContent(rawLine);
 
-            //Debug.Log($"Speak='{speaker}' \nDialogue = '{dialogue}'\nCommands = '{commands}'");
             commands = TagManager.Inject(commands);
-            
+
+            //Debug.Log($"Parsing line - '{rawLine}'");
+            //Debug.Log($"Speak='{speaker}' \nDialogue = '{dialogue}'\nCommands = '{commands}'");
+
+            /*
+            We have to inject tags and variables into the speaker and dialogue separately because there are initial checks that have to be performed.
+            But commands neeed no checks, so we can inject the variables in them right now.
+            화자와 대화에는 태그와 변수를 별도로 주입해야 함
+            초기 검증(checks)이 필요하기 때문
+            하지만 명령은 검증이 필요 없으므로 즉시 변수 주입 가능
+            */
+            commands = TagManager.Inject(commands);
+
             return new DIALOGUE_LINE(rawLine, speaker, dialogue, commands);
         }
 

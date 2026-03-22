@@ -984,6 +984,7 @@ GameObject:
   m_Component:
   - component: {fileID: 265844237}
   - component: {fileID: 265844236}
+  - component: {fileID: 265844238}
   m_Layer: 0
   m_Name: VisualNovelManager
   m_TagString: Untagged
@@ -998,7 +999,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 265844235}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d36662542423af94587efbdba78c3b75, type: 3}
   m_Name: 
@@ -1018,6 +1019,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &265844238
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 265844235}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1625064e83ad5af4ebaf25f4d26053a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VNDatabaseLinkSetup
 --- !u!1 &285602933
 GameObject:
   m_ObjectHideFlags: 0
@@ -1755,7 +1768,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 640725164}
-  - component: {fileID: 640725165}
+  - component: {fileID: 640725169}
   - component: {fileID: 640725166}
   - component: {fileID: 640725167}
   - component: {fileID: 640725168}
@@ -1781,19 +1794,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1634830609}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &640725165
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 640725163}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7937c27bce4f4d044ba7e6737ffb1e68, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TESTING.ChoicePanelTesting
-  fileToRoad: {fileID: 4900000, guid: 36a3370f475b7434d97d70f5b3a3a2fe, type: 3}
 --- !u!114 &640725166
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1843,6 +1843,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aada193a1942a3c42bd8237176edef6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TESTING.TestGameSave
+--- !u!114 &640725169
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 640725163}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3906826e978e2334f866fef5af1099ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TESTING.TestDialogueFiles
+  fileToRead: {fileID: 4900000, guid: 36a3370f475b7434d97d70f5b3a3a2fe, type: 3}
 --- !u!1 &643375162
 GameObject:
   m_ObjectHideFlags: 0

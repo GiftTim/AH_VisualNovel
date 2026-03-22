@@ -119,7 +119,7 @@ namespace DIALOGUE
 
                         CommandManager.instance.StopAllProcesses();
 
-                        dialogueSystem.onSystemPrompt_Clear();
+                        dialogueSystem.OnSystemPrompt_Clear();
                     }
                 }
 
@@ -246,7 +246,7 @@ namespace DIALOGUE
             {
                 case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.C:
                     yield return WaitForUserInput();
-                    dialogueSystem.onSystemPrompt_Clear();
+                    dialogueSystem.OnSystemPrompt_Clear();
                     break;
                 case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.A:
                     yield return WaitForUserInput();
@@ -269,7 +269,7 @@ namespace DIALOGUE
                     }
 
                     isWaitingOnAutoTimer = false;
-                    dialogueSystem.onSystemPrompt_Clear();
+                    dialogueSystem.OnSystemPrompt_Clear();
                     break;
                 case DL_DIALOGUE_DATA.DIALOGUE_SEGMENT.StartSignal.WA:
                     isWaitingOnAutoTimer = true;

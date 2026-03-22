@@ -28,6 +28,8 @@ namespace COMMANDS
             database.AddCommand("Hidedb", new Func<string[], IEnumerator>(HideDialogueBox));
 
             database.AddCommand("load", new Action<string[]>(LoadNewDialogueFile));
+
+            database.AddCommand("setplayername", new Action<string>(SetPlayerNameVariable));
         }
 
         private static IEnumerator Wait(string data)
@@ -124,6 +126,11 @@ namespace COMMANDS
             {
                 DialogueSystem.instance.conversationManager.StartConversation(newComversation);
             }
+        }
+    
+        private static void SetPlayerNameVariable(string data)
+        {
+            VISUALNOVEL.VNGameSave.activeFile.playerName = data;
         }
     }
 }

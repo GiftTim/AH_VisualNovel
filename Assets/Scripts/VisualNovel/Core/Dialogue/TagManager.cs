@@ -3,17 +3,17 @@ using System.Globalization;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
+using VISUALNOVEL;
 
 public class TagManager
 {
     private static readonly Dictionary<string, Func<string>> tags = new Dictionary<string, Func<string>>()
     {
 
-        {"<mainChar>",   () => "Avira" },
+        {"<mainChar>",   () => VNGameSave.activeFile.playerName },
         {"<time>",       () => DateTime.Now.ToString("hh:mm tt", CultureInfo.InvariantCulture) },
         {"<playerLevel>",() => "15"},
         { "<input>",     () => InputPanel.instance.lastInput },
-        {"<tempVal1>",   () => "42"}
     };
     
 

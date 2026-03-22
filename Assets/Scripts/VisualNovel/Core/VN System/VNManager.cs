@@ -18,6 +18,9 @@ namespace VISUALNOVEL
             {
                 DestroyImmediate(gameObject);
             }
+
+            VNDatabaseLinkSetup linkSetup = GetComponent<VNDatabaseLinkSetup>();
+            linkSetup.SetupExtrnalLinks();
         }
 
         public void LoadFile(string filePath)

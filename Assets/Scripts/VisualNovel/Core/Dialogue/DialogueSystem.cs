@@ -77,7 +77,7 @@ namespace DIALOGUE
             onUserPrompt_Next?.Invoke();
         }
 
-        public void onSystemPrompt_Clear()
+        public void OnSystemPrompt_Clear()
         {
             onClear?.Invoke();
         }
