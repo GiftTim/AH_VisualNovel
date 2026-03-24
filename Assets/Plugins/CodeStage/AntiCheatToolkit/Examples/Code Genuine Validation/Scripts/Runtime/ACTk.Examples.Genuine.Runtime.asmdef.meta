@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: aafa4e30070a7144198fb13b3d39c456
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Examples/Code Genuine Validation/Scripts/Runtime/ACTk.Examples.Genuine.Runtime.asmdef
+  uploadId: 844778

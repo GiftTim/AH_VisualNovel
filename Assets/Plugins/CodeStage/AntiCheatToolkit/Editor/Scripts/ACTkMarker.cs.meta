@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: 00b850c709170d1469bcd89e6f80b16c
+timeCreated: 1557660868
+licenseType: Store
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Editor/Scripts/ACTkMarker.cs
+  uploadId: 844778

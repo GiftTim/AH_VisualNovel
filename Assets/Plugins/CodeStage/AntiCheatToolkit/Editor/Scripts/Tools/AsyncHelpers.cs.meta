@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 6f7a87b8e9d64a87bfeac78cba14813a
+timeCreated: 1683630296
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Editor/Scripts/Tools/AsyncHelpers.cs
+  uploadId: 844778

@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 6560e603784748ca9e742adbe8119d1c
+timeCreated: 1623342137
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Storage/Prefs/ObscuredPrefs.LegacyApi.cs
+  uploadId: 844778

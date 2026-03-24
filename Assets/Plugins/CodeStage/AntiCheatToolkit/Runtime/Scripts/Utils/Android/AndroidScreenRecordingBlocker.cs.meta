@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: dc8dca0740f24bae975c5c48c5d469bc
+timeCreated: 1717977518
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Utils/Android/AndroidScreenRecordingBlocker.cs
+  uploadId: 844778

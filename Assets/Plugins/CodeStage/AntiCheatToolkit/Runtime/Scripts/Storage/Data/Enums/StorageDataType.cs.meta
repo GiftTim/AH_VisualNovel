@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: d8300df491e14951a99a01d75a2fd1a7
+timeCreated: 1622838527
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Storage/Data/Enums/StorageDataType.cs
+  uploadId: 844778

@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: fb916ebfae36eec4ba1dfb094994b0db
+timeCreated: 1554196070
+licenseType: Store
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Examples/API Examples/Scripts/Runtime/ACTk.Examples.Runtime.asmdef
+  uploadId: 844778

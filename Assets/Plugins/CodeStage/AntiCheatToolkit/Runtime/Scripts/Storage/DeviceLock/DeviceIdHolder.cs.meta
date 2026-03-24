@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 71bc8753816c4dd487c486884a613af3
+timeCreated: 1620332008
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Storage/DeviceLock/DeviceIdHolder.cs
+  uploadId: 844778

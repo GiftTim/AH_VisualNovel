@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 3f01147a33cc454f8b196c9c1334ac86
+timeCreated: 1630166740
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Common/UnityApiResultsHolder.cs
+  uploadId: 844778

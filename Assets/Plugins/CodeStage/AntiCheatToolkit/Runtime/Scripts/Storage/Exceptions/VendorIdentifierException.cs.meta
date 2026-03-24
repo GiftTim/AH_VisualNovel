@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: aebcb2d846cd4234a5dbf58722d0a5f9
+timeCreated: 1631283157
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Storage/Exceptions/VendorIdentifierException.cs
+  uploadId: 844778

@@ -1,0 +1,2 @@
+Please, check out latest Anti-Cheat Toolkit Code Library API Docs here:
+https://docs.codestage.net/actk/api/

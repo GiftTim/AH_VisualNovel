@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: e2c1cc7843a8d8a4cb79097b5a0e507f
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Detectors/Injection/InjectionDetectionInfo.cs
+  uploadId: 844778

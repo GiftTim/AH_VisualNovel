@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 352a6c04af12482086a0adc92034eb9c
+timeCreated: 1679403668
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/ObscuredTypes/ObscuredDouble.API.cs
+  uploadId: 844778

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: eaf7a22e1b4319f40b23596cea6556a4
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Editor/Scripts/ObscuredTypes/PropertyDrawers/ObscuredShortDrawer.cs
+  uploadId: 844778

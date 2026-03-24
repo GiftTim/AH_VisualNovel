@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: ab13e15ddf3b1d24ea07503a57d84959
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Editor/Scripts/ObscuredTypes/PropertyDrawers/ObscuredVector3Drawer.cs
+  uploadId: 844778

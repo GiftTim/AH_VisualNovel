@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: 412e16d0fa167194389bfb6445d52a7d
+timeCreated: 1556318424
+licenseType: Store
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Time/SpeedHackProofTime.cs
+  uploadId: 844778

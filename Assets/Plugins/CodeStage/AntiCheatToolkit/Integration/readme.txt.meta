@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: ba80bafc30976424784d71fb92e3f994
+TextScriptImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Integration/readme.txt
+  uploadId: 844778

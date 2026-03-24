@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 60ed8818221c4eb78b4ebab394aa2c5d
+timeCreated: 1757249400
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Examples/DOTS ECS Examples/Scripts/Authoring/PlayerAuthoring.cs
+  uploadId: 844778

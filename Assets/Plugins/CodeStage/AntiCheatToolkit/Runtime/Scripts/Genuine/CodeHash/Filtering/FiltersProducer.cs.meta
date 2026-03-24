@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: cc6fa73d31024c40b3e61445c307ab3f
+timeCreated: 1679605696
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Genuine/CodeHash/Filtering/FiltersProducer.cs
+  uploadId: 844778

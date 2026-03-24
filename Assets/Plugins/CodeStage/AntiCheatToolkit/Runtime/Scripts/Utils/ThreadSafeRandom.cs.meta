@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 8e4d27a9c75b48ca82b4eee37273f1b2
+timeCreated: 1552380891
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Utils/ThreadSafeRandom.cs
+  uploadId: 844778

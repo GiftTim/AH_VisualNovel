@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: c48a363379404a3f8ffa0970bd1f7653
+timeCreated: 1653693062
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Editor/Scripts/ObscuredTypes/PropertyDrawers/ObscuredBigIntegerDrawer.cs
+  uploadId: 844778

@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 1cd362a81eab4155a2f1585c5d7ba876
+timeCreated: 1544725257
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Editor/Scripts/ObscuredTypes/PropertyDrawers/ObscuredQuaternionDrawer.cs
+  uploadId: 844778

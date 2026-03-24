@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: bea83117fdebb0a468c22e747faaf69f
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Third-Party Notices.txt
+  uploadId: 844778

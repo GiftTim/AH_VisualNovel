@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: fdf0055c31634e909d8fa139c4ed3466
+timeCreated: 1630167247
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Storage/Exceptions/PersistentDataPathException.cs
+  uploadId: 844778

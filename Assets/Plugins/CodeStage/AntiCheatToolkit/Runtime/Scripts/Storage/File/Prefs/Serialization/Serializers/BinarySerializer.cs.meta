@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: ced52881bfaf4d98a304173fa5ef0773
+timeCreated: 1622717656
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Storage/File/Prefs/Serialization/Serializers/BinarySerializer.cs
+  uploadId: 844778

@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 905728f794eb4c9a8871af1cd83479be
+timeCreated: 1622720122
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Storage/File/Prefs/Serialization/SerializationSettings.cs
+  uploadId: 844778

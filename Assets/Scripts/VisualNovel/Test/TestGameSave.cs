@@ -6,9 +6,10 @@ namespace TESTING
     public class TestGameSave : MonoBehaviour
     {
         // Start is called once before the first execution of Update after the MonoBehaviour is created
-        void Start()
+        void Awake()
         {
-            VNGameSave.activeFile = new VNGameSave();        }
+            VNGameSave.activeFile = new VNGameSave();
+        }
 
         // Update is called once per frame
         void Update()
@@ -19,8 +20,10 @@ namespace TESTING
             }
             else if(Input.GetKeyDown(KeyCode.L))
             {
-                VNGameSave.activeFile = FileManager.Load<VNGameSave>($"{FilePaths.gameSaves}1{VNGameSave.FILE_TYPE}");
-                VNGameSave.activeFile.Load();
+                VNGameSave.Load($"{FilePaths.gameSaves}1{VNGameSave.FILE_TYPE}", activateOnLoad: true);
+
+                // VNGameSave.activeFile = FileManager.Load<VNGameSave>($"{FilePaths.gameSaves}1{VNGameSave.FILE_TYPE}");
+                // VNGameSave.activeFile.Activate();
             }
         }
     }

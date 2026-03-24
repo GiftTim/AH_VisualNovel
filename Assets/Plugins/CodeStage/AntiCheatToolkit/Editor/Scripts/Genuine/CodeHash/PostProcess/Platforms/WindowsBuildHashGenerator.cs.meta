@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 02b38fd3639d4fd7a1a6732fadbeebc8
+timeCreated: 1680806778
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Editor/Scripts/Genuine/CodeHash/PostProcess/Platforms/WindowsBuildHashGenerator.cs
+  uploadId: 844778

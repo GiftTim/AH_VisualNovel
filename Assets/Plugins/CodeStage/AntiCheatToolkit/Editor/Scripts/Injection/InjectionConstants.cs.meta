@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: fdb8abbb3fde4da3aa210fccf74e9524
+timeCreated: 1552925592
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Editor/Scripts/Injection/InjectionConstants.cs
+  uploadId: 844778

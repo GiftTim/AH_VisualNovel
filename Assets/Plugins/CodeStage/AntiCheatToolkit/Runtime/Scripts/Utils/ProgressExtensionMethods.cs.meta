@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 8acb09078aef4ba98ac831c94944e1a2
+timeCreated: 1682620618
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Utils/ProgressExtensionMethods.cs
+  uploadId: 844778

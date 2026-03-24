@@ -1,10 +1,11 @@
 using System.Collections.Generic;
-using System.Collections;
 using UnityEngine;
 using System.IO;
+using System.Text;
 
 public class FileManager 
 {
+    private const string KEY  = "SECRETKEY";
     public static List<string> ReadTextFile(string filePath, bool includeBlackLines = true)
     {
         if(!filePath.StartsWith('/'))
@@ -95,7 +96,7 @@ public class FileManager
         }
     }
 
-    public static void Save(string filePath, string JSONData)
+    public static void Save(string filePath, string JSONData, bool encrypt = false)
     {
         if (!TryCreateDirectoryFromPath(filePath))
         {
@@ -103,24 +104,56 @@ public class FileManager
             return;
         }
 
-        StreamWriter sw = new StreamWriter(filePath);
-        sw.Write(JSONData);
-        sw.Close();
+        if (encrypt)
+        {
+            byte[] dataBytes = Encoding.UTF8.GetBytes(JSONData);
+            byte[] keyBytes = Encoding.UTF8.GetBytes(KEY);
+            byte[] encryptedBytes = Xor(dataBytes, keyBytes);
+            
+            File.WriteAllBytes(filePath, encryptedBytes);
+        }
+        else
+        {
+            StreamWriter sw = new StreamWriter(filePath);
+            sw.Write(JSONData);
+            sw.Close();
+        }
 
         Debug.Log($"Saved data to '{filePath}'");
     }
 
-    public static T Load<T>(string filePath)
+    public static T Load<T>(string filePath, bool encrypt = false)
     {
         if (File.Exists(filePath))
         {
-            string JSONData = File.ReadAllLines(filePath)[0];
-            return JsonUtility.FromJson<T>(JSONData);
+            if (encrypt)
+            {
+                byte[] encryptedBytes = File.ReadAllBytes(filePath);
+                byte[] keyBytes = Encoding.UTF8.GetBytes(KEY);
+                byte[] decryptedBytes = Xor(encryptedBytes, keyBytes);
+                string decryptedString = Encoding.UTF8.GetString(decryptedBytes);
+                return JsonUtility.FromJson<T>(decryptedString);
+            }
+            else
+            {
+                string JSONData = File.ReadAllLines(filePath)[0];
+                return JsonUtility.FromJson<T>(JSONData);
+            }
         }
         else
         {
             Debug.LogError($"File not found: '{filePath}'");
             return default(T);
         }
+    }
+
+    private static byte[] Xor(byte[] input, byte[] key)
+    {
+        byte[] output = new byte[input.Length];
+        for (int i = 0; i < input.Length; i++)
+        {
+            output[i] = (byte)(input[i] ^ key[i % key.Length]);
+        }
+        return output;
     }
 }

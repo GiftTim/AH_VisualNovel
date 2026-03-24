@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: ddd4abd9e1e4456d8f6ba9a829d4939a
+timeCreated: 1679402125
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/ObscuredTypes/ObscuredBool.API.cs
+  uploadId: 844778

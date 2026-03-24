@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 4b71b315cb2a41f183596505f2a19126
+timeCreated: 1667508786
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/ObscuredTypes/ObscuredBigInteger.Editor.cs
+  uploadId: 844778

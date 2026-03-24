@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 873848bffb90cd744bb326d9f1bbde6d
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Examples/DOTS ECS Examples/Scripts/README.md
+  uploadId: 844778

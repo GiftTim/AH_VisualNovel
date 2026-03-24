@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 682e4f8bd25b4b3f9ab90c2c080decf5
+timeCreated: 1552927820
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Editor/Scripts/Injection/InjectionRoutines.cs
+  uploadId: 844778

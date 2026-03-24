@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 9717d52c2bf842caaa8575f8f2947afa
+timeCreated: 1680806503
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Editor/Scripts/Genuine/CodeHash/PostProcess/Platforms/AndroidBuildHashGenerator.cs
+  uploadId: 844778

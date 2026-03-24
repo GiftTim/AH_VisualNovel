@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: d4822eb673254d3fa09b8add898e8445
+timeCreated: 1684493697
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Editor/Scripts/ObscuredTypes/PropertyDrawers/ObscuredDateTimeDrawer.cs
+  uploadId: 844778

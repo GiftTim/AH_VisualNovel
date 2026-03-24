@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: c33ea17d2e2648e8a1f1358128cecd86
+timeCreated: 1719661385
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Examples/API Examples/Scripts/Runtime/UsageExamples/AndroidExamples.UI.cs
+  uploadId: 844778

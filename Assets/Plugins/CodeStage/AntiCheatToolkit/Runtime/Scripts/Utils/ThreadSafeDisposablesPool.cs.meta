@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 36a7cddae1a24aacb514e029fed03fa5
+timeCreated: 1682495385
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Utils/ThreadSafeDisposablesPool.cs
+  uploadId: 844778

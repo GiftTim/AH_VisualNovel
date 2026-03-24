@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 95b162e541f72be46bac48d6f19b855a
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Examples/API Examples/Prefabs/ACTk
+    Detectors.prefab
+  uploadId: 844778

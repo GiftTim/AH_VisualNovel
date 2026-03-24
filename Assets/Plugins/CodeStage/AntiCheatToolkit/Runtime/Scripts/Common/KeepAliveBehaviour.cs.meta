@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: cce5e7aa50344452aa5288a5ac0852b5
+timeCreated: 1556838390
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Common/KeepAliveBehaviour.cs
+  uploadId: 844778

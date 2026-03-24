@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 0d5b5067d6a1403e8c65b6b63f7acade
+timeCreated: 1724782025
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Editor/Scripts/ObscuredTypes/PropertyDrawers/Abstract/WideObscuredTypeDrawer.cs
+  uploadId: 844778

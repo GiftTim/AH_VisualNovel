@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 1cb994d96ecfe4d4697d649e0e7d5100
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Detectors/TimeCheating/TimeCheatingDetector.cs
+  uploadId: 844778

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: fa2f8d376473f7844b2df52f3782d5bf
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Examples/DOTS ECS Examples/ACTk
+    Hybrid DOTS Setup.unity
+  uploadId: 844778

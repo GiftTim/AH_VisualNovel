@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 2d0bef565d046a242a0342756348e42f
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Examples/DOTS ECS Examples/Scripts/ACTk.DOTS.Examples.Runtime.asmdef
+  uploadId: 844778

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 5d8cd15768d39b141a1a5365bb23b201
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Examples/Code Genuine Validation/GenuineValidator.unity
+  uploadId: 844778

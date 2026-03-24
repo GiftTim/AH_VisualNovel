@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 5cdd7f4d9c5093c4ea9b389f6d3bf600
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Examples/API Examples/Scripts/Runtime/UsageExamples/GenuineChecksExamples.cs
+  uploadId: 844778

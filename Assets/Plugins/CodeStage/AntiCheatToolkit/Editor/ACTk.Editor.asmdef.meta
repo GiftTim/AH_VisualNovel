@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 8ef82b58ed1acc8419a02b8a05286620
+timeCreated: 1554196096
+licenseType: Store
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Editor/ACTk.Editor.asmdef
+  uploadId: 844778

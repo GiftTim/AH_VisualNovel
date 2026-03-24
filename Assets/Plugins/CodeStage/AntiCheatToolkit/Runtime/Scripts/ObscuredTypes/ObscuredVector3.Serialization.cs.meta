@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: df10ed0e5dfb4dbc85b2d6a8372d8dbe
+timeCreated: 1734376862
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/ObscuredTypes/ObscuredVector3.Serialization.cs
+  uploadId: 844778

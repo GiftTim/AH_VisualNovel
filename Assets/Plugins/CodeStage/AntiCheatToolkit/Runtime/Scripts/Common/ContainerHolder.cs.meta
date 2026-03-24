@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: cf0b42e703ec4f19811989be4515def4
+timeCreated: 1683220715
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Common/ContainerHolder.cs
+  uploadId: 844778

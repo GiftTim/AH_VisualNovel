@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: c71db1d59986c3b41af10f08c0c54787
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/ObscuredTypes/Converters/Newtonsoft/ObscuredTypesNewtonsoftConverter.cs
+  uploadId: 844778

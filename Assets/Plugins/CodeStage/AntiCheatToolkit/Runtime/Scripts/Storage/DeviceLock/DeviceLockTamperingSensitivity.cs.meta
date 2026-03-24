@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: a3df350ee20f4958babae3d07e3661a1
+timeCreated: 1620929044
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Storage/DeviceLock/DeviceLockTamperingSensitivity.cs
+  uploadId: 844778

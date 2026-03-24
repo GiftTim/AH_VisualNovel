@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: bb9d8ea9d58e42a083882e4981608519
+timeCreated: 1623416321
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Runtime/Scripts/Storage/Data/UnsupportedDataTypeException.cs
+  uploadId: 844778

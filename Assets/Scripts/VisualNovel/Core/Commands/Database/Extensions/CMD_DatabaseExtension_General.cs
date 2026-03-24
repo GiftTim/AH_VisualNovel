@@ -29,7 +29,6 @@ namespace COMMANDS
 
             database.AddCommand("load", new Action<string[]>(LoadNewDialogueFile));
 
-            database.AddCommand("setplayername", new Action<string>(SetPlayerNameVariable));
         }
 
         private static IEnumerator Wait(string data)
@@ -128,9 +127,5 @@ namespace COMMANDS
             }
         }
     
-        private static void SetPlayerNameVariable(string data)
-        {
-            VISUALNOVEL.VNGameSave.activeFile.playerName = data;
-        }
     }
 }

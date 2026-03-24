@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 8259422d2c3f43a6a50862621be7436d
+timeCreated: 1557586522
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202695
+  packageName: Anti-Cheat Toolkit
+  packageVersion: 6.8.0
+  assetPath: Assets/Plugins/CodeStage/AntiCheatToolkit/Editor/Scripts/Settings/SymbolsData.cs
+  uploadId: 844778
