@@ -10,7 +10,7 @@ public class SaveLoadSlot : MonoBehaviour
     public Button saveButton;
     public Button loadButton;
     public RawImage previewImage;
-    public TextMeshProUGUI DateText;
+    public TextMeshProUGUI dateText;
     public TextMeshProUGUI titleText;
     public TextMeshProUGUI descriptionText;
     public Button deleteButton;
@@ -36,13 +36,13 @@ public class SaveLoadSlot : MonoBehaviour
     // SaveLoadSlot.cs의 PopulateDetailsFromFile 메서드 수정
     private void PopulateDetailsFromFile(SaveAndLoadMenu.MenuFunction function, VNGameSave file)
     {
-        bool fileExists = File.Exists(filePath);
-        Debug.Log($"File Path: {filePath}, Exists: {fileExists}"); // 디버깅 로그 추가
+        // bool fileExists = File.Exists(filePath);
+        // Debug.Log($"File Path: {filePath}, Exists: {fileExists}"); // 디버깅 로그 추가
 
-        if (!fileExists)
+        if (file == null)
         {
             titleText.text = "Empty File";
-            DateText.text = "";
+            dateText.text = "";
             descriptionText.text = "";
             previewImage.texture = SaveAndLoadMenu.Instance.emptyFileImage;
 
@@ -61,7 +61,9 @@ public class SaveLoadSlot : MonoBehaviour
         }
         else
         {
-
+            titleText.text = $"{fileNumber}.";
+            dateText.text = $"{file.timeStamp}";
+            
         }
     
     }
@@ -85,6 +87,6 @@ public class SaveLoadSlot : MonoBehaviour
     {
         VNGameSave file = VNGameSave.Load(filePath, true);
 
-        SaveAndLoadMenu.Instance.Close();
+        SaveAndLoadMenu.Instance.Close(closeAllMenus: true);
     }
 }

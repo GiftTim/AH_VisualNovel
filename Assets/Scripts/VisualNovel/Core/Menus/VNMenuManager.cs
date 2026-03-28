@@ -4,6 +4,8 @@ using System.Linq;
 
 public class VNMenuManager : MonoBehaviour
 {
+    public static VNMenuManager instance;
+
     private MenuPage activePage = null;
     private bool isOpen = false;
 
@@ -11,6 +13,18 @@ public class VNMenuManager : MonoBehaviour
     [SerializeField] private MenuPage[] pages;
     
     private CanvasGroupController rootCG;
+
+    private void Awake()
+    {
+        if (instance == null)
+        {
+            instance = this;
+        }
+        else
+        {
+            DestroyImmediate(gameObject);
+        }
+    }
 
     void Start()
     {

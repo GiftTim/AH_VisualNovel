@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using DIALOGUE;
@@ -28,6 +29,8 @@ namespace VISUALNOVEL
         public HistoryState[] historyLog;
         public VN_VariableData[] variables;
 
+        public string timeStamp;
+
         public static VNGameSave Load(string filePath, bool activateOnLoad = false)
         {
             VNGameSave save = FileManager.Load<VNGameSave>(filePath, ENCRYPT);
@@ -48,6 +51,8 @@ namespace VISUALNOVEL
             historyLog = HistoryManager.instance.history.ToArray();
             activeConversations = GetConversationData();
             variables = GetVariableData();
+
+            timeStamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
             string saveJSON = JsonUtility.ToJson(this);
             FileManager.Save(filePath, saveJSON, ENCRYPT);

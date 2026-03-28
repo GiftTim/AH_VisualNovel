@@ -18,8 +18,13 @@ public class MenuPage : MonoBehaviour
         anim.SetTrigger(OPEN);
     } 
 
-    public virtual void Close()
+    public virtual void Close(bool closeAllMenus = false)
     {
         anim.SetTrigger(CLOSE);
+
+        if(closeAllMenus)
+        {
+            VNMenuManager.instance.CloseRoot();
+        }
     }
 }

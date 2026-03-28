@@ -48,7 +48,6 @@ public class SaveAndLoadMenu : MenuPage
 
             if(i == 0)
             {
-                Debug.Log($"활성화 됬어요{i}");
                 slot.root.SetActive(true);
                 slot.isAutoSlot = true;
 
