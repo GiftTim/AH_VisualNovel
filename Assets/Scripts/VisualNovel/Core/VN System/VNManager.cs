@@ -21,6 +21,8 @@ namespace VISUALNOVEL
 
             VNDatabaseLinkSetup linkSetup = GetComponent<VNDatabaseLinkSetup>();
             linkSetup.SetupExtrnalLinks();
+
+            VNGameSave.activeFile = new VNGameSave();
         }
 
         public void LoadFile(string filePath)

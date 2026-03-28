@@ -34,7 +34,7 @@ namespace History
             if (isOpen) 
                 return;
 
-            anim.Play("Open");
+            anim.Play("LogOpen");
             isOpen = true;
         }
 
@@ -43,7 +43,7 @@ namespace History
             if (!isOpen) 
                 return;
 
-            anim.Play("Close");
+            anim.Play("LogClose");
             isOpen = false;
         }
     
