@@ -1,0 +1,296 @@
+================================================================
+  버그 분석 문서
+  작성일: 2026-03-29
+  대상 프로젝트: AH_VisualNovel
+  주제: Load(-e false)로 Coffee_Bean 이동 시 titleText.text가 공백이 되는 문제
+================================================================
+
+----------------------------------------------------------------
+  문제 재현 조건
+  - testFile8.txt의 choice에서 두 번째 선택지 선택
+    → Load(Coffee_Bean -folder "CHAPTER 1" -e false) 실행
+  - Coffee_Bean 씬으로 전환 후 세이브 시도
+  - 결과: Save 슬롯의 titleText.text가 공백
+----------------------------------------------------------------
+
+
+================================================================
+  a. 왜 작동하지 않는가
+================================================================
+
+  [ 데이터 흐름 ]
+
+    titleText.text 값은 아래 경로로 설정된다:
+
+      SaveLoadSlot.PopulateDetailsFromFile()
+        → GetFolderLabelFromSave(VNGameSave file)
+          → file.activeConversations[0] 역직렬화
+          → VN_ConversationDataCompressed.fileName 추출
+          → "Dialogue Files/" 접두사 제거 → 첫 '/' 앞 부분 = 폴더명
+          → titleText.text = folderLabel
+
+    따라서 titleText가 공백이 되는 조건은 다음 중 하나다:
+
+      조건 A) file.activeConversations 가 null 또는 Length == 0
+      조건 B) compressed.fileName 이 null 또는 빈 문자열
+      조건 C) withoutPrefix 에 '/' 가 없거나 인덱스 0에 있음
+
+  ---------------------------------------------------------------
+
+  [ 실제 원인: 조건 A - conversationQueue가 빈 상태에서 저장 ]
+
+    VNGameSave.Save()가 GetConversationData()를 호출할 때,
+    내부에서 conversationManager.GetConversationQueue()를 가져온다.
+
+    이 큐가 비어 있으면 activeConversations = [] (길이 0)이 되고,
+    GetFolderLabelFromSave에서 즉시 string.Empty를 반환한다.
+
+  ---------------------------------------------------------------
+
+  [ 언제 큐가 비는가 ]
+
+    Coffee_Bean.txt의 내용:
+
+      (공백)
+      SetLayerMedia(background "training")   ← 커맨드, 자동 실행
+      PlayAmbience(RainyMood)                ← 커맨드, 자동 실행
+      (공백)
+      narrator "번개가 친다."               ← 대화, 유저 입력 대기
+      (공백)
+
+    흐름:
+      1) Load(-e false) 실행 → StartConversation(coffeeBean) 호출
+         - 기존 큐 전부 Clear
+         - coffeeBean만 큐에 추가
+         - 새 RunningConversation 코루틴 시작
+      2) 커맨드 라인들 자동 실행 (유저 입력 없음)
+      3) narrator "번개가 친다." 표시 → 유저 입력 대기
+         → 이 시점에서는 큐에 coffeeBean이 있음 (정상 저장 가능)
+      4) 유저가 '다음' 클릭 → 대화 진행
+      5) 마지막 공백 라인 처리 → HasReachedEnd() = true
+         → conversationQueue.Dequeue() → 큐가 빔
+      6) RunningConversation while 루프 종료 → process = null
+
+    ★ 핵심: 유저가 narrator 라인을 넘기고 나서 저장을 시도하면,
+       이미 큐가 비어 있어 activeConversations = []가 된다.
+
+  ---------------------------------------------------------------
+
+  [ 왜 일반 저장(-e true, 또는 testFile8에서 저장)은 정상인가 ]
+
+    testFile8.txt는 긴 파일이며 대사, choice 등 다수의 유저 입력
+    대기 지점이 있다. 유저가 자연스럽게 저장하는 시점에는
+    아직 대화가 진행 중이므로 큐가 비지 않는다.
+
+    Load(-enqueue true, -e true) 의 경우: Enqueue로 추가하므로
+    기존 큐(testFile8의 남은 라인)도 함께 유지된다.
+    저장 시점에 testFile8이 큐에 남아 있어 폴더명이 표시된다.
+
+    Load(-enqueue false, -e false) 의 경우: StartConversation으로
+    기존 큐를 전부 Clear하고 coffeeBean만 남긴다.
+    Coffee_Bean은 내용이 매우 짧아(narrator 1줄) 빠르게 종료되고,
+    유저가 완독 후 저장하면 큐가 비어 있다.
+
+
+================================================================
+  b. 어떤 식으로 변경할 것인가
+================================================================
+
+  [ 채택 방법: VNGameSave.activeFile에 lastFolderName 필드 추가 ]
+
+    새 conversation이 시작될 때마다(StartConversation, Enqueue),
+    conversation.file에서 폴더명을 추출해
+    VNGameSave.activeFile.lastFolderName에 저장한다.
+
+    저장 시: activeConversations가 비어 있는 경우,
+    lastFolderName을 titleText의 fallback 값으로 사용한다.
+
+    GetFolderLabelFromSave 수정:
+      → activeConversations가 비어 있으면 file.lastFolderName 반환
+      → activeConversations가 있으면 기존 로직대로 fileName에서 추출
+
+  ---------------------------------------------------------------
+
+  [ 변경 대상 코드 흐름 ]
+
+    1) ConversationManager.StartConversation() 호출 시
+       → conversation.file에서 폴더명 추출
+       → VNGameSave.activeFile.lastFolderName = 추출한 폴더명
+
+    2) VNGameSave.lastFolderName 필드 신규 추가 (직렬화 포함)
+
+    3) SaveLoadSlot.GetFolderLabelFromSave() 수정
+       → activeConversations가 비어 있는 경우 lastFolderName 반환
+
+
+================================================================
+  c. 다른 방법들과 비교 - 왜 위 방법을 선택하는가
+================================================================
+
+  방법 1 (채택): lastFolderName 필드 추가
+  -----------------------------------------------
+  장점:
+    - 저장 시점(큐 상태)에 무관하게 폴더명이 유지된다
+    - 세이브 파일에 직렬화되므로 Load 후 재표시도 정확하다
+    - 기존 activeConversations 구조를 변경하지 않아 호환성 유지
+  단점:
+    - VNGameSave에 새 필드가 생겨 기존 세이브 파일과 부분 불일치
+      (구 파일 로드 시 lastFolderName = null → 기존 방식으로 fallback)
+
+  방법 2: 저장 가능 시점을 conversationQueue가 비지 않을 때로 제한
+  -----------------------------------------------
+  장점:
+    - 구현 간단
+  단점:
+    - 사용자가 대화 완료 후 저장을 시도하면 저장이 거부되는 UX 문제
+    - 의도한 게임 플로우를 제한함
+
+  방법 3: 저장 시 conversationQueue가 빈 경우 빈 폴더명 허용
+  -----------------------------------------------
+  장점:
+    - 코드 변경 없음
+  단점:
+    - 현재 버그 그대로 유지. 근본적인 해결이 아님
+
+  방법 4: conversation.file을 lastConversationFile로 별도 보존
+  -----------------------------------------------
+  장점:
+    - 구현 범위가 방법 1과 유사
+  단점:
+    - 파일 전체 경로를 저장하는 것보다 폴더명만 저장하는 것이
+      GetFolderLabelFromSave의 기존 목적에 더 부합함
+    - 중복 정보(fileName이 이미 경로를 포함)
+
+  → 방법 1이 최소 변경으로 정확한 폴더명을 보장하는 가장 실용적인 방법
+
+
+================================================================
+  d. 진행 순서
+================================================================
+
+  Step 1: VNGameSave.cs
+    → lastFolderName 필드 추가 (public string, [System.Serializable] 영향 받음)
+
+  Step 2: ConversationManager.cs
+    → StartConversation() 내부에서
+       conversation.file → 폴더명 추출 → VNGameSave.activeFile.lastFolderName 갱신
+    (Enqueue는 선택적으로 적용 - 필요 시 추가)
+
+  Step 3: SaveLoadSlot.cs
+    → GetFolderLabelFromSave() 수정
+       activeConversations가 비어 있는 경우
+       file.lastFolderName 반환하도록 fallback 추가
+
+
+================================================================
+  e. 어디를 어떻게 변경할 것인가
+================================================================
+
+  ---------------------------------------------------------------
+  파일 1: Assets/Scripts/VisualNovel/Core/VN System/VNGameSave.cs
+  ---------------------------------------------------------------
+  변경 위치: 클래스 필드 선언 영역 (timeStamp 필드 근처)
+
+  변경 전:
+    public string timeStamp;
+
+  변경 후:
+    public string timeStamp;
+    public string lastFolderName;   ← 추가
+
+  ---------------------------------------------------------------
+  파일 2: Assets/Scripts/VisualNovel/Core/Dialogue/Conversation/ConversationManager.cs
+  ---------------------------------------------------------------
+  변경 위치: StartConversation() 메서드
+
+  변경 전:
+    public Coroutine StartConversation(Conversation conversation)
+    {
+        StopConversation();
+        conversationQueue.Clear();
+        Enqueue(conversation);
+        process = dialogueSystem.StartCoroutine(RunningConversation());
+        return process;
+    }
+
+  변경 후:
+    public Coroutine StartConversation(Conversation conversation)
+    {
+        StopConversation();
+        conversationQueue.Clear();
+        Enqueue(conversation);
+
+        // lastFolderName 갱신: 폴더명이 있는 경우에만
+        if (!string.IsNullOrEmpty(conversation.file)
+            && VNGameSave.activeFile != null)
+        {
+            string folderName = ExtractFolderName(conversation.file);
+            if (!string.IsNullOrEmpty(folderName))
+                VNGameSave.activeFile.lastFolderName = folderName;
+        }
+
+        process = dialogueSystem.StartCoroutine(RunningConversation());
+        return process;
+    }
+
+    // 헬퍼 메서드 추가
+    private string ExtractFolderName(string filePath)
+    {
+        string prefix = FilePaths.resources_dialogueFiles; // "Dialogue Files/"
+        string withoutPrefix = filePath.StartsWith(prefix)
+            ? filePath.Substring(prefix.Length)
+            : filePath;
+        int slashIndex = withoutPrefix.IndexOf('/');
+        return slashIndex > 0 ? withoutPrefix.Substring(0, slashIndex) : string.Empty;
+    }
+
+  ---------------------------------------------------------------
+  파일 3: Assets/Scripts/VisualNovel/Core/Menus/Pages/SaveLoadSlot.cs
+  ---------------------------------------------------------------
+  변경 위치: GetFolderLabelFromSave() 메서드
+
+  변경 전:
+    private string GetFolderLabelFromSave(VNGameSave file)
+    {
+        if (file.activeConversations == null || file.activeConversations.Length == 0)
+            return string.Empty;
+
+        try { ... }
+        catch { return string.Empty; }
+    }
+
+  변경 후:
+    private string GetFolderLabelFromSave(VNGameSave file)
+    {
+        if (file.activeConversations == null || file.activeConversations.Length == 0)
+            return file.lastFolderName ?? string.Empty;   ← fallback 추가
+
+        try { ... }
+        catch { return string.Empty; }
+    }
+
+  ---------------------------------------------------------------
+
+  [ 기대 동작 ]
+
+    Load(-e false) → Coffee_Bean 전환 → narrator 라인 종료 → 큐 빔
+    → 저장 시: activeConversations = []
+    → GetFolderLabelFromSave: lastFolderName = "CHAPTER 1" 반환
+    → titleText.text = "CHAPTER 1" 표시 ✓
+
+    기존 저장 파일 (lastFolderName 필드 없는 파일):
+    → lastFolderName = null → null ?? string.Empty = ""
+    → 기존 동작 유지 ✓
+
+
+================================================================
+  관련 파일 요약
+================================================================
+
+  No.  파일                              변경 내용
+  ---  ---------------------------------  --------------------------------
+  1    VNGameSave.cs                      lastFolderName 필드 추가
+  2    ConversationManager.cs             StartConversation에서 lastFolderName 갱신
+  3    SaveLoadSlot.cs                    GetFolderLabelFromSave fallback 추가
+
+================================================================
