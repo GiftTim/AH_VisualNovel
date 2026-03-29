@@ -52,7 +52,7 @@ namespace VISUALNOVEL
             activeConversations = GetConversationData();
             variables = GetVariableData();
 
-            timeStamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            timeStamp = DateTime.Now.ToString("yyyy-MM-dd   HH:mm:ss");
 
             string saveJSON = JsonUtility.ToJson(this);
             FileManager.Save(filePath, saveJSON, ENCRYPT);

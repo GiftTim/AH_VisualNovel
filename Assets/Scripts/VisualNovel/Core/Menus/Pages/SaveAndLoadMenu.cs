@@ -54,7 +54,7 @@ public class SaveAndLoadMenu : MenuPage
                 slot.fileNumber = 0;
                 slot.filePath = $"{FilePaths.gameSaves}autosave{VNGameSave.FILE_TYPE}";
 
-                slot.PopulateDetails(MenuFunction.load); // 항상 load 모드
+                // slot.PopulateDetails(MenuFunction.load); // 항상 load 모드
                 continue;
             }
 

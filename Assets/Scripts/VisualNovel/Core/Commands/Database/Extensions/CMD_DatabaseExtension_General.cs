@@ -12,6 +12,7 @@ namespace COMMANDS
         private static readonly string[] PARAM_IMMEDIATE = new string[] { "-i", "-immediate" };
         private static readonly string[] PARAM_FILEPATH = new string[] { "-f", "-file", "-filepath" };
         private static readonly string[] PARAM_ENQUEUE = new string[] { "-e", "-enqueue" };
+        private static readonly string[] PARAM_FOLDER = new string[] { "-folder", "-dir" };
 
 
 
@@ -98,19 +99,24 @@ namespace COMMANDS
         private static void LoadNewDialogueFile(string[] data)
         {
             string fileName = string.Empty;
+            string folderName = string.Empty;
             bool enqueue = false;
 
             var parameters = ConvertDataToParameters(data);
 
             parameters.TryGetValue(PARAM_FILEPATH, out fileName);
+            parameters.TryGetValue(PARAM_FOLDER, out folderName, defaultValue: string.Empty);
             parameters.TryGetValue(PARAM_ENQUEUE, out enqueue, defaultValue: false);
 
-            string filePath = FilePaths.GetPathToResource(FilePaths.resources_dialogueFiles, fileName);
-            TextAsset file = Resources.Load<TextAsset>(filePath);
+            string resourcePath = string.IsNullOrEmpty(folderName)
+                ? FilePaths.GetPathToResource(FilePaths.resources_dialogueFiles, fileName)
+                : FilePaths.GetPathToResource(FilePaths.resources_dialogueFiles, $"{folderName}/{fileName}");
+
+            TextAsset file = Resources.Load<TextAsset>(resourcePath);
 
             if (file == null)
             {
-                Debug.LogError($"대화 파일에서 '{filePath}' 파일을 불러올 수 없습니다. 해당 파일이 '{FilePaths.resources_dialogueFiles}' 리소스 폴더 안에 있는지 확인해 주세요.");
+                Debug.LogError($"대화 파일에서 '{resourcePath}' 파일을 불러올 수 없습니다. 해당 파일이 '{FilePaths.resources_dialogueFiles}' 리소스 폴더 안에 있는지 확인해 주세요.");
                 return;
             }
 
