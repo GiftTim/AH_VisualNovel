@@ -12,7 +12,6 @@ public class SaveLoadSlot : MonoBehaviour
     public RawImage previewImage;
     public TextMeshProUGUI dateText;
     public TextMeshProUGUI titleText;
-    public TextMeshProUGUI descriptionText;
     public Button deleteButton;
     public bool isAutoSlot = false;
 
@@ -36,41 +35,78 @@ public class SaveLoadSlot : MonoBehaviour
     // SaveLoadSlot.cs의 PopulateDetailsFromFile 메서드 수정
     private void PopulateDetailsFromFile(SaveAndLoadMenu.MenuFunction function, VNGameSave file)
     {
-        // bool fileExists = File.Exists(filePath);
-        // Debug.Log($"File Path: {filePath}, Exists: {fileExists}"); // 디버깅 로그 추가
 
         if (file == null)
         {
-            titleText.text = "Empty File";
+            titleText.text = "";
             dateText.text = "";
-            descriptionText.text = "";
             previewImage.texture = SaveAndLoadMenu.Instance.emptyFileImage;
 
             if (isAutoSlot)
             {
                 loadButton.gameObject.SetActive(true); // 26.03.28 AutoSlot은 처음부터 초기파일(시작파일)을 넣는 걸로 초기화 시킬 것이기 때문에 항상 Load 활성화
-                saveButton.gameObject.SetActive(false);
-                deleteButton.gameObject.SetActive(false);
+                saveButton.gameObject.SetActive(false); // 아예 등장시키질 않을 거라서 그냥 비활성화
+                deleteButton.gameObject.SetActive(false); // 아예 등장시키질 않을 거라서 그냥 비활성화
             }
             else
             {
                 loadButton.gameObject.SetActive(false); // 일반 슬롯 Load 버튼 강제 비활성화
-                saveButton.gameObject.SetActive(true); // 가장 기본 상태은 Save할 수 있는 상태
-                deleteButton.gameObject.SetActive(false);
+                saveButton.gameObject.SetActive(function == SaveAndLoadMenu.MenuFunction.save); // 가장 기본 상태은 Save할 수 있는 상태
+                var cEmpty = saveButton.image.color;
+                saveButton.image.color = new Color(cEmpty.r, cEmpty.g, cEmpty.b, 1f); // 빈 슬롯이므로 Save 버튼 불투명 복원
+                deleteButton.gameObject.SetActive(false); // Load 모드일 때만 삭제 가능하도록
             }
         }
         else
         {
-            titleText.text = $"{fileNumber}.";
+            string folderLabel = GetFolderLabelFromSave(file);
+            titleText.text = string.IsNullOrEmpty(folderLabel) ? string.Empty : $"{folderLabel}";
             dateText.text = $"{file.timeStamp}";
+
+            loadButton.gameObject.SetActive(true);  // 파일 있으면 모드 관계없이 항상 Load 가능
+            saveButton.gameObject.SetActive(function == SaveAndLoadMenu.MenuFunction.save);
+            if (function == SaveAndLoadMenu.MenuFunction.save)
+            {
+                var c = saveButton.image.color;
+                saveButton.image.color = new Color(c.r, c.g, c.b, 0f); // 저장된 슬롯: Save 버튼 투명화 → 뒤 LoadButton이 보이도록
+            }
+            deleteButton.gameObject.SetActive(true); // Load 모드일 때만 삭제 가능하도록
+            previewImage.texture = null;
             
         }
-    
+
+    }
+
+    private string GetFolderLabelFromSave(VNGameSave file)
+    {
+        if (file.activeConversations == null || file.activeConversations.Length == 0)
+            return string.Empty;
+
+        try
+        {
+            var compressed = JsonUtility.FromJson<VISUALNOVEL.VN_ConversationDataCompressed>(file.activeConversations[0]);
+            if (compressed == null || string.IsNullOrEmpty(compressed.fileName))
+                return string.Empty;
+
+            // "Dialogue Files/Chapter1/Coffee_Bean" → "Chapter1"
+            string prefix = FilePaths.resources_dialogueFiles;
+            string withoutPrefix = compressed.fileName.StartsWith(prefix)
+                ? compressed.fileName.Substring(prefix.Length)
+                : compressed.fileName;
+
+            int slashIndex = withoutPrefix.IndexOf('/');
+            return slashIndex > 0 ? withoutPrefix.Substring(0, slashIndex) : string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
     }
 
     public void Delete()
     {
-        
+        File.Delete(filePath);
+        PopulateDetails(SaveAndLoadMenu.Instance.menuFunction);
     }
 
     public void Save()

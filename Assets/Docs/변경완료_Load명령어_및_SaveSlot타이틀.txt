@@ -1,0 +1,226 @@
+================================================================
+  변경 완료 문서
+  작성일: 2026-03-28
+  대상 프로젝트: AH_VisualNovel
+================================================================
+
+----------------------------------------------------------------
+  목차
+  1. Load 명령어 폴더 지원 (CMD_DatabaseExtension_General.cs)
+  2. SaveLoadSlot 타이틀에 폴더명 표시 (SaveLoadSlot.cs)
+----------------------------------------------------------------
+
+
+================================================================
+  1. Load 명령어 폴더 지원
+================================================================
+
+[ 변경 파일 ]
+  Assets/Scripts/VisualNovel/Core/Commands/Database/
+  Extensions/CMD_DatabaseExtension_General.cs
+
+[ 변경 메서드 ]
+  private static void LoadNewDialogueFile(string[] data)
+
+----------------------------------------------------------------
+
+[ 변경 전 코드 ]
+  -------------------------------------------------------
+  private static void LoadNewDialogueFile(string[] data)
+  {
+      string fileName = string.Empty;
+      bool enqueue = false;
+
+      var parameters = ConvertDataToParameters(data);
+
+      parameters.TryGetValue(PARAM_FILEPATH, out fileName);
+      parameters.TryGetValue(PARAM_ENQUEUE, out enqueue, defaultValue: false);
+
+      string filePath = FilePaths.GetPathToResource(FilePaths.resources_dialogueFiles, fileName);
+      TextAsset file = Resources.Load<TextAsset>(filePath);
+
+      if (file == null)
+      {
+          Debug.LogError($"대화 파일에서 '{filePath}' 파일을 불러올 수 없습니다. ...");
+          return;
+      }
+
+      List<string> lines = FileManager.ReadTextAsset(file, includeBlackLines: true);
+      Conversation newComversation = new Conversation(lines);
+
+      if (enqueue)
+          DialogueSystem.instance.conversationManager.Enqueue(newComversation);
+      else
+          DialogueSystem.instance.conversationManager.StartConversation(newComversation);
+  }
+  -------------------------------------------------------
+
+[ 변경 후 코드 ]
+  -------------------------------------------------------
+  private static void LoadNewDialogueFile(string[] data)
+  {
+      string fileName = string.Empty;
+      string folderName = string.Empty;
+      bool enqueue = false;
+
+      // 콜론으로 끝나는 인자를 폴더명으로 감지
+      foreach (string arg in data)
+      {
+          if (arg.TrimStart().EndsWith(":"))
+          {
+              folderName = arg.TrimStart().TrimEnd(':').Trim();
+              break;
+          }
+      }
+
+      var parameters = ConvertDataToParameters(data);
+
+      parameters.TryGetValue(PARAM_FILEPATH, out fileName);
+      parameters.TryGetValue(PARAM_ENQUEUE, out enqueue, defaultValue: false);
+
+      string resourcePath = string.IsNullOrEmpty(folderName)
+          ? FilePaths.GetPathToResource(FilePaths.resources_dialogueFiles, fileName)
+          : FilePaths.GetPathToResource(FilePaths.resources_dialogueFiles, $"{folderName}/{fileName}");
+
+      TextAsset file = Resources.Load<TextAsset>(resourcePath);
+
+      if (file == null)
+      {
+          Debug.LogError($"대화 파일에서 '{resourcePath}' 파일을 불러올 수 없습니다. ...");
+          return;
+      }
+
+      List<string> lines = FileManager.ReadTextAsset(file, includeBlackLines: true);
+      Conversation newComversation = new Conversation(lines);
+
+      if (enqueue)
+          DialogueSystem.instance.conversationManager.Enqueue(newComversation);
+      else
+          DialogueSystem.instance.conversationManager.StartConversation(newComversation);
+  }
+  -------------------------------------------------------
+
+[ 변경 요약 ]
+  - string folderName 변수 추가
+  - data 배열을 순회하며 콜론(:)으로 끝나는 인자를 folderName으로 파싱
+  - filePath → resourcePath 로 변수명 변경
+  - folderName 유무에 따라 리소스 경로 분기 처리
+
+[ 사용 예시 ]
+  - load(Coffee_Bean)               → Dialogue Files/Coffee_Bean
+  - load(Chapter1: Coffee_Bean)     → Dialogue Files/Chapter1/Coffee_Bean
+  - load(Chapter2: Ending_A)        → Dialogue Files/Chapter2/Ending_A
+
+[ 하위 호환 ]
+  - 기존 load(파일명) 형태 그대로 동작
+
+
+================================================================
+  2. SaveLoadSlot 타이틀에 폴더명 표시
+================================================================
+
+[ 변경 파일 ]
+  Assets/Scripts/VisualNovel/Core/Menus/Pages/SaveLoadSlot.cs
+
+[ 변경 위치 ]
+  - PopulateDetailsFromFile() 의 else 블록
+  - GetFolderLabelFromSave() 헬퍼 메서드 신규 추가
+
+----------------------------------------------------------------
+
+[ 변경 전 코드 ]
+  -------------------------------------------------------
+  else
+  {
+      titleText.text = $"{fileNumber}.";
+      dateText.text = $"{file.timeStamp}";
+  }
+  -------------------------------------------------------
+
+[ 변경 후 코드 ]
+  -------------------------------------------------------
+  else
+  {
+      string folderLabel = GetFolderLabelFromSave(file);
+      titleText.text = string.IsNullOrEmpty(folderLabel)
+          ? $"{fileNumber}."
+          : $"{fileNumber}. [{folderLabel}]";
+
+      dateText.text = $"{file.timeStamp}";
+  }
+
+  // 추가 헬퍼 메서드
+  private string GetFolderLabelFromSave(VNGameSave file)
+  {
+      if (file.activeConversations == null || file.activeConversations.Length == 0)
+          return string.Empty;
+
+      try
+      {
+          var compressed = JsonUtility.FromJson<VISUALNOVEL.VN_ConversationDataCompressed>(file.activeConversations[0]);
+          if (compressed == null || string.IsNullOrEmpty(compressed.fileName))
+              return string.Empty;
+
+          // "Dialogue Files/Chapter1/Coffee_Bean" → "Chapter1"
+          string prefix = FilePaths.resources_dialogueFiles;
+          string withoutPrefix = compressed.fileName.StartsWith(prefix)
+              ? compressed.fileName.Substring(prefix.Length)
+              : compressed.fileName;
+
+          int slashIndex = withoutPrefix.IndexOf('/');
+          return slashIndex > 0 ? withoutPrefix.Substring(0, slashIndex) : string.Empty;
+      }
+      catch
+      {
+          return string.Empty;
+      }
+  }
+  -------------------------------------------------------
+
+[ 변경 요약 ]
+  - GetFolderLabelFromSave() 헬퍼 메서드 추가
+  - activeConversations[0] JSON에서 VN_ConversationDataCompressed 역직렬화
+  - fileName에서 "Dialogue Files/" 접두사 제거 후 첫 번째 '/' 앞 부분을 폴더명으로 추출
+  - 폴더명이 있으면 titleText에 "[폴더명]" 함께 표시
+  - 예외 발생 시 string.Empty 반환하여 안전하게 처리
+
+[ 표시 예시 ]
+  - 폴더 없는 파일   → "1."
+  - 폴더 있는 파일   → "1. [Chapter1]"
+
+[ 하위 호환 ]
+  - VNGameSave에 새 필드 없음 → 기존 세이브 파일 완전 호환
+
+
+================================================================
+  데이터 흐름 정리
+================================================================
+
+  세이브 시
+    VNGameSave.Save()
+      → GetConversationData()
+        → conversation.file 에서 리소스 경로 저장
+           예: "Dialogue Files/Chapter1/Coffee_Bean"
+        → VN_ConversationDataCompressed.fileName 에 담아 JSON 직렬화
+        → activeConversations[0] 에 저장됨
+
+  슬롯 표시 시
+    SaveLoadSlot.PopulateDetailsFromFile()
+      → GetFolderLabelFromSave() 호출
+        → activeConversations[0] 역직렬화
+          → fileName = "Dialogue Files/Chapter1/Coffee_Bean"
+          → "Dialogue Files/" 제거 → "Chapter1/Coffee_Bean"
+          → 첫 번째 '/' 앞 부분 추출 → "Chapter1"
+      → titleText = "1. [Chapter1]"
+
+
+================================================================
+  변경 파일 요약
+================================================================
+
+  No.  파일                                변경 내용
+  ---  ------------------------------------  --------------------------------
+  1    CMD_DatabaseExtension_General.cs      Load 명령어에 폴더명 콜론 파싱 추가
+  2    SaveLoadSlot.cs                       titleText에 폴더명 표시 + 헬퍼 메서드 추가
+
+================================================================

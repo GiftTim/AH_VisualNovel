@@ -1,0 +1,99 @@
+====================================================
+  SaveLoadMenu 기능 추가 변경 완료 보고서
+  작성일: 2026-03-29
+====================================================
+
+[ 변경 결과 요약 ]
+
+  계획서(변경계획_SaveLoadMenu_기능추가_기획.txt)의 3가지 기능을
+  아래와 같이 처리하였음.
+
+
+----------------------------------------------------
+Step 1. deleteButton 누락 처리 (코드)
+----------------------------------------------------
+
+  상태: 변경 불필요 (이미 완료됨)
+
+  확인 내용:
+    - 계획서에서는 file != null 블록에 deleteButton.SetActive가 누락되었다고
+      명시하였으나, 코드 확인 결과 이미 존재하고 있었음.
+    - SaveLoadSlot.cs line 66:
+        deleteButton.gameObject.SetActive(function == SaveAndLoadMenu.MenuFunction.load);
+    - 별도 수정 없이 통과.
+
+
+----------------------------------------------------
+Step 2. PopulateDetailsFromFile() 수정 (코드)
+----------------------------------------------------
+
+  상태: 변경 완료
+
+  파일: Assets/Scripts/VisualNovel/Core/Menus/Pages/SaveLoadSlot.cs
+  위치: PopulateDetailsFromFile() 내 file != null 블록
+
+  변경 전 (line 64):
+      loadButton.gameObject.SetActive(function == SaveAndLoadMenu.MenuFunction.load);
+      saveButton.gameObject.SetActive(function == SaveAndLoadMenu.MenuFunction.save);
+
+  변경 후 (line 64):
+      loadButton.gameObject.SetActive(true);  // 파일 있으면 모드 관계없이 항상 Load 가능
+      saveButton.gameObject.SetActive(function == SaveAndLoadMenu.MenuFunction.save);
+
+  효과:
+      상태                        결과
+      Save 모드 + 빈 슬롯         Save 버튼만 표시
+      Save 모드 + 저장된 슬롯     Save + Load 둘 다 표시
+      Load 모드 + 저장된 슬롯     Load + Delete 표시
+
+  동작 흐름:
+      Save() 호출
+        → activeSave.Save() 실행 (파일 디스크에 기록)
+        → PopulateDetailsFromFile() 호출
+        → 이제 file != null 경로 진입
+        → loadButton.SetActive(true) 자동 반영
+    → 별도 SetActive 코드 추가 없이 기능 1, 2 모두 커버됨.
+
+
+----------------------------------------------------
+Step 3. 인스펙터 연결 확인 (Unity 에디터)
+----------------------------------------------------
+
+  상태: 코드 작업 완료, Unity 에디터에서 직접 확인 필요
+
+  확인 항목:
+    - 각 SaveLoadSlot 프리팹/오브젝트의 인스펙터에서:
+        saveButton.onClick  → SaveLoadSlot.Save()  연결 여부
+        loadButton.onClick  → SaveLoadSlot.Load()  연결 여부
+        deleteButton.onClick → SaveLoadSlot.Delete() 연결 여부 (Delete 미구현 상태)
+
+  비고:
+    - Save(), Load() 메서드는 이미 코드에 구현되어 있음.
+    - 인스펙터 연결 여부만 확인하면 되며 코드 변경은 없음.
+
+
+----------------------------------------------------
+Step 4. 테스트 항목 (미수행 - 에디터에서 직접 확인 필요)
+----------------------------------------------------
+
+  □ Save 모드 진입 → 빈 슬롯 저장 후 loadButton으로 전환되는지 확인
+  □ Save 모드 진입 → 기존 슬롯 덮어쓰기 후 loadButton으로 전환되는지 확인
+  □ Load 모드 진입 → 슬롯 클릭 후 불러오기 및 메뉴 닫힘 확인
+  □ 저장한 슬롯만 전환되고 나머지 슬롯은 영향 없는지 확인
+  □ AutoSlot이 전환 로직과 무관한지 확인
+      (AutoSlot은 isAutoSlot = true 분기가 별도 처리되어 영향 없음)
+
+
+----------------------------------------------------
+변경된 파일 목록
+----------------------------------------------------
+
+  [코드 변경]
+    - Assets/Scripts/VisualNovel/Core/Menus/Pages/SaveLoadSlot.cs
+        PopulateDetailsFromFile() file != null 블록 line 64 수정
+
+  [변경 없음]
+    - SaveAndLoadMenu.cs  (수정 불필요)
+    - 인스펙터 설정       (에디터에서 직접 확인 필요)
+
+====================================================
