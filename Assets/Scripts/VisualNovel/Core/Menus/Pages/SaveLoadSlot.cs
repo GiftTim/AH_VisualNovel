@@ -71,8 +71,11 @@ public class SaveLoadSlot : MonoBehaviour
                 saveButton.image.color = new Color(c.r, c.g, c.b, 0f); // 저장된 슬롯: Save 버튼 투명화 → 뒤 LoadButton이 보이도록
             }
             deleteButton.gameObject.SetActive(true); // Load 모드일 때만 삭제 가능하도록
-            previewImage.texture = null;
             
+            byte[] data = File.ReadAllBytes(file.screenshotPath);
+            Texture2D screenshotPreview = new Texture2D(2, 2);
+            ImageConversion.LoadImage(screenshotPreview, data);
+            previewImage.texture = screenshotPreview;            
         }
 
     }

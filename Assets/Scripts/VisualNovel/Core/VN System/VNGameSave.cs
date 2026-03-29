@@ -16,6 +16,7 @@ namespace VISUALNOVEL
         public const string FILE_TYPE = ".vns";
         public const string SCREENSHOT_FILE_TYPE = ".jpg";
         public const bool ENCRYPT = true;
+        public const float SCREENSHOT_DOWNSCALE_AMOUNT = 0.25f;
 
         public string filePath => $"{FilePaths.gameSaves}{slotNumber}{FILE_TYPE}";
         public string screenshotPath => $"{FilePaths.gameSaves}{slotNumber}{SCREENSHOT_FILE_TYPE}";
@@ -53,7 +54,7 @@ namespace VISUALNOVEL
             variables = GetVariableData();
 
             timeStamp = DateTime.Now.ToString("yyyy-MM-dd   HH:mm:ss");
-
+            ScreenShotFunction.CaptureScreenshot(VNManager.instance.mainCamera, Screen.width, Screen.height, SCREENSHOT_DOWNSCALE_AMOUNT, screenshotPath);
             string saveJSON = JsonUtility.ToJson(this);
             FileManager.Save(filePath, saveJSON, ENCRYPT);
         }

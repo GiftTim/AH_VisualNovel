@@ -2,10 +2,10 @@ using UnityEngine;
 
 public class ScreenShotFunction : MonoBehaviour
 {
-    public static Texture2D CaptureScreenshot(int width, int height, int superSize = 1, string filePath = "") 
+    public static Texture2D CaptureScreenshot(int width, int height, float superSize = 1, string filePath = "") 
         => CaptureScreenshot(Camera.main, width, height, superSize, filePath);
     
-    public static Texture2D CaptureScreenshot(Camera cam, int width, int height, int superSize = 1, string filePath = "")
+    public static Texture2D CaptureScreenshot(Camera cam, int width, int height, float superSize = 1, string filePath = "")
     {
         if(superSize != 1)
         {
@@ -29,25 +29,40 @@ public class ScreenShotFunction : MonoBehaviour
         RenderTexture.active = null;
         RenderTexture.ReleaseTemporary(rt);
 
+        if(filePath != "")
+        {
+            SaveScreenshotToFile(screenShot, filePath);
+        }
+
         return screenShot;
     }
 
     public enum ImageType { PNG, JPG }
 
-    public static void SaveScreenshotToFile(Texture2D screenshot, string filePath, string fileType = ".png")
+    public static void SaveScreenshotToFile(Texture2D screenshot, string filePath, ImageType fileType = ImageType.PNG)
     {
-        if (string.IsNullOrEmpty(filePath))
+        byte[] bytes = new byte[0];
+        string extension = "";
+
+        switch (fileType)
         {
-            Debug.LogError("File path is null or empty. Cannot save screenshot.");
-            return;
+            case ImageType.PNG:
+                bytes = screenshot.EncodeToPNG();
+                break;
+            case ImageType.JPG:
+                bytes = screenshot.EncodeToJPG();
+                break;
         }
 
-        if (!filePath.EndsWith(fileType))
+        if(!filePath.Contains("."))
         {
-            filePath += fileType;
+            filePath = filePath + extension;
         }
-    {
-        byte[] bytes = screenshot.EncodeToJPG();
+
         System.IO.File.WriteAllBytes(filePath, bytes);
+
     }
+
+
+
 }

@@ -95,10 +95,22 @@ namespace COMMANDS
 
             if (graphic is Texture)
             {
+                if(!immediate)
+                {
+                    CommandManager.instance.AddTerminationActionToCurrentProcess(
+                        ()=> {graphicLayer?.SetTexture(graphic as Texture, filePath: pathToGraphic, immediate: true); });
+                }
+
                 yield return graphicLayer.SetTexture(graphic as Texture, transitionSpeed, blendTex, pathToGraphic, immediate);
             }
             else
             {
+                if (!immediate)
+                {
+                    CommandManager.instance.AddTerminationActionToCurrentProcess(
+                        () => { graphicLayer?.SetVideo(graphic as VideoClip, transitionSpeed, useAudio, blendTex, pathToGraphic, immediate); });
+                }
+                
                 yield return graphicLayer.SetVideo(graphic as VideoClip, transitionSpeed, useAudio, blendTex, pathToGraphic, immediate);
             }
         }

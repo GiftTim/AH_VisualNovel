@@ -7,6 +7,7 @@ namespace VISUALNOVEL
     public class VNManager : MonoBehaviour
     {
         public static VNManager instance { get; private set; }
+        public Camera mainCamera;
 
         private void Awake()
         {

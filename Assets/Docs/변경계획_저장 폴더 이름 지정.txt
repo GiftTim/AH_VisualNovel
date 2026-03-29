@@ -1,0 +1,86 @@
+================================================================================
+수정 계획서: 세이브 슬롯 폴더 이름 미표시 버그 수정
+================================================================================
+작성일: 2026-03-29
+
+--------------------------------------------------------------------------------
+a. 어떻게 추가/변경할 것인가
+--------------------------------------------------------------------------------
+
+CMD_DatabaseExtension_General.cs 124번 줄에서
+Conversation 객체 생성 시 resourcePath를 file 인자로 전달하도록 수정한다.
+
+[변경 전]
+    Conversation newComversation = new Conversation(lines);
+
+[변경 후]
+    Conversation newComversation = new Conversation(lines, file: resourcePath);
+
+이것이 유일한 변경점이다. 단 한 줄 수정으로 버그가 해결된다.
+
+
+--------------------------------------------------------------------------------
+b. 다른 방법들과 비교 — 왜 이 방법을 선택했는가
+--------------------------------------------------------------------------------
+
+방법 1 (선택): Conversation 생성 시 resourcePath를 전달
+  - Conversation 객체가 자신이 어느 파일에서 왔는지 처음부터 올바르게 알고 있음
+  - 세이브 → 로드 흐름 전체가 자연스럽게 동작
+  - 변경 범위: 1줄
+  - 부작용 없음
+
+방법 2 (기각): GetFolderLabelFromSave에서 다른 필드를 파싱
+  - activeConversations[0]의 fileName이 원래 비어있으므로 파싱 자체가 불가
+  - 근본 원인을 해결하지 못하는 우회책
+
+방법 3 (기각): VNGameSave.Save()에서 fileName을 별도로 채워넣기
+  - 저장 시점에 원본 경로 정보가 이미 유실된 상태
+  - 역방향으로 경로를 재구성해야 하므로 불안정
+
+→ 방법 1이 문제의 발생 지점(Conversation 생성 시 file 미전달)을 직접 수정하는
+  가장 정확하고 범위가 작은 수정이다.
+
+
+--------------------------------------------------------------------------------
+c. 진행 순서
+--------------------------------------------------------------------------------
+
+1. CMD_DatabaseExtension_General.cs 124번 줄 수정
+   new Conversation(lines)  →  new Conversation(lines, file: resourcePath)
+
+2. (선택적 확인) 실제 저장 파일의 JSON을 열어 fileName 필드가 채워지는지 확인
+   경로 예: Assets/appdata/Save Files/
+
+3. Unity 플레이 모드에서
+   - Load(Coffee_Bean -folder "CHAPTER 1" -enqueue true) 실행
+   - 세이브
+   - 세이브 슬롯 UI에서 폴더 이름 CHAPTER 1 표시 확인
+
+
+--------------------------------------------------------------------------------
+d. 변경 위치 및 내용 상세
+--------------------------------------------------------------------------------
+
+파일: Assets/Scripts/VisualNovel/Core/Commands/Database/Extensions/
+      CMD_DatabaseExtension_General.cs
+
+변경 줄: 124번
+
+변경 내용:
+  Conversation 생성자의 file 파라미터에 resourcePath를 전달한다.
+  resourcePath는 같은 함수 내 111~113번 줄에서 이미 계산되어 있다.
+
+  예시 경로값: "Dialogue Files/CHAPTER 1/Coffee_Bean"
+
+  이 값이 conversation.file에 저장되면:
+  → VNGameSave.Save() 호출 시 compressedData.fileName = "Dialogue Files/CHAPTER 1/Coffee_Bean"
+  → GetFolderLabelFromSave()에서 prefix 제거 후 "CHAPTER 1/Coffee_Bean" 획득
+  → 첫 번째 '/' 앞 문자열 "CHAPTER 1" 반환
+  → titleText.text = CHAPTER 1 표시됨
+
+변경되지 않는 파일:
+  - SaveLoadSlot.cs        (GetFolderLabelFromSave 로직 그대로 유지)
+  - VNGameSave.cs          (세이브/로드 로직 그대로 유지)
+  - Conversation.cs        (생성자 시그니처 그대로 유지, file 파라미터는 이미 존재)
+
+================================================================================

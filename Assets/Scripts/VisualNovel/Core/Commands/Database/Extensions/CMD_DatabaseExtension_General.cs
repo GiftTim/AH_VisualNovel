@@ -121,7 +121,7 @@ namespace COMMANDS
             }
 
             List<string> lines = FileManager.ReadTextAsset(file, includeBlackLines: true);
-            Conversation newComversation = new Conversation(lines);
+            Conversation newComversation = new Conversation(lines, file: resourcePath);
 
             if (enqueue)
             {

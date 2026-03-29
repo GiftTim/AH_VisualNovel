@@ -665,8 +665,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 773625677}
   - {fileID: 1185507291}
+  - {fileID: 773625677}
   - {fileID: 1777295051}
   m_Father: {fileID: 2028531089}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2776,11 +2776,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 265844235}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d36662542423af94587efbdba78c3b75, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VISUALNOVEL.VNManager
+  mainCamera: {fileID: 1835682000}
 --- !u!4 &265844237
 Transform:
   m_ObjectHideFlags: 0
@@ -3084,7 +3085,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1321312612}
+      - m_Target: {fileID: 1298898018}
         m_TargetAssemblyTypeName: SaveLoadSlot, Assembly-CSharp
         m_MethodName: Delete
         m_Mode: 1
@@ -6016,7 +6017,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1321312612}
+      - m_Target: {fileID: 775222730}
         m_TargetAssemblyTypeName: SaveLoadSlot, Assembly-CSharp
         m_MethodName: Load
         m_Mode: 1
@@ -7905,8 +7906,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 161076824}
   - {fileID: 586568556}
+  - {fileID: 161076824}
   - {fileID: 1417442716}
   m_Father: {fileID: 2028531089}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -12617,7 +12618,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1321312612}
+      - m_Target: {fileID: 86178400}
         m_TargetAssemblyTypeName: SaveLoadSlot, Assembly-CSharp
         m_MethodName: Load
         m_Mode: 1
@@ -13751,8 +13752,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 487806131}
   - {fileID: 2074426752}
+  - {fileID: 487806131}
   - {fileID: 288411255}
   m_Father: {fileID: 2028531089}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -13886,8 +13887,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2018147559}
   - {fileID: 1484433312}
+  - {fileID: 2018147559}
   - {fileID: 942034930}
   m_Father: {fileID: 2028531089}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -14610,7 +14611,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1321312612}
+      - m_Target: {fileID: 2021769114}
         m_TargetAssemblyTypeName: SaveLoadSlot, Assembly-CSharp
         m_MethodName: Delete
         m_Mode: 1
@@ -15295,7 +15296,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1321312612}
+      - m_Target: {fileID: 775222730}
         m_TargetAssemblyTypeName: SaveLoadSlot, Assembly-CSharp
         m_MethodName: Delete
         m_Mode: 1
@@ -17123,8 +17124,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1084755021}
   - {fileID: 1662297155}
+  - {fileID: 1084755021}
   - {fileID: 1685883284}
   m_Father: {fileID: 2028531089}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -17397,7 +17398,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1321312612}
+      - m_Target: {fileID: 1644562405}
         m_TargetAssemblyTypeName: SaveLoadSlot, Assembly-CSharp
         m_MethodName: Load
         m_Mode: 1
@@ -17848,7 +17849,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1321312612}
+      - m_Target: {fileID: 1644562405}
         m_TargetAssemblyTypeName: SaveLoadSlot, Assembly-CSharp
         m_MethodName: Delete
         m_Mode: 1
@@ -18838,7 +18839,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1321312612}
+      - m_Target: {fileID: 2021769114}
         m_TargetAssemblyTypeName: SaveLoadSlot, Assembly-CSharp
         m_MethodName: Load
         m_Mode: 1
@@ -19276,7 +19277,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1321312612}
+      - m_Target: {fileID: 86178400}
         m_TargetAssemblyTypeName: SaveLoadSlot, Assembly-CSharp
         m_MethodName: Delete
         m_Mode: 1
@@ -22093,8 +22094,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2072366689}
   - {fileID: 1755341758}
+  - {fileID: 2072366689}
   - {fileID: 1358174472}
   m_Father: {fileID: 2028531089}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -23024,7 +23025,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1321312612}
+      - m_Target: {fileID: 1298898018}
         m_TargetAssemblyTypeName: SaveLoadSlot, Assembly-CSharp
         m_MethodName: Load
         m_Mode: 1
