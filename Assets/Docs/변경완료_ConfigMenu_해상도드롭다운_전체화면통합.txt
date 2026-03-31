@@ -1,0 +1,387 @@
+================================================================
+변경완료: ConfigMenu 해상도 드롭다운에 전체화면/창모드 통합
+작성일: 2026-03-30
+================================================================
+
+
+----------------------------------------------------------------
+1. 사전 비교 결과 (현재 코드 vs 문서 c)
+----------------------------------------------------------------
+
+  VN_Configuration.cs : 일치 (로직 동일)
+  ConfigMenu.cs       : 실질적 일치
+    - 문서 c에 미기재된 else { Debug.LogWarning(...) } 블록이 실제 코드에 존재했으나
+      변경 내용에 영향이 없어 진행 (변경 후에도 windowed 경로에서 유지)
+
+  → 차이 없음, 변경 진행
+
+
+----------------------------------------------------------------
+2. 변경 전/후 코드
+----------------------------------------------------------------
+
+[ 파일: VN_Configuration.cs ]
+
+  --- 변경 전 ---
+
+    //Display Settings
+    public bool dispaly_fullscreen = true;
+    public string display_resolution = "1920 x 1080";
+
+    public void Load()
+    {
+        var ui = ConfigMenu.instance.ui;
+
+        // Apply the general settings
+        ConfigMenu.instance.SetDisplayToFullScreen(dispaly_fullscreen);
+
+        // Set the screen resolution
+        int res_index = 0;
+        for(int i = 0; i < ui.resolutions.options.Count; i++)
+        {
+            string resolution = ui.resolutions.options[i].text;
+            if(resolution == display_resolution)
+            {
+                res_index = i;
+                break;
+            }
+        }
+
+        ui.resolutions.value = res_index;
+    }
+
+  --- 변경 후 ---
+
+    //Display Settings
+    public string display_resolution = "1920 x 1080";
+
+    public void Load()
+    {
+        var ui = ConfigMenu.instance.ui;
+
+        // Set the screen resolution
+        int res_index = 0;
+        for(int i = 0; i < ui.resolutions.options.Count; i++)
+        {
+            string resolution = ui.resolutions.options[i].text;
+            if(resolution == display_resolution)
+            {
+                res_index = i;
+                break;
+            }
+        }
+
+        ui.resolutions.value = res_index;
+        ConfigMenu.instance.SetDisplayResolution();
+    }
+
+
+[ 파일: ConfigMenu.cs ]
+
+  --- 변경 전: SetAvailableResolutions() ---
+
+    private void SetAvailableResolutions()
+    {
+        Resolution[] resolutions = Screen.resolutions;
+        List<string> options = new List<string>();
+
+        for(int i = resolutions.Length - 1; i >= 0; i--)
+        {
+            options.Add($"{resolutions[i].width} x {resolutions[i].height}");
+        }
+
+        ui.resolutions.ClearOptions();
+        ui.resolutions.AddOptions(options);
+    }
+
+  --- 변경 후: SetAvailableResolutions() ---
+
+    private void SetAvailableResolutions()
+    {
+        List<string> options = new List<string>()
+        {
+            "1920 x 1080 (전체화면)",
+            "1920 x 1080",
+            "1600 x 900",
+            "1280 x 720",
+            "1024 x 768",
+            "800 x 600",
+            "640 x 480"
+        };
+
+        ui.resolutions.ClearOptions();
+        ui.resolutions.AddOptions(options);
+    }
+
+  --- 변경 전: SetDisplayToFullScreen() + SetDisplayResolution() ---
+
+    public void SetDisplayToFullScreen(bool fullscreen)
+    {
+        Screen.fullScreen = fullscreen;
+    }
+
+    public void SetDisplayResolution()
+    {
+        string resolution = ui.resolutions.captionText.text;
+        string[] values = resolution.Split('x');
+
+        if(int.TryParse(values[0].Trim(), out int width) && int.TryParse(values[1].Trim(), out int height))
+        {
+            Screen.SetResolution(width, height, Screen.fullScreen);
+            confing.display_resolution = resolution;
+        }
+        else
+        {
+            Debug.LogWarning($"Parsing error for screen resolution! ['{resolution}'] could not be parsed into WIDTH X HEIGHT from string ");
+        }
+    }
+
+  --- 변경 후: SetDisplayResolution() (SetDisplayToFullScreen 제거됨) ---
+
+    public void SetDisplayResolution()
+    {
+        int index = ui.resolutions.value;
+
+        if (index == 0)
+        {
+            Screen.SetResolution(1920, 1080, FullScreenMode.ExclusiveFullScreen);
+        }
+        else
+        {
+            string resolution = ui.resolutions.captionText.text;
+            string[] values = resolution.Split('x');
+
+            if(int.TryParse(values[0].Trim(), out int width) && int.TryParse(values[1].Trim(), out int height))
+            {
+                Screen.SetResolution(width, height, FullScreenMode.Windowed);
+            }
+            else
+            {
+                Debug.LogWarning($"Parsing error for screen resolution! ['{resolution}'] could not be parsed into WIDTH X HEIGHT from string ");
+            }
+        }
+
+        confing.display_resolution = ui.resolutions.captionText.text;
+    }
+
+
+----------------------------------------------------------------
+3. 변경 후 동작 흐름
+----------------------------------------------------------------
+
+  [게임 시작 시]
+  1. ConfigMenu.Start() 호출
+  2. SetAvailableResolutions() → 드롭다운에 고정 7개 항목 등록
+       index 0: "1920 x 1080 (전체화면)"
+       index 1~6: 창모드 해상도 목록
+  3. LoadConfig() → vnconfig.cfg 존재 시 로드, 없으면 기본값 생성
+  4. VN_Configuration.Load() 호출
+       - display_resolution 문자열로 드롭다운 index 탐색
+       - ui.resolutions.value = res_index (드롭다운 선택 반영)
+       - ConfigMenu.instance.SetDisplayResolution() 직접 호출 → 실제 화면 적용
+
+  [사용자가 드롭다운을 변경할 때 (OnValueChanged 연결 시)]
+  1. SetDisplayResolution() 호출
+  2. index == 0 → Screen.SetResolution(1920, 1080, FullScreenMode.ExclusiveFullScreen)
+  3. index >= 1 → 텍스트 파싱 후 Screen.SetResolution(width, height, FullScreenMode.Windowed)
+  4. confing.display_resolution = 선택된 텍스트 (저장용 갱신)
+
+  [게임 종료 시]
+  1. OnApplicationQuit() → VN_Configuration.Save()
+  2. display_resolution 문자열이 JSON으로 vnconfig.cfg에 저장됨
+
+  [저장 호환성]
+  - 기존 cfg에 dispaly_fullscreen 필드가 있어도 JsonUtility가 무시 → 오류 없음
+  - 기존 display_resolution = "1920 x 1080" → index 1과 일치, 창모드로 로드됨
+  - 매칭 실패 시 res_index = 0 (전체화면)으로 fallback
+
+
+----------------------------------------------------------------
+4. Unity Scene 수동 작업 필요 항목 (코드 외)
+----------------------------------------------------------------
+
+  - 전체화면/창모드 전환 버튼 오브젝트 제거
+  - 해당 버튼의 OnClick → SetDisplayToFullScreen() 연결 정리
+  - 드롭다운 OnValueChanged → SetDisplayResolution() 연결 여부 확인 및 추가
+
+
+================================================================
+추가 변경: 드롭다운 표시 텍스트 형식 변경 및 저장값 분리
+작성일: 2026-03-31
+================================================================
+
+
+----------------------------------------------------------------
+1. 변경 이유
+----------------------------------------------------------------
+
+  기존 옵션 텍스트("1920 x 1080 (전체화면)", "1920 x 1080" 등)에서
+  새 텍스트("전체창 (1920 x 1080)", "창모드 (1920 x 1080)" 등)로 변경 시
+  파싱 로직 문제 발생:
+
+    resolution.Split('x') → values[0] = "창모드 (1920 " → int.TryParse 실패
+
+  해결 방법: 표시 텍스트와 저장값을 분리 (옵션 B)
+    - 표시: "창모드 (1920 x 1080)"
+    - 저장: "1920 x 1080"  (기존 파싱 가능한 형식 유지)
+
+
+----------------------------------------------------------------
+2. 변경 전/후 코드
+----------------------------------------------------------------
+
+[ 파일: ConfigMenu.cs ]
+
+  --- 변경 전: SetAvailableResolutions() 옵션 목록 ---
+
+    "1920 x 1080 (전체화면)",
+    "1920 x 1080",
+    "1600 x 900",
+    "1280 x 720",
+    "1024 x 768",
+    "800 x 600",
+    "640 x 480"
+
+  --- 변경 후: SetAvailableResolutions() 옵션 목록 ---
+
+    "전체창 (1920 x 1080)",
+    "창모드 (1920 x 1080)",
+    "창모드 (1600 x 900)",
+    "창모드 (1280 x 720)",
+    "창모드 (1024 x 768)",
+    "창모드 (800 x 600)",
+    "창모드 (640 x 480)"
+
+
+  --- 변경 전: SetDisplayResolution() ---
+
+    public void SetDisplayResolution()
+    {
+        int index = ui.resolutions.value;
+
+        if (index == 0)
+        {
+            Screen.SetResolution(1920, 1080, FullScreenMode.ExclusiveFullScreen);
+        }
+        else
+        {
+            string resolution = ui.resolutions.captionText.text;
+            string[] values = resolution.Split('x');
+
+            if(int.TryParse(values[0].Trim(), out int width) && int.TryParse(values[1].Trim(), out int height))
+            {
+                Screen.SetResolution(width, height, FullScreenMode.Windowed);
+            }
+            else
+            {
+                Debug.LogWarning($"Parsing error for screen resolution! ['{resolution}'] ...");
+            }
+        }
+
+        confing.display_resolution = ui.resolutions.captionText.text;
+    }
+
+  --- 변경 후: SetDisplayResolution() + ExtractResolution() 추가 ---
+
+    public void SetDisplayResolution()
+    {
+        int index = ui.resolutions.value;
+        string caption = ui.resolutions.captionText.text;
+        string resolution = ExtractResolution(caption);   // "창모드 (1920 x 1080)" → "1920 x 1080"
+
+        if (index == 0)
+        {
+            Screen.SetResolution(1920, 1080, FullScreenMode.ExclusiveFullScreen);
+        }
+        else
+        {
+            string[] values = resolution.Split('x');
+
+            if(int.TryParse(values[0].Trim(), out int width) && int.TryParse(values[1].Trim(), out int height))
+            {
+                Screen.SetResolution(width, height, FullScreenMode.Windowed);
+            }
+            else
+            {
+                Debug.LogWarning($"Parsing error for screen resolution! ['{resolution}'] ...");
+            }
+        }
+
+        confing.display_resolution = resolution;   // "1920 x 1080" 형태로 저장
+    }
+
+    // 새로 추가: "전체창 (1920 x 1080)" → "1920 x 1080", 괄호 없으면 원문 반환
+    public string ExtractResolution(string caption)
+    {
+        int pStart = caption.IndexOf('(');
+        int pEnd = caption.IndexOf(')');
+        if (pStart >= 0 && pEnd > pStart)
+            return caption.Substring(pStart + 1, pEnd - pStart - 1).Trim();
+        return caption;
+    }
+
+
+[ 파일: VN_Configuration.cs ]
+
+  --- 변경 전: Load() 비교 로직 ---
+
+        for(int i = 0; i < ui.resolutions.options.Count; i++)
+        {
+            string resolution = ui.resolutions.options[i].text;
+
+            if(resolution == display_resolution)
+            {
+                res_index = i;
+                break;
+            }
+        }
+
+  --- 변경 후: Load() 비교 로직 ---
+
+        for(int i = 0; i < ui.resolutions.options.Count; i++)
+        {
+            string optionText = ui.resolutions.options[i].text;
+            string optionResolution = ConfigMenu.instance.ExtractResolution(optionText);
+            // "창모드 (1920 x 1080)" → "1920 x 1080" 로 변환 후 비교
+
+            if(optionResolution == display_resolution)
+            {
+                res_index = i;
+                break;
+            }
+        }
+
+
+----------------------------------------------------------------
+3. 변경 후 동작 흐름
+----------------------------------------------------------------
+
+  [게임 시작 시]
+  1. SetAvailableResolutions() → 드롭다운에 고정 7개 항목 등록
+       index 0: "전체창 (1920 x 1080)"
+       index 1~6: "창모드 (해상도)"
+  2. VN_Configuration.Load() 호출
+       - 각 옵션 텍스트를 ExtractResolution()으로 추출 → "1920 x 1080" 형태 변환
+       - 저장된 display_resolution과 비교 → index 탐색
+       - SetDisplayResolution() 직접 호출 → 실제 화면 적용
+
+  [드롭다운 변경 시]
+  1. SetDisplayResolution() 호출
+  2. caption에서 ExtractResolution()으로 "1920 x 1080" 추출
+  3. index == 0 → ExclusiveFullScreen / index >= 1 → Windowed
+  4. confing.display_resolution = "1920 x 1080" 형태로 저장
+
+  [저장 호환성]
+  - 기존 cfg의 display_resolution = "1920 x 1080" → 추출 후 비교에서 정상 매칭
+
+
+----------------------------------------------------------------
+4. 미해결 항목
+----------------------------------------------------------------
+
+  - 전체창(index 0)과 창모드 1920x1080(index 1) 둘 다 "1920 x 1080"으로 저장됨
+  - Load 시 루프가 index 0부터 탐색하므로 항상 전체창이 선택됨
+  - 해결하려면 전체창 저장값을 별도 구분 처리 필요
+
+
+================================================================

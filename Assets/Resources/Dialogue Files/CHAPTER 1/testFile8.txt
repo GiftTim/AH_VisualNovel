@@ -17,11 +17,11 @@ choice "준비되셨나요?"
         Mina "몇 살인가요?"
         Man "..."
         Mina "아, 알겠어요 그냥 지나갈게요..."
-        Load(Coffee_Bean -folder "CHAPTER 1" -enqueue true)
+        Load(Coffee_Bean -folder "CHAPTER 2" -enqueue true)
 
     -이 길을 통과하기 위해서 왔습니다.
         Man "아쉽겠군, 오늘부터 이 문은 출입 퉁제가 된다!"
-        Load(Coffee_Bean -folder "CHAPTER 1" -e false)
+        Load(Coffee_Bean -folder "CHAPTER 2" -e false)
 }
 
 

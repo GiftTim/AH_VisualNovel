@@ -1,5 +1,5 @@
 
 SetLayerMedia(background "training")
-PlayAmbience(RainyMood)
+PlaySfx(RadioStatic -l true)
 
 narrator "번개가 친다."

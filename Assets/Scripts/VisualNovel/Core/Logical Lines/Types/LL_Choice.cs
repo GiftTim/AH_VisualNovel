@@ -36,6 +36,10 @@ namespace DIALOGUE.LogicalLines
             DialogueSystem.instance.conversationManager.conversation.SetProgress(data.endingIndex - currentConversation.fileStartIndex);
             DialogueSystem.instance.conversationManager.EnqueuePriority(newConversation);
 
+            AutoReader autoReader = DialogueSystem.instance.autoReader;
+
+            
+
         }
 
         public bool Matches(DIALOGUE_LINE line)

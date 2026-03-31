@@ -3,10 +3,10 @@ using UnityEngine;
 public class FilePaths
 {
     private const string HOME_DIRECTORY_SYMBOL = "~/";
-    public static readonly string root = $"{Application.dataPath}/gameData/";
 
     // Runtime Paths
     public static readonly string gameSaves = $"{runtimePath}/Save Files/";
+    public static readonly string gameDatas = $"{runtimePath}/gameData/";
 
     // Resources Paths
     public static readonly string resources_font = "Fonts/";

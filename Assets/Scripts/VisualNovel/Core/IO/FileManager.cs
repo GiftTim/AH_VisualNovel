@@ -9,7 +9,7 @@ public class FileManager
     public static List<string> ReadTextFile(string filePath, bool includeBlackLines = true)
     {
         if(!filePath.StartsWith('/'))
-            filePath = FilePaths.root + filePath;
+            filePath = FilePaths.gameDatas + filePath;
 
         List<string> lines = new List<string>();
 

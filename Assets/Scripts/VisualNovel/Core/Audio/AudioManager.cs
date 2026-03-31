@@ -6,6 +6,11 @@ using UnityEngine.Rendering;
 
 public class AudioManager : MonoBehaviour
 {
+    public const string MUSIC_VOLUME_PARAMETER_NAME = "MusicVolume";
+    public const string SFX_VOLUME_PARAMETER_NAME = "SFXVolume";  
+    public const string VOICES_VOLUME_PARAMETER_NAME = "VoicesVolume";
+    public const float MUTED_VOLUME_LEVEL = -80f;
+
     private const string SFX_PARENT_NAME = "SFX";
     private const string SFX_NAME_FORMAT = "SFX - [{0}]";
     public  const float  TRACK_TRANSITION_SPEED = 1f;
@@ -17,6 +22,8 @@ public class AudioManager : MonoBehaviour
     public AudioMixerGroup musicMixer;
     public AudioMixerGroup sfxMixer;
     public AudioMixerGroup voicesMixer;
+
+    public AnimationCurve audioFalloffCurve;
 
     private Transform sfxRoot;
 
@@ -174,8 +181,22 @@ public class AudioManager : MonoBehaviour
         return null;
     }
 
-    internal void StopSoundEffect(string[] data)
+    public void SetMusicVolume(float volume, bool muted)
     {
-        throw new NotImplementedException();
+        volume = muted ? MUTED_VOLUME_LEVEL : audioFalloffCurve.Evaluate(volume);
+        musicMixer.audioMixer.SetFloat(MUSIC_VOLUME_PARAMETER_NAME, volume);
     }
+
+    public void SetSFXVolume(float volume, bool muted)
+    {
+        volume = muted ? MUTED_VOLUME_LEVEL : audioFalloffCurve.Evaluate(volume);
+        sfxMixer.audioMixer.SetFloat(SFX_VOLUME_PARAMETER_NAME, volume);
+    }
+
+    public void SetVoicesVolume(float volume, bool muted)
+    {
+        volume = muted ? MUTED_VOLUME_LEVEL : audioFalloffCurve.Evaluate(volume);
+        voicesMixer.audioMixer.SetFloat(VOICES_VOLUME_PARAMETER_NAME, volume);
+    }
+
 }
