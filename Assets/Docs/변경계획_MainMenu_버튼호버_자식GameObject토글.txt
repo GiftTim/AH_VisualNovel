@@ -1,0 +1,195 @@
+====================================================
+  MainMenu 버튼 호버 시 자식 GameObject 토글 (SerializeField 방식)
+  작성일: 2026-04-02
+====================================================
+
+----------------------------------------------------
+a. 목차
+----------------------------------------------------
+
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 요구한 기능을 만들기 위해서 어떤 식으로 추가/변경할 것인지
+  e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+  f. 어떤 순서로 진행할 것인지
+  g. 어디가 어떤 식으로 변경되는지
+
+
+----------------------------------------------------
+b. 요구한 기능
+----------------------------------------------------
+
+  - 메인 메뉴의 5개 버튼 각각에 대해:
+      · 마우스 커서가 버튼 위에 올라가면(PointerEnter)
+        → 인스펙터에서 직접 연결한 자식 GameObject를 활성화(SetActive(true))
+      · 마우스 커서가 버튼 영역 밖으로 벗어나면(PointerExit)
+        → 해당 자식 GameObject를 비활성화(SetActive(false))
+
+  - 연결 방식:
+      · Awake()에서 자동 탐색하는 방식 제거
+      · [SerializeField]로 childObject 필드를 인스펙터에 노출
+      · 에디터에서 버튼마다 해당 자식 오브젝트를 직접 드래그하여 연결
+
+  - 각 버튼의 자식 구조 (예시):
+      Button (부모) ← ButtonHoverEffect 컴포넌트 부착
+      ├── ChildObject  ← SerializeField로 연결, SetActive로 켜고 끔
+      └── Text
+
+
+----------------------------------------------------
+c. 현재 상황 및 코드
+----------------------------------------------------
+
+  [ ButtonHoverEffect.cs ]
+  -------------------------------------------------------
+  using UnityEngine;
+  using UnityEngine.UI;
+  using UnityEngine.EventSystems;
+
+  public class ButtonHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+  {
+      private Image childImage;
+
+      void Awake()
+      {
+          // 첫 번째 자식의 Image 컴포넌트를 자동으로 찾음
+          childImage = transform.GetChild(0).GetComponent<Image>();
+      }
+
+      public void OnPointerEnter(PointerEventData eventData)
+      {
+          if (childImage != null)
+              childImage.enabled = true;
+      }
+
+      public void OnPointerExit(PointerEventData eventData)
+      {
+          if (childImage != null)
+              childImage.enabled = false;
+      }
+  }
+  -------------------------------------------------------
+
+  - 문제점:
+      · Awake()에서 GetChild(0)으로 자동 탐색하므로
+        자식 오브젝트 순서가 달라지면 잘못된 오브젝트를 참조함
+      · Image 컴포넌트의 enabled만 조절하므로
+        자식 오브젝트 자체의 활성/비활성 상태와 다름
+      · 어떤 오브젝트가 연결됐는지 인스펙터에서 확인 불가 → 디버깅 어려움
+      · 현재 작동 안 함 (자동 탐색 실패 가능성 있음)
+
+
+----------------------------------------------------
+d. 요구한 기능을 만들기 위해서 어떤 식으로 추가/변경할 것인지
+----------------------------------------------------
+
+  [ 방식: ButtonHoverEffect.cs 수정 ]
+    - private Image childImage 제거
+    - Awake() 자동 탐색 로직 제거
+    - [SerializeField] private GameObject childObject 필드 추가
+    - OnPointerEnter/Exit 에서 childImage.enabled 대신
+      childObject.SetActive() 사용
+
+  변경 후 코드:
+  -------------------------------------------------------
+  using UnityEngine;
+  using UnityEngine.EventSystems;
+
+  public class ButtonHoverEffect : MonoBehaviour,
+      IPointerEnterHandler, IPointerExitHandler
+  {
+      [SerializeField] private GameObject childObject;
+
+      public void OnPointerEnter(PointerEventData eventData)
+      {
+          if (childObject != null)
+              childObject.SetActive(true);
+      }
+
+      public void OnPointerExit(PointerEventData eventData)
+      {
+          if (childObject != null)
+              childObject.SetActive(false);
+      }
+  }
+  -------------------------------------------------------
+
+
+----------------------------------------------------
+e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+----------------------------------------------------
+
+  방법 A (기존, 기각): Awake()에서 GetChild(0).GetComponent<Image>()로 자동 탐색
+    - 단점:
+        · 자식 오브젝트 순서에 의존 → 순서 변경 시 잘못된 참조
+        · Image 컴포넌트가 첫 번째 자식에 없으면 null → 작동 안 함
+        · 인스펙터에서 연결 상태 확인 불가
+        · 현재 작동하지 않는 원인일 가능성 있음
+
+  방법 B (채택): [SerializeField] + SetActive()
+    - 장점:
+        · 인스펙터에서 어떤 오브젝트가 연결됐는지 명확하게 확인 가능
+        · 자식 오브젝트 순서와 무관하게 원하는 오브젝트를 정확히 연결
+        · SetActive()로 GameObject 자체를 끄므로
+          하위 컴포넌트들도 함께 비활성화 → 더 확실한 토글
+        · 코드가 더 단순해지고 using UnityEngine.UI 불필요
+
+  방법 C (기각): GetComponentInChildren<Image>()로 자동 탐색
+    - 단점: 자동 탐색이라는 근본 문제 동일, 여전히 디버깅 어려움
+
+  → 방법 B 채택.
+    인스펙터 연결로 명확성 확보 + SetActive로 완전한 토글 보장.
+
+
+----------------------------------------------------
+f. 어떤 순서로 진행할 것인지
+----------------------------------------------------
+
+  Step 1. ButtonHoverEffect.cs 코드 수정
+    - private Image childImage 및 Awake() 제거
+    - [SerializeField] private GameObject childObject 추가
+    - OnPointerEnter/Exit 로직을 SetActive()로 변경
+    - using UnityEngine.UI 제거
+
+  Step 2. Unity 에디터 - 인스펙터 연결
+    - Main Menu 씬에서 5개 버튼 각각 선택
+    - ButtonHoverEffect 컴포넌트의 Child Object 필드에
+      해당 자식 오브젝트를 드래그하여 연결
+
+  Step 3. 자식 오브젝트 초기 상태 확인
+    - 연결한 자식 오브젝트가 기본적으로 비활성화(SetActive false) 상태인지 확인
+    - 활성화 상태라면 인스펙터에서 체크박스 해제
+
+  Step 4. 테스트
+    - Play 모드에서 각 버튼에 마우스 호버 시 자식 오브젝트 켜짐 확인
+    - 마우스가 버튼 밖으로 나갔을 때 꺼짐 확인
+
+
+----------------------------------------------------
+g. 어디가 어떤 식으로 변경되는지
+----------------------------------------------------
+
+  [ 수정 - ButtonHoverEffect.cs ]
+
+    삭제:
+      · using UnityEngine.UI
+      · private Image childImage
+      · void Awake() { childImage = transform.GetChild(0).GetComponent<Image>(); }
+      · childImage.enabled = true / false
+
+    추가:
+      · [SerializeField] private GameObject childObject
+      · childObject.SetActive(true) / SetActive(false)
+
+  [ Unity 에디터 변경 (인스펙터) ]
+    - 5개 버튼 각각의 ButtonHoverEffect 컴포넌트
+      → Child Object 필드에 자식 오브젝트 직접 연결
+    - 연결된 자식 오브젝트의 초기 활성 상태: false
+
+  [ 변경 없는 파일 ]
+    - MainMenu.cs        : 변경 없음
+    - PlayerInputManager.cs : 변경 없음
+    - 기타 스크립트      : 변경 없음
+
+====================================================

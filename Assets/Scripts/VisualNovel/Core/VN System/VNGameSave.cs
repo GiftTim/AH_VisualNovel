@@ -74,7 +74,6 @@ namespace VISUALNOVEL
 
             SetConversationData();
   
-
             DialogueSystem.instance.prompt.Hide();
         }
 

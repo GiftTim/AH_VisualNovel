@@ -94,5 +94,17 @@ public class VNMenuManager : MonoBehaviour
         isOpen = false;
     }
 
+    public void Click_Home()
+    {
+        UnityEngine.SceneManagement.SceneManager.LoadScene("Main Menu");
+    }
 
+    public void Click_Quit()
+    {
+        #if UNITY_EDITOR 
+        UnityEditor.EditorApplication.isPlaying = false;
+        #else 
+        Application.Quit();
+        #endif
+    }
 }

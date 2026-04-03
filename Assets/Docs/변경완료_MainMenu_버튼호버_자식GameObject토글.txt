@@ -1,0 +1,121 @@
+====================================================
+  변경완료: MainMenu 버튼 호버 시 자식 GameObject 토글
+  작성일: 2026-04-02
+====================================================
+
+----------------------------------------------------
+1. 현재 코드와 문서(c섹션) 비교 결과
+----------------------------------------------------
+
+  → 완전히 일치. 차이 없음. 변경 진행.
+
+
+----------------------------------------------------
+2. 변경 전 코드
+----------------------------------------------------
+
+  [ ButtonHoverEffect.cs - 변경 전 ]
+  -------------------------------------------------------
+  using UnityEngine;
+  using UnityEngine.UI;
+  using UnityEngine.EventSystems;
+
+  public class ButtonHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+  {
+      private Image childImage;
+
+      void Awake()
+      {
+          // 첫 번째 자식의 Image 컴포넌트를 자동으로 찾음
+          childImage = transform.GetChild(0).GetComponent<Image>();
+      }
+
+      public void OnPointerEnter(PointerEventData eventData)
+      {
+          if (childImage != null)
+              childImage.enabled = true;
+      }
+
+      public void OnPointerExit(PointerEventData eventData)
+      {
+          if (childImage != null)
+              childImage.enabled = false;
+      }
+  }
+  -------------------------------------------------------
+
+
+----------------------------------------------------
+3. 변경 후 코드
+----------------------------------------------------
+
+  [ ButtonHoverEffect.cs - 변경 후 ]
+  -------------------------------------------------------
+  using UnityEngine;
+  using UnityEngine.EventSystems;
+
+  public class ButtonHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+  {
+      [SerializeField] private GameObject childObject;
+
+      public void OnPointerEnter(PointerEventData eventData)
+      {
+          if (childObject != null)
+              childObject.SetActive(true);
+      }
+
+      public void OnPointerExit(PointerEventData eventData)
+      {
+          if (childObject != null)
+              childObject.SetActive(false);
+      }
+  }
+  -------------------------------------------------------
+
+
+----------------------------------------------------
+4. 변경 후 작동 흐름
+----------------------------------------------------
+
+  [ 에디터 설정 단계 ]
+    1. Unity 에디터에서 Main Menu 씬을 열기
+    2. 5개 버튼 오브젝트 각각 선택
+    3. 인스펙터에서 ButtonHoverEffect 컴포넌트 확인
+       → "Child Object" 필드가 노출되어 있음
+    4. 해당 버튼의 자식 GameObject를 Child Object 필드에 드래그 연결
+    5. 연결된 자식 오브젝트의 초기 활성 상태를 false(비활성)로 설정
+
+  [ 런타임 흐름 ]
+    ① 게임 시작 시
+       → childObject는 비활성(SetActive false) 상태
+
+    ② 마우스 커서가 버튼 위에 올라감 (PointerEnter 이벤트 발생)
+       → OnPointerEnter() 호출
+       → childObject.SetActive(true) 실행
+       → 자식 GameObject 활성화 (하위 컴포넌트 포함 모두 켜짐)
+
+    ③ 마우스 커서가 버튼 영역 밖으로 벗어남 (PointerExit 이벤트 발생)
+       → OnPointerExit() 호출
+       → childObject.SetActive(false) 실행
+       → 자식 GameObject 비활성화 (하위 컴포넌트 포함 모두 꺼짐)
+
+
+----------------------------------------------------
+5. 변경 내용 요약
+----------------------------------------------------
+
+  삭제:
+    · using UnityEngine.UI
+    · private Image childImage 필드
+    · void Awake() { childImage = transform.GetChild(0).GetComponent<Image>(); }
+    · childImage.enabled = true / false
+
+  추가:
+    · [SerializeField] private GameObject childObject 필드
+    · childObject.SetActive(true) / SetActive(false)
+
+  변경 없는 파일:
+    · MainMenu.cs
+    · 기타 스크립트
+
+====================================================

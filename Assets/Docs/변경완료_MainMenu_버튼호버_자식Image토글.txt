@@ -1,0 +1,137 @@
+====================================================
+  변경완료: MainMenu 버튼 호버 시 자식 Image 컴포넌트 토글
+  완료일: 2026-04-02
+====================================================
+
+
+----------------------------------------------------
+1. 현재 코드와 계획(c)의 비교 결과
+----------------------------------------------------
+
+  [ MainMenu.cs ]
+  - 비교 결과: 기능적으로 동일 (Update() 내부 빈 줄 유무만 차이)
+  - 판정: 차이 없음 → 변경 진행
+
+  [ ButtonHoverEffect.cs ]
+  - 비교 결과: 파일 없음 (신규 생성 대상)
+  - 판정: 정상 → 변경 진행
+
+
+----------------------------------------------------
+2. 변경 전 코드
+----------------------------------------------------
+
+  [ 변경 전 - ButtonHoverEffect.cs ]
+  → 파일 없음 (존재하지 않았음)
+
+  [ 변경 없음 - MainMenu.cs ]
+  -------------------------------------------------------
+  using UnityEngine;
+
+  public class MainMenu : MonoBehaviour
+  {
+      public AudioClip menuMusic;
+
+      void Start()
+      {
+          AudioManager.instance.PlayTrack(menuMusic, startingVolume: 1f);
+      }
+
+      void Update()
+      {
+      }
+  }
+  -------------------------------------------------------
+
+
+----------------------------------------------------
+3. 변경 후 코드
+----------------------------------------------------
+
+  [ 신규 생성 - ButtonHoverEffect.cs ]
+  경로: Assets/Scripts/VisualNovel/Core/Menus/ButtonHoverEffect.cs
+  -------------------------------------------------------
+  using UnityEngine;
+  using UnityEngine.UI;
+  using UnityEngine.EventSystems;
+
+  public class ButtonHoverEffect : MonoBehaviour,
+      IPointerEnterHandler, IPointerExitHandler
+  {
+      private Image childImage;
+
+      void Awake()
+      {
+          // 첫 번째 자식의 Image 컴포넌트를 자동으로 찾음
+          childImage = transform.GetChild(0).GetComponent<Image>();
+      }
+
+      public void OnPointerEnter(PointerEventData eventData)
+      {
+          if (childImage != null)
+              childImage.enabled = true;
+      }
+
+      public void OnPointerExit(PointerEventData eventData)
+      {
+          if (childImage != null)
+              childImage.enabled = false;
+      }
+  }
+  -------------------------------------------------------
+
+
+----------------------------------------------------
+4. 변경 후 작동 흐름
+----------------------------------------------------
+
+  [씬 시작]
+    └─ 각 버튼 오브젝트의 ButtonHoverEffect.Awake() 실행
+         └─ transform.GetChild(0).GetComponent<Image>()
+              → 버튼의 첫 번째 자식 오브젝트에서 Image 컴포넌트를 찾아 childImage에 저장
+
+  [마우스가 버튼 위에 올라감 (PointerEnter)]
+    └─ Unity EventSystem이 OnPointerEnter() 호출
+         └─ childImage.enabled = true
+              → 자식 Image 컴포넌트 활성화 (화면에 표시됨)
+
+  [마우스가 버튼 밖으로 나감 (PointerExit)]
+    └─ Unity EventSystem이 OnPointerExit() 호출
+         └─ childImage.enabled = false
+              → 자식 Image 컴포넌트 비활성화 (화면에서 숨겨짐)
+
+
+----------------------------------------------------
+5. 코드 외 에디터 작업 (수동 필요)
+----------------------------------------------------
+
+  Step 2. 각 버튼 자식 Image 초기 상태를 enabled = false 로 설정
+    - Main Menu.unity 씬에서 5개 버튼 각각의 자식 Image 컴포넌트 선택
+    - Inspector에서 Image 컴포넌트 체크박스 해제 (enabled = false)
+
+  Step 3. 5개 버튼에 ButtonHoverEffect 컴포넌트 추가
+    - 각 버튼 오브젝트 선택 → Add Component → ButtonHoverEffect
+
+  Step 4. (선택) 자식 Image 인덱스 불일치 시
+    - 첫 번째 자식이 Image가 아닌 버튼이 있다면
+      childImage 필드를 [SerializeField]로 노출하고 인스펙터에서 직접 연결
+
+  Step 5. 테스트
+    - Play 모드에서 각 버튼에 마우스 호버 시 자식 Image 켜짐 확인
+    - 마우스가 버튼 밖으로 나갔을 때 꺼짐 확인
+    - 버튼 클릭 시 호버 효과 간섭 없는지 확인
+
+
+----------------------------------------------------
+6. 변경된 파일 목록
+----------------------------------------------------
+
+  [신규 생성]
+    - Assets/Scripts/VisualNovel/Core/Menus/ButtonHoverEffect.cs
+
+  [변경 없음]
+    - MainMenu.cs
+    - PlayerInputManager.cs
+    - 기타 스크립트
+
+====================================================

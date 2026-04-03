@@ -168,12 +168,23 @@ public class ConfigMenu : MenuPage
     public void SetTextArchitectSpeed()
     {
         config.dialogueTextSpeed = ui.architectSpeed.value;
-        DialogueSystem.instance.conversationManager.architect.speed = config.dialogueTextSpeed;
+        
+        if(DialogueSystem.instance != null)
+        {
+            DialogueSystem.instance.conversationManager.architect.speed = config.dialogueTextSpeed;
+        }
+        
     }
 
     public void SetAutoReaderSpeed()
     {
         config.dialogueAutoReadSpeed = ui.autoReaderSpeed.value;
+
+        if(DialogueSystem.instance == null)
+        {
+            return;
+        }
+
         AutoReader autoReader = DialogueSystem.instance.autoReader;
 
         if(autoReader != null)
