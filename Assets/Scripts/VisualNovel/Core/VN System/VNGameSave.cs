@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using DIALOGUE;
 using History;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace VISUALNOVEL
@@ -57,7 +56,9 @@ namespace VISUALNOVEL
             variables = GetVariableData();
 
             timeStamp = DateTime.Now.ToString("yyyy-MM-dd   HH:mm:ss");
+           
             ScreenShotFunction.CaptureScreenshot(VNManager.instance.mainCamera, Screen.width, Screen.height, SCREENSHOT_DOWNSCALE_AMOUNT, screenshotPath);
+            
             string saveJSON = JsonUtility.ToJson(this);
             FileManager.Save(filePath, saveJSON, ENCRYPT);
         }

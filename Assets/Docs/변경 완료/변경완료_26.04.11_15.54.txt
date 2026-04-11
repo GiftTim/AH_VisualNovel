@@ -1,0 +1,132 @@
+================================================================
+ 변경 완료 | 26.04.11_15.54 (KST)
+ 주제: ConfigMenu 해상도/창모드 전환 미작동 버그 수정
+ 원본 계획: 변경계획_26.04.11_07.08.txt
+================================================================
+
+
+목차
+----
+ a. 비교 결과
+ b. 변경 전/후 코드
+ c. 작동 흐름
+
+
+────────────────────────────────────────
+a. 비교 결과
+────────────────────────────────────────
+ 현재 코드와 변경 계획 c의 내용을 비교한 결과, 모두 일치.
+ 다른 점 없음 → 변경 진행.
+
+
+────────────────────────────────────────
+b. 변경 전/후 코드
+────────────────────────────────────────
+
+ [파일 1] Assets/Scripts/VisualNovel/Core/Menus/Pages/ConfigMenu.cs
+ SetDisplayResolution() 메서드
+
+  변경 전:
+  ─────────────────────────────────────
+    else
+    {
+        string resolution = ui.resolutions.captionText.text;
+        string[] values = resolution.Split('x');
+
+        if(int.TryParse(values[0].Trim(), out int width) && int.TryParse(values[1].Trim(), out int height))
+        {
+            Screen.SetResolution(width, height, FullScreenMode.Windowed);
+        }
+        else
+        {
+            Debug.LogWarning($"...");
+        }
+    }
+
+    config.display_resolution = ExtractResolution(ui.resolutions.captionText.text);
+
+  변경 후:
+  ─────────────────────────────────────
+    else
+    {
+        string rawText = ui.resolutions.captionText.text;
+        string resolution = ExtractResolution(rawText);   // ← ExtractResolution 먼저 적용
+        string[] values = resolution.Split('x');
+
+        if(int.TryParse(values[0].Trim(), out int width) && int.TryParse(values[1].Trim(), out int height))
+        {
+            Screen.SetResolution(width, height, FullScreenMode.Windowed);
+        }
+        else
+        {
+            Debug.LogWarning($"...");
+        }
+    }
+
+    config.display_resolution = ui.resolutions.captionText.text;  // ← 전체 텍스트로 저장
+
+
+ [파일 2] Assets/Scripts/VisualNovel/Core/VN System/DataContainers/VN_Configuration.cs
+ display_resolution 기본값
+
+  변경 전:
+  ─────────────────────────────────────
+    public string display_resolution = "1920 x 1080";
+
+  변경 후:
+  ─────────────────────────────────────
+    public string display_resolution = "전체창 (1920 x 1080)";
+
+
+ VN_Configuration.cs Load() 비교 로직
+
+  변경 전:
+  ─────────────────────────────────────
+    string optionText = ui.resolutions.options[i].text;
+    string optionResolution = ConfigMenu.ExtractResolution(optionText);
+
+    if(optionResolution == display_resolution)
+
+  변경 후:
+  ─────────────────────────────────────
+    string optionText = ui.resolutions.options[i].text;
+
+    if(optionText == display_resolution)   // ← ExtractResolution 제거, 전체 텍스트 직접 비교
+
+
+────────────────────────────────────────
+c. 작동 흐름
+────────────────────────────────────────
+
+ [선택 시 흐름]
+ 1. 유저가 Dropdown에서 옵션 선택 (예: "창모드 (1280 x 720)")
+ 2. OnValueChanged → SetDisplayResolution() 호출
+ 3. index == 0이면 ExclusiveFullScreen 1920x1080 적용
+ 4. index != 0이면:
+      rawText = "창모드 (1280 x 720)"
+      resolution = ExtractResolution(rawText)  →  "1280 x 720"
+      values = ["1280 ", " 720"]
+      width=1280, height=720 파싱 성공
+      Screen.SetResolution(1280, 720, Windowed)
+ 5. config.display_resolution = "창모드 (1280 x 720)"  (전체 텍스트 저장)
+
+ [저장 및 복원 흐름]
+ 1. 앱 종료 시 VN_Configuration.Save() → vnconfig.cfg에 JSON 저장
+      display_resolution: "창모드 (1280 x 720)"
+ 2. 다음 실행 시 LoadConfig() → VN_Configuration.Load() 호출
+ 3. Dropdown 옵션을 순회하며 optionText == display_resolution 직접 비교
+      "창모드 (1280 x 720)" == "창모드 (1280 x 720)" → 일치 → res_index = 해당 index
+ 4. ui.resolutions.value = res_index → SetDisplayResolution() 호출 → 복원 완료
+
+
+ [주의사항]
+  - 기존에 vnconfig.cfg가 저장되어 있으면 구 형식("1920 x 1080")과 불일치하여
+    항상 index 0(전체창)으로 복원됨.
+  - 기존 파일 삭제 또는 초기화 필요.
+  - Inspector에서 ui.resolutions(TMP_Dropdown)의 OnValueChanged에
+    ConfigMenu.SetDisplayResolution이 연결되어 있는지 별도 확인 필요.
+
+
+================================================================
+ END
+================================================================

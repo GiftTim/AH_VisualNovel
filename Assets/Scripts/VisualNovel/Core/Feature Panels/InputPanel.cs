@@ -84,6 +84,18 @@ public class InputPanel : MonoBehaviour
         if (!HasValidText())
             return;
 
+        string input = inputField.text;
+        if(CensorManager.Censor(ref input))
+        {
+            UIConfirmationMenu.instance.Show("금지 단어를 입력하셨습니다. 다른 단어를 입력하십시오", 
+                new UIConfirmationMenu.ConfirmationButton(title: "확인", ()=> inputField.text = ""));
+        }
+        else
+        {
+            lastInput = inputField.text;
+            Hide();
+        }
+
         // 앞뒤 공백 제거해서 저장 (원문 유지가 필요하면 Trim 제거)
         lastInput = inputField.text.Trim();
         Hide();

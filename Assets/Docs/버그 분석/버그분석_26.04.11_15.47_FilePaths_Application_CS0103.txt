@@ -1,0 +1,175 @@
+================================================================
+ 버그 분석 문서
+ 파일명: 버그분석_26.04.11_15.47_FilePaths_Application_CS0103.txt
+ 작성일: 2026-04-11 (KST)
+================================================================
+
+[목차]
+  1. 문제점
+  2. 현재 상황 및 코드
+  3. 해결 방법 (채택 방안)
+  4. 다른 방법들과 채택 이유
+  5. 진행 순서
+  6. 변경 위치 및 내용 상세
+
+================================================================
+ 1. 문제점
+================================================================
+
+오류 메시지:
+  Assets/Scripts/VisualNovel/Core/IO/FilePaths.cs(51,24):
+  error CS0103: The name 'Application' does not exist in the current context
+
+원인 요약:
+  FilePaths.cs 파일에 UnityEngine 네임스페이스에 대한 using 선언이
+  누락되어 있어, #else 브랜치(빌드 환경)에서 사용되는
+  UnityEngine.Application 클래스를 컴파일러가 인식하지 못함.
+
+영향 범위:
+  - UNITY_EDITOR 심볼이 정의되지 않은 환경(실제 빌드)에서만 컴파일 오류 발생.
+  - 에디터 내에서는 #if UNITY_EDITOR 브랜치만 컴파일되므로 오류가 표시되지
+    않을 수 있으나, 빌드 시 반드시 실패함.
+  - runtimePath 프로퍼티에 의존하는 gameSaves, gameDatas 경로가
+    빌드 환경에서 전혀 동작하지 않음.
+
+================================================================
+ 2. 현재 상황 및 코드
+================================================================
+
+파일 경로:
+  Assets/Scripts/VisualNovel/Core/IO/FilePaths.cs
+
+현재 전체 코드:
+------------------------------------------------------------------
+public class FilePaths
+{
+    private const string HOME_DIRECTORY_SYMBOL = "~/";
+
+    // Runtime Paths
+    public static readonly string gameSaves = $"{runtimePath}/Save Files/";
+    public static readonly string gameDatas = $"{runtimePath}/gameData/";
+
+    // Resources Paths - Graphics
+    public static readonly string resources_font = "Fonts/";
+    public static readonly string resources_graphics = "Graphics/";
+    public static readonly string resources_backgroundImages = $"{resources_graphics}BG Images/";
+    public static readonly string resources_backgroundVideos = $"{resources_graphics}BG Videos/";
+    public static readonly string resources_blendTextures = $"{resources_graphics}Transition Effects/";
+    public static readonly string resources_gallery = $"{resources_graphics}Gallery/";
+
+    // Resources Paths - Audio
+    public static readonly string resources_audio    = "Audio/";
+    public static readonly string resources_sfx      = $"{resources_audio}SFX/";
+    public static readonly string resources_voices   = $"{resources_audio}Voices/";
+    public static readonly string resources_music    = $"{resources_audio}Music/";
+    public static readonly string resources_ambience = $"{resources_audio}Ambience/";
+
+    public static readonly string resources_dialogueFiles = $"Dialogue Files/";
+
+    public static string GetPathToResource(string defaultPath, string resourceName)
+    {
+        if (resourceName.StartsWith(HOME_DIRECTORY_SYMBOL))
+            return resourceName.Substring(HOME_DIRECTORY_SYMBOL.Length);
+        return defaultPath + resourceName;
+    }
+
+    public static string runtimePath
+    {
+        get
+        {
+            #if UNITY_EDITOR
+                return "Assets/appdata";
+            #else
+                return Application.persistentDataPath + "/appdata/";  // <-- 51번째 줄, 오류 발생
+            #endif
+        }
+    }
+}
+------------------------------------------------------------------
+
+문제 위치:
+  - 51번째 줄: Application.persistentDataPath
+  - Application은 UnityEngine.Application이나,
+    파일 최상단에 "using UnityEngine;" 선언이 없음.
+  - 클래스 선언(public class FilePaths)에도 네임스페이스 지정 없음.
+
+================================================================
+ 3. 해결 방법 (채택 방안)
+================================================================
+
+방법: 파일 최상단에 "using UnityEngine;" 한 줄 추가
+
+변경 전:
+  public class FilePaths
+  {
+      ...
+
+변경 후:
+  using UnityEngine;
+
+  public class FilePaths
+  {
+      ...
+
+이유:
+  Application 클래스는 UnityEngine 네임스페이스에 속하며,
+  using 선언만 추가하면 기존 코드를 전혀 수정하지 않고 오류가 해결됨.
+  최소 침습적 수정으로 부작용 없음.
+
+================================================================
+ 4. 다른 방법들과 채택 이유
+================================================================
+
+[방법 A] using UnityEngine; 추가 (★ 채택)
+  - 장점: 변경 범위 최소 (1줄 추가). 기존 코드 구조 유지.
+  - 단점: 없음.
+
+[방법 B] UnityEngine.Application.persistentDataPath 로 완전 한정 이름 사용
+  - 변경 전: Application.persistentDataPath
+  - 변경 후: UnityEngine.Application.persistentDataPath
+  - 장점: using 없이도 명확히 동작.
+  - 단점: 코드가 장황해지고, 같은 파일 내 다른 UnityEngine 클래스 사용 시
+    일관성 없이 중복 수정이 필요해짐.
+
+[방법 C] FilePaths 클래스를 UnityEngine 네임스페이스 안으로 이동
+  - 단점: 클래스 구조 변경이 크고, 타 스크립트에서 참조하는
+    방식에 영향을 줄 수 있어 과도한 수정임.
+
+→ 방법 A 채택:
+  코드 최소 변경, 부작용 없음, Unity 프로젝트의 일반적 관행과 일치.
+
+================================================================
+ 5. 진행 순서
+================================================================
+
+  1) FilePaths.cs 파일 상단에 "using UnityEngine;" 추가
+  2) Unity 에디터에서 컴파일 오류 해소 확인
+  3) 실제 빌드 환경(#else 브랜치)에서 runtimePath가
+     Application.persistentDataPath 기반으로 정상 반환되는지 확인
+  4) 저장 경로(gameSaves, gameDatas)가 빌드 시 올바르게 참조되는지 확인
+
+================================================================
+ 6. 변경 위치 및 내용 상세
+================================================================
+
+파일:
+  Assets/Scripts/VisualNovel/Core/IO/FilePaths.cs
+
+변경 유형: 추가 (1줄)
+
+위치: 파일 최상단 (1번째 줄 앞)
+
+변경 전 (1번째 줄):
+  public class FilePaths
+
+변경 후:
+  using UnityEngine;
+
+  public class FilePaths
+
+변경 요약:
+  - 추가된 코드: using UnityEngine;
+  - 수정/삭제된 코드: 없음
+  - 영향받는 멤버: runtimePath (get 프로퍼티, #else 브랜치의 51번째 줄)
+
+================================================================

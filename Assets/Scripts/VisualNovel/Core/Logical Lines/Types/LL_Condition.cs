@@ -1,6 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 using static DIALOGUE.LogicalLines.LogicalLineUtils.Encapsulation;
 using static DIALOGUE.LogicalLines.LogicalLineUtils.Conditions;

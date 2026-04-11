@@ -1,7 +1,4 @@
 using System.Collections.Generic;
-using System.Data.Common;
-using CHARACTERS;
-using UnityEngine;
 
 namespace History
 {

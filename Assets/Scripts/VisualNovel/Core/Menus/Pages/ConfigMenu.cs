@@ -5,8 +5,7 @@ using TMPro;
 using System.Collections.Generic;
 using System.IO;
 using DIALOGUE;
-using System;
-using UnityEngine.Audio;
+
 
 public class ConfigMenu : MenuPage
 {
@@ -140,7 +139,8 @@ public class ConfigMenu : MenuPage
         }
         else
         {
-            string resolution = ui.resolutions.captionText.text;
+            string rawText = ui.resolutions.captionText.text;
+            string resolution = ExtractResolution(rawText);
             string[] values = resolution.Split('x');
 
             if(int.TryParse(values[0].Trim(), out int width) && int.TryParse(values[1].Trim(), out int height))
@@ -153,9 +153,8 @@ public class ConfigMenu : MenuPage
             }
         }
 
-        config.display_resolution = ExtractResolution(ui.resolutions.captionText.text);
+        config.display_resolution = ui.resolutions.captionText.text;
     }
-
     public static string ExtractResolution(string optionText)
     {
         int start = optionText.IndexOf('(');
@@ -175,7 +174,6 @@ public class ConfigMenu : MenuPage
         }
         
     }
-
     public void SetAutoReaderSpeed()
     {
         config.dialogueAutoReadSpeed = ui.autoReaderSpeed.value;
@@ -193,6 +191,7 @@ public class ConfigMenu : MenuPage
         }
     }
 
+
     public void SetMusicVolume()
     {
         config.musicVolume = ui.musicVolume.value;
@@ -201,7 +200,6 @@ public class ConfigMenu : MenuPage
         ui.musicFill.color = config.muteMusic ? UI_ITEMS.musicOffColor : UI_ITEMS.musicOnColor;
 
     }
-    
     public void SetSFXVolume()
     {
         config.sfxVolume = ui.sfxVolume.value;
@@ -209,7 +207,6 @@ public class ConfigMenu : MenuPage
 
         ui.sfxFill.color = config.muteSFX ? UI_ITEMS.musicOffColor : UI_ITEMS.musicOnColor;
     }
-
     public void SetVoiceVolume()
     {
         config.voicesVolume = ui.voicesVolume.value;
@@ -226,7 +223,6 @@ public class ConfigMenu : MenuPage
     
         AudioManager.instance.SetMusicVolume(config.musicVolume, config.muteMusic);
     }
-
     public void SetSFXMute()
     {
         config.muteSFX = !config.muteSFX;
@@ -235,8 +231,6 @@ public class ConfigMenu : MenuPage
 
         AudioManager.instance.SetSFXVolume(config.sfxVolume, config.muteSFX);
     }
-
-
     public void SetVoiceMute()
     {
         config.muteVoices = !config.muteVoices;

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using DIALOGUE;
 using UnityEngine;
@@ -15,6 +14,8 @@ namespace History
         public List<HistoryState> history = new List<HistoryState>();
 
         private HistoryNavigation navigation;
+        public bool isViewingHistory => navigation.isViewingHistory;
+        
         public HistoryLogManager logManager{get; private set;}
 
         void Awake()

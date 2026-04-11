@@ -5,8 +5,8 @@
   <Project Path="ACTk.DOTS.Examples.Runtime.csproj" />
   <Project Path="ACTk.Editor.csproj" />
   <Project Path="ACTk.Examples.Runtime.csproj" />
-  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="ACTk.Examples.Genuine.Runtime.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Assembly-CSharp-Editor-firstpass.csproj" />
   <Project Path="AYellowpaper.SerializedCollections.Editor.csproj" />
   <Project Path="ACTk.Examples.Genuine.Editor.csproj" />

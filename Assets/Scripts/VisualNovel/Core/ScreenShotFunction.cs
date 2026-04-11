@@ -59,6 +59,8 @@ public class ScreenShotFunction : MonoBehaviour
             filePath = filePath + extension;
         }
 
+        FileManager.TryCreateDirectoryFromPath(filePath);
+
         System.IO.File.WriteAllBytes(filePath, bytes);
 
     }

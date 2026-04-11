@@ -1,4 +1,3 @@
-using UnityEditor;
 using UnityEngine;
 using VISUALNOVEL;
 
@@ -7,7 +6,6 @@ public class SaveAndLoadMenu : MenuPage
     public static SaveAndLoadMenu Instance {get; private set;}
 
     private const int MAX_FILES = 7;
-    private string savePath = FilePaths.gameSaves;
 
     private int currentPage = 1;
     private bool loadedFilesForFirstTime = false;

@@ -1,0 +1,212 @@
+================================================================
+ 변경 계획 | 26.04.11_07.08 (KST)
+ 주제: ConfigMenu 해상도/창모드 전환 미작동 버그 분석 및 수정 계획
+================================================================
+
+
+목차
+----
+ a. 목차
+ b. 요구한 기능
+ c. 현재 상황 및 코드
+ d. 수정 방향
+ e. 왜 d 방식인가
+ f. 진행 순서
+ g. 어디가 어떻게 변경되는지
+
+
+────────────────────────────────────────
+a. 목차
+────────────────────────────────────────
+ 위 참조
+
+
+────────────────────────────────────────
+b. 요구한 기능
+────────────────────────────────────────
+ Dropdown 옵션에서 해상도를 선택하면:
+  - "전체창 (1920 x 1080)" → 전체화면(ExclusiveFullScreen) 1920x1080 적용
+  - "창모드 (1920 x 1080)" ~ "창모드 (640 x 480)" → 창 모드(Windowed)로 해당 해상도 적용
+
+ 선택한 값은 config 파일에 저장되고, 다음 실행 시 복원되어야 한다.
+
+
+────────────────────────────────────────
+c. 현재 상황 및 코드
+────────────────────────────────────────
+
+ [문제 1 - 핵심] SetDisplayResolution()의 문자열 파싱 실패
+ ─────────────────────────────────────────────────────────
+ 위치: ConfigMenu.cs > SetDisplayResolution() (line 132~156)
+
+  string resolution = ui.resolutions.captionText.text;
+  // 예: "창모드 (1920 x 1080)"
+
+  string[] values = resolution.Split('x');
+  // 결과:
+  //   values[0] = "창모드 (1920 "
+  //   values[1] = " 1080)"
+
+  int.TryParse(values[0].Trim(), out int width)
+  // "창모드 (1920" → 파싱 실패 → Debug.LogWarning 출력, SetResolution 미호출
+
+ 원인: Split('x')는 옵션 텍스트 전체를 기준으로 자르기 때문에
+       해상도 숫자가 아닌 한글 접두사("창모드 (1920")가 width 자리에 들어간다.
+       이미 ExtractResolution() 헬퍼가 존재하지만 파싱 전에 호출하지 않는다.
+
+
+ [문제 2] 전체창/창모드 구분 정보가 저장되지 않음
+ ─────────────────────────────────────────────────────────
+ 위치: ConfigMenu.cs > SetDisplayResolution() (line 155),
+       VN_Configuration.cs > display_resolution 필드 (line 14)
+
+  config.display_resolution = ExtractResolution(ui.resolutions.captionText.text);
+  // "전체창 (1920 x 1080)" → 저장값: "1920 x 1080"
+  // "창모드 (1920 x 1080)" → 저장값: "1920 x 1080"  ← 동일!
+
+ 원인: ExtractResolution()은 괄호 안 해상도 문자열만 저장한다.
+       전체창/창모드 구분이 사라지기 때문에 1920x1080 해상도는
+       항상 index 0 (전체창)으로 복원된다.
+
+
+ [문제 3] OnValueChanged 연결 여부 (Inspector 확인 필요)
+ ─────────────────────────────────────────────────────────
+ SetDisplayResolution()이 Dropdown의 OnValueChanged 이벤트에
+ 연결되어 있지 않으면 선택해도 아무 일도 일어나지 않는다.
+ VN_Configuration.Load()에서 초기 로드 시에는 직접 호출하지만,
+ 이후 사용자 조작에 의한 호출은 Inspector 연결에 의존한다.
+ → Inspector에서 반드시 확인 필요.
+
+
+────────────────────────────────────────
+d. 수정 방향
+────────────────────────────────────────
+
+ [수정 1] SetDisplayResolution() 파싱 로직 수정
+  - captionText.text를 바로 Split('x')하지 않고,
+    먼저 ExtractResolution()으로 "1920 x 1080" 부분만 추출한 뒤 Split('x') 적용
+
+  수정 전:
+    string resolution = ui.resolutions.captionText.text;
+    string[] values = resolution.Split('x');
+
+  수정 후:
+    string rawText = ui.resolutions.captionText.text;
+    string resolution = ExtractResolution(rawText);  // → "1920 x 1080"
+    string[] values = resolution.Split('x');
+
+
+ [수정 2] 전체창/창모드 구분 정보 저장 방식 수정
+  - display_resolution에 옵션의 전체 텍스트("전체창 (1920 x 1080)")를 그대로 저장
+  - VN_Configuration.Load()에서도 전체 텍스트를 비교하도록 수정
+
+  VN_Configuration.cs:
+    public string display_resolution = "전체창 (1920 x 1080)";  // 기본값 변경
+
+  ConfigMenu.cs SetDisplayResolution():
+    config.display_resolution = ui.resolutions.captionText.text;  // 전체 텍스트 저장
+
+  VN_Configuration.cs Load():
+    if(optionText == display_resolution)  // 전체 텍스트 직접 비교 (ExtractResolution 제거)
+
+
+────────────────────────────────────────
+e. 왜 d 방식인가
+────────────────────────────────────────
+
+ 대안 A - 인덱스 저장:
+  display_resolution → display_index (int)으로 교체
+  단점: 옵션 목록 순서가 바뀌면 저장값이 깨짐.
+        옵션 추가/삭제 시 기존 저장 파일과 불일치.
+
+ 대안 B - 해상도 + fullscreen bool 분리 저장:
+  display_resolution = "1920 x 1080"
+  display_fullscreen = true/false
+  단점: 같은 해상도(1920x1080)에 전체창/창모드 버전이 모두 있을 때
+        Load 매칭 로직이 복잡해짐.
+
+ → d 방식 (전체 텍스트 저장) 선택 이유:
+  - 옵션 텍스트를 key로 사용하므로 순서 변경에 강함
+  - 전체창/창모드 구분이 텍스트 자체에 포함되어 별도 필드 불필요
+  - 코드 변경 최소화 (ExtractResolution 호출 위치만 조정)
+  - 기존 Load() 비교 로직을 단순화할 수 있음
+
+
+────────────────────────────────────────
+f. 진행 순서
+────────────────────────────────────────
+
+ 1. Inspector 확인
+    - ConfigMenu가 붙은 오브젝트의 ui.resolutions (TMP_Dropdown)
+    - OnValueChanged → ConfigMenu.SetDisplayResolution 연결 여부 확인
+    - 미연결 시 연결
+
+ 2. ConfigMenu.cs > SetDisplayResolution() 수정
+    - captionText.text를 ExtractResolution() 통과 후 Split('x') 적용
+
+ 3. ConfigMenu.cs > SetDisplayResolution() 저장 부분 수정
+    - ExtractResolution() 제거, 전체 옵션 텍스트 저장으로 변경
+
+ 4. VN_Configuration.cs 수정
+    - display_resolution 기본값을 "전체창 (1920 x 1080)"으로 변경
+    - Load()의 optionText 비교를 전체 텍스트 직접 비교로 변경
+
+ 5. 기존 저장 파일(vnconfig.cfg) 삭제 또는 초기화
+    - 저장 형식이 변경되므로 기존 파일이 있으면 오작동 가능
+
+ 6. 에디터 플레이 테스트
+    - 각 옵션 선택 → 실제 해상도/창 모드 전환 확인
+    - 종료 후 재시작 → 설정 복원 확인
+
+
+────────────────────────────────────────
+g. 어디가 어떻게 변경되는지
+────────────────────────────────────────
+
+ [파일 1] Assets/Scripts/VisualNovel/Core/Menus/Pages/ConfigMenu.cs
+
+  SetDisplayResolution() (line 132~156):
+
+    변경 전:
+      string resolution = ui.resolutions.captionText.text;
+      string[] values = resolution.Split('x');
+      ...
+      config.display_resolution = ExtractResolution(ui.resolutions.captionText.text);
+
+    변경 후:
+      string rawText = ui.resolutions.captionText.text;
+      string resolution = ExtractResolution(rawText);   // ← 추가
+      string[] values = resolution.Split('x');
+      ...
+      config.display_resolution = rawText;              // ← 전체 텍스트로 변경
+
+
+ [파일 2] Assets/Scripts/VisualNovel/Core/VN System/DataContainers/VN_Configuration.cs
+
+  display_resolution 기본값 (line 14):
+
+    변경 전:
+      public string display_resolution = "1920 x 1080";
+
+    변경 후:
+      public string display_resolution = "전체창 (1920 x 1080)";
+
+  Load() 내 비교 로직 (line 39~45):
+
+    변경 전:
+      string optionText = ui.resolutions.options[i].text;
+      string optionResolution = ConfigMenu.ExtractResolution(optionText);
+      if(optionResolution == display_resolution)
+
+    변경 후:
+      string optionText = ui.resolutions.options[i].text;
+      if(optionText == display_resolution)              // ← ExtractResolution 제거, 직접 비교
+
+
+ [Inspector] ConfigMenu 오브젝트 > ui.resolutions (TMP_Dropdown)
+  - OnValueChanged 이벤트에 ConfigMenu.SetDisplayResolution 연결 (미연결 시)
+
+
+================================================================
+ END
+================================================================

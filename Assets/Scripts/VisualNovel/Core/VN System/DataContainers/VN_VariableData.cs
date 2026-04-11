@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace VISUALNOVEL
 {
     [System.Serializable]

@@ -11,7 +11,7 @@ public class VN_Configuration
 
 
     //Display Settings
-    public string display_resolution = "1920 x 1080";
+    public string display_resolution = "전체창 (1920 x 1080)";
 
     //Text Settings
     public float dialogueTextSpeed = 1f;
@@ -37,9 +37,8 @@ public class VN_Configuration
         for(int i = 0; i < ui.resolutions.options.Count; i++)
         {
             string optionText = ui.resolutions.options[i].text;
-            string optionResolution = ConfigMenu.ExtractResolution(optionText);
 
-            if(optionResolution == display_resolution)
+            if(optionText == display_resolution)
             {
                 res_index = i;
                 break;

@@ -1,0 +1,298 @@
+================================================================
+변경 계획 문서
+작성일: 2026-04-11 18:07 (KST)
+대상 파일:
+  - Assets/Scripts/VisualNovel/Core/Menus/Pages/ConfigMenu.cs
+  - Assets/Scripts/VisualNovel/Core/VN System/DataContainers/VN_Configuration.cs
+================================================================
+
+
+================================================================
+a. 목차
+================================================================
+
+  1. 요구한 기능
+  2. 현재 상황 및 코드
+     2-1. [버그] SetDisplayResolution() 파싱 오류 (치명적)
+     2-2. [버그] Save/Load 시 창 모드 정보 소실 (치명적)
+  3. 요구 기능 구현을 위한 변경 방법
+  4. 다른 방법들과 채택 이유
+  5. 진행 순서
+  6. 변경 위치 및 내용 상세
+
+
+================================================================
+b. 요구한 기능
+================================================================
+
+  TMP_Dropdown 옵션 목록:
+
+    [0] 전체창 (1920 x 1080)
+    [1] 창모드 (1920 x 1080)
+    [2] 창모드 (1600 x 900)
+    [3] 창모드 (1280 x 720)
+    [4] 창모드 (1024 x 768)
+    [5] 창모드 (800 x 600)
+    [6] 창모드 (640 x 480)
+
+  동작 방식:
+  - "전체창 (1920 x 1080)" 선택
+      → FullScreenMode.ExclusiveFullScreen + 해상도 1920x1080 즉시 적용
+  - "창모드 (xxxx x yyyy)" 선택
+      → FullScreenMode.Windowed + 해당 해상도 즉시 적용
+  - 선택하는 순간 모드 + 해상도가 바로 반영됨
+
+
+================================================================
+c. 현재 상황 및 코드
+================================================================
+
+  ─ ConfigMenu.cs : SetDisplayResolution() ─────────────────────
+
+    public void SetDisplayResolution()
+    {
+        int index = ui.resolutions.value;
+
+        if (index == 0)
+        {
+            // 전체창 → 정상 동작
+            Screen.SetResolution(1920, 1080, FullScreenMode.ExclusiveFullScreen);
+        }
+        else
+        {
+            string resolution = ui.resolutions.captionText.text;   // (A)
+            string[] values = resolution.Split('x');               // (B)
+
+            if(int.TryParse(values[0].Trim(), out int width) &&
+               int.TryParse(values[1].Trim(), out int height))
+            {
+                Screen.SetResolution(width, height, FullScreenMode.Windowed);
+            }
+            else
+            {
+                Debug.LogWarning($"...");  // ← 항상 이쪽 진입 (버그)
+            }
+        }
+
+        // (C) 저장 시 모드 정보 소실
+        config.display_resolution = ExtractResolution(ui.resolutions.captionText.text);
+    }
+
+  ─ VN_Configuration.cs : Load() ──────────────────────────────
+
+    public string display_resolution = "1920 x 1080";  // (D) 모드 정보 없음
+
+    public void Load()
+    {
+        int res_index = 0;
+        for(int i = 0; i < ui.resolutions.options.Count; i++)
+        {
+            string optionResolution = ConfigMenu.ExtractResolution(options[i].text);
+            if(optionResolution == display_resolution)  // (E)
+            {
+                res_index = i;
+                break;  // ← 항상 index 0에서 먼저 매칭
+            }
+        }
+        ui.resolutions.value = res_index;
+        ConfigMenu.instance.SetDisplayResolution();
+    }
+
+
+  ─────────────────────────────────────────────────────────────
+  [버그 1] SetDisplayResolution() 파싱 오류 — 치명적
+  ─────────────────────────────────────────────────────────────
+  (A) captionText.text = "창모드 (1920 x 1080)"
+  (B) Split('x') 결과:
+        values[0] = "창모드 (1920 "
+        values[1] = " 1080)"
+
+  int.TryParse("창모드 (1920".Trim(), ...)
+    → "창모드 (1920"은 정수가 아님 → 파싱 실패
+
+  결과: 창모드 선택 시 Screen.SetResolution()이 호출되지 않음.
+        실제로 창 모드 전환 및 해상도 변경이 적용되지 않는다.
+
+
+  ─────────────────────────────────────────────────────────────
+  [버그 2] Save 시 창 모드 정보 소실 — 치명적
+  ─────────────────────────────────────────────────────────────
+  (C) config.display_resolution = ExtractResolution("창모드 (1920 x 1080)")
+        → "1920 x 1080" 만 저장 (전체창/창모드 구분 없음)
+
+  (D) 기본값도 "1920 x 1080"
+
+  (E) Load() 비교:
+      - options[0] "전체창 (1920 x 1080)" → ExtractResolution → "1920 x 1080" → 매칭!
+      - 루프가 index 0에서 break → 항상 전체창으로 복원
+
+  결과: 사용자가 "창모드 (1920 x 1080)"를 선택해도
+        앱 재실행 시 항상 "전체창 (1920 x 1080)"으로 복원된다.
+
+
+================================================================
+d. 요구한 기능을 만들기 위해 어떤 식으로 변경해야 하는지
+================================================================
+
+  [수정 1] SetDisplayResolution() — 파싱 로직 수정
+  -------------------------------------------------
+  captionText.text 전체를 Split('x')하는 대신,
+  기존의 ExtractResolution()으로 먼저 괄호 안 문자열("1920 x 1080")을 추출한 뒤
+  'x'로 분리한다.
+
+    // 수정 전
+    string resolution = ui.resolutions.captionText.text;
+    string[] values = resolution.Split('x');
+
+    // 수정 후
+    string rawText = ui.resolutions.captionText.text;
+    string resolution = ExtractResolution(rawText);   // → "1920 x 1080"
+    string[] values = resolution.Split('x');
+
+
+  [수정 2] display_resolution 저장 형식 — 옵션 전체 텍스트로 변경
+  ---------------------------------------------------------------
+  모드 + 해상도를 모두 보존하기 위해 captionText.text 전체를 저장한다.
+
+    // ConfigMenu.cs 수정 전
+    config.display_resolution = ExtractResolution(ui.resolutions.captionText.text);
+
+    // ConfigMenu.cs 수정 후
+    config.display_resolution = ui.resolutions.captionText.text;
+    // 예: "창모드 (1920 x 1080)" 전체 저장
+
+    // VN_Configuration.cs 기본값 수정 전
+    public string display_resolution = "1920 x 1080";
+
+    // VN_Configuration.cs 기본값 수정 후
+    public string display_resolution = "전체창 (1920 x 1080)";
+
+    // VN_Configuration.cs Load() 비교 로직 수정 전
+    string optionResolution = ConfigMenu.ExtractResolution(optionText);
+    if(optionResolution == display_resolution)
+
+    // VN_Configuration.cs Load() 비교 로직 수정 후
+    if(optionText == display_resolution)
+    // ExtractResolution 호출 제거, 옵션 전체 텍스트와 직접 비교
+
+
+================================================================
+e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+================================================================
+
+  방법 A: index(int)를 저장                          ← 미채택
+  ─────────────────────────────────────────────────
+  장점: 단순하고 저장 크기가 최소.
+  단점: 옵션 목록의 순서가 바뀌거나 옵션이 추가/삭제될 경우
+        저장된 index가 엉뚱한 해상도를 가리킬 수 있다.
+        데이터와 UI 목록 사이의 결합도가 높아 유지보수 위험.
+
+  방법 B: 별도 enum(FullScreenMode) + 해상도 string 두 필드 ← 미채택
+  ─────────────────────────────────────────────────────────
+  장점: 모드와 해상도를 명확히 분리.
+  단점: VN_Configuration에 필드 추가 필요.
+        Load() 복원 로직도 별도 처리가 필요해 변경 범위가 가장 크다.
+
+  방법 C: 옵션 전체 텍스트를 저장                    ← 채택
+  ─────────────────────────────────────────────────
+  장점:
+    - 기존 display_resolution 필드 하나를 그대로 유지 (구조 변경 최소).
+    - 모드 + 해상도 정보가 한 문자열에 모두 포함.
+    - Load()에서 string 직접 비교로 정확한 index 복원.
+    - 옵션 목록 순서가 바뀌어도 텍스트 기반 매칭이라 안전.
+    - 기존 ExtractResolution() 유틸 메서드를 그대로 활용 가능.
+  단점:
+    - 옵션 텍스트가 완전히 일치해야 하므로 UI 텍스트 변경 시
+      기존 저장값과 불일치할 수 있음 (단, 이 경우 폴백으로 index 0 복원).
+
+
+================================================================
+f. 어떤 순서로 진행할 것인지
+================================================================
+
+  Step 1. VN_Configuration.cs 수정
+    1-1. display_resolution 기본값 → "전체창 (1920 x 1080)"
+    1-2. Load() 비교 로직 → optionText 직접 비교 (ExtractResolution 제거)
+
+  Step 2. ConfigMenu.cs 수정
+    2-1. SetDisplayResolution() 파싱 로직
+         → ExtractResolution() 먼저 호출 후 Split('x')
+    2-2. SetDisplayResolution() 저장 로직
+         → captionText.text 전체 저장 (ExtractResolution 래핑 제거)
+
+  Step 3. 동작 검증
+    3-1. 에디터에서 "전체창 (1920 x 1080)" 선택 → 전체창 전환 확인
+    3-2. "창모드 (1920 x 1080)" 선택 → 창 전환 + 해상도 확인
+    3-3. "창모드 (1280 x 720)" 선택 → 해상도 변경 확인
+    3-4. 저장 후 재실행 → 마지막 선택 상태로 정확히 복원되는지 확인
+    3-5. 전체창 → 창모드 → 전체창 반복 전환 시 정상 동작 확인
+
+
+================================================================
+g. 어디가 어떤 식으로 변경되는지
+================================================================
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │ 파일: ConfigMenu.cs                                          │
+  ├──────────────────────────────────────────────────────────────┤
+  │ 메서드: SetDisplayResolution()                               │
+  │                                                              │
+  │ [변경 1] 파싱 로직 (else 블록 상단, Line ~142)              │
+  │                                                              │
+  │   Before:                                                    │
+  │     string resolution = ui.resolutions.captionText.text;    │
+  │     string[] values = resolution.Split('x');                 │
+  │                                                              │
+  │   After:                                                     │
+  │     string rawText = ui.resolutions.captionText.text;        │
+  │     string resolution = ExtractResolution(rawText);          │
+  │     string[] values = resolution.Split('x');                 │
+  │                                                              │
+  │ [변경 2] 저장 로직 (메서드 마지막 줄, Line ~155)            │
+  │                                                              │
+  │   Before:                                                    │
+  │     config.display_resolution =                              │
+  │         ExtractResolution(ui.resolutions.captionText.text);  │
+  │                                                              │
+  │   After:                                                     │
+  │     config.display_resolution =                              │
+  │         ui.resolutions.captionText.text;                     │
+  └──────────────────────────────────────────────────────────────┘
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │ 파일: VN_Configuration.cs                                    │
+  ├──────────────────────────────────────────────────────────────┤
+  │ [변경 3] display_resolution 기본값 (Line 14)                │
+  │                                                              │
+  │   Before:                                                    │
+  │     public string display_resolution = "1920 x 1080";        │
+  │                                                              │
+  │   After:                                                     │
+  │     public string display_resolution = "전체창 (1920 x 1080)"; │
+  │                                                              │
+  │ [변경 4] Load() 비교 로직 (Line ~39~43)                     │
+  │                                                              │
+  │   Before:                                                    │
+  │     string optionText = ui.resolutions.options[i].text;      │
+  │     string optionResolution =                                │
+  │         ConfigMenu.ExtractResolution(optionText);            │
+  │     if(optionResolution == display_resolution)               │
+  │                                                              │
+  │   After:                                                     │
+  │     string optionText = ui.resolutions.options[i].text;      │
+  │     if(optionText == display_resolution)                     │
+  │     (ExtractResolution 호출 제거)                            │
+  └──────────────────────────────────────────────────────────────┘
+
+  영향 범위 요약:
+  - 변경 파일: 2개
+  - 변경 메서드: 2개 (SetDisplayResolution, Load)
+  - 총 변경 라인: 약 4~5줄
+  - 기존 저장 파일(vnconfig.cfg) 호환성:
+      기존 cfg에 "1920 x 1080" 형식이 저장된 경우,
+      Load()에서 매칭 실패 → res_index = 0 (전체창) 폴백.
+      첫 실행 시 전체창으로 시작하므로 실질적 문제 없음.
+
+================================================================
+END OF DOCUMENT
+================================================================

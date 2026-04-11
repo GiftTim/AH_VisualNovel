@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using System.IO;
 using VISUALNOVEL;
+using History;
 
 public class SaveLoadSlot : MonoBehaviour
 {
@@ -116,6 +117,14 @@ public class SaveLoadSlot : MonoBehaviour
 
     public void Save()
     {
+        if (HistoryManager.instance.isViewingHistory)
+        {
+            UIConfirmationMenu.instance.Show(
+                "You cannot save while viewing history.", 
+                new UIConfirmationMenu.ConfirmationButton("확인",null));
+            return;
+        }
+
         var activeSave = VNGameSave.activeFile;
         activeSave.slotNumber = fileNumber;
 
