@@ -1,0 +1,361 @@
+================================================================
+  변경계획 - GalleryMenu NavBar 윈도우 슬라이딩
+  (nextButton/previousButton 클릭 시 페이지 버튼 묶음 단위 이동)
+  작성일: 2026-04-10
+================================================================
+
+[목차]
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 요구한 기능을 만들기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+  e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+  f. 어떤 순서로 진행할 것인지
+  g. 어디가 어떤 식으로 변경되는지
+
+================================================================
+b. 요구한 기능
+================================================================
+
+  [전제 상황]
+    - 총 10페이지가 존재하고 PAGE_BUTTON_LIMIT = 3이라 가정
+    - 갤러리 진입 시 NavBar 구성:
+        LeftEndButton | (panelSelectionPrefab 비활성) | previousButton
+        | [버튼1: "1"] | [버튼2: "2"] | [버튼3: "3"] |
+        nextButton | RightEndButton
+
+  [현재 동작]
+    - nextButton 클릭 → selectedPage + 1 로 이동 (예: 1페이지 → 2페이지)
+    - 버튼 레이블은 항상 1, 2, 3 고정
+
+  [원하는 동작]
+    nextButton 클릭 시:
+      - 버튼 레이블이 [4, 5, 6]으로 교체됨
+      - 갤러리 콘텐츠가 4페이지로 이동
+      - 첫 번째 버튼("4")이 선택(Selected) 상태로 포커스됨
+
+    previousButton 클릭 시:
+      - 버튼 레이블이 [1, 2, 3]으로 복구됨
+      - 갤러리 콘텐츠가 1페이지로 이동
+      - 첫 번째 버튼("1")이 선택(Selected) 상태로 포커스됨
+
+  [윈도우 개념]
+    3개의 버튼은 전체 페이지 목록을 보는 "슬라이딩 윈도우"이다.
+    nextButton/previousButton은 이 윈도우를 PAGE_BUTTON_LIMIT(3) 단위로 앞뒤로 민다.
+
+    윈도우 예시 (maxPages=10, PAGE_BUTTON_LIMIT=3):
+      윈도우 1: 버튼 레이블 [1, 2, 3]   (windowStart = 1)
+      윈도우 2: 버튼 레이블 [4, 5, 6]   (windowStart = 4)
+      윈도우 3: 버튼 레이블 [7, 8, 9]   (windowStart = 7)
+      윈도우 4: 버튼 레이블 [10, -, -]  (windowStart = 10, 11·12 미존재 → 버튼 비활성)
+
+================================================================
+c. 현재 상황 및 코드
+================================================================
+
+  private const int PAGE_BUTTON_LIMIT = 3;
+  private int maxPages = 0;
+  private int selectedPage = 0;
+  private List<Button> pageButtons = new List<Button>();
+
+  private void ConstructNavBar()
+  {
+      int pageLimit = PAGE_BUTTON_LIMIT < maxPages ? PAGE_BUTTON_LIMIT : maxPages;
+
+      for(int i = 1; i <= pageLimit; i++)
+      {
+          // 버튼 생성
+          int page = i;
+          button.onClick.AddListener(() => LoadPage(page));  // ← 생성 시 고정
+          buttonText.text = i.ToString();                    // ← 레이블 고정
+          pageButtons.Add(button);
+      }
+
+      previousButton.gameObject.SetActive(pageLimit < maxPages);  // ← 초기 1회만 설정
+      nextButton.gameObject.SetActive(pageLimit < maxPages);       // ← 초기 1회만 설정
+      ArrangeNavBarOrder();
+  }
+
+  public void ToNextPage()
+  {
+      if(selectedPage < maxPages)
+          LoadPage(selectedPage + 1);   // ← 1씩만 이동
+  }
+
+  public void ToPreviousPage()
+  {
+      if(selectedPage > 1)
+          LoadPage(selectedPage - 1);   // ← 1씩만 이동
+  }
+
+  private void SelectPageButton(int pageNumber)
+  {
+      int index = pageNumber - 1;       // ← windowStart가 항상 1이라고 가정
+      if (index >= 0 && index < pageButtons.Count)
+          EventSystem.current.SetSelectedGameObject(pageButtons[index].gameObject);
+  }
+
+  [ 문제 요약 ]
+
+    ① nextButton/previousButton이 selectedPage를 1씩 바꿀 뿐,
+       버튼 레이블과 onClick이 변경되지 않는다.
+
+    ② 버튼 레이블과 onClick이 생성 시 고정되어,
+       윈도우가 이동해도 항상 1, 2, 3 페이지만 가리킨다.
+
+    ③ SelectPageButton이 pageNumber - 1을 인덱스로 사용하므로
+       windowStart가 1이 아닌 상황에서 잘못된 버튼을 선택하거나
+       범위 밖 인덱스를 참조한다.
+
+    ④ previousButton / nextButton의 활성 상태가
+       ConstructNavBar에서 1회만 결정되어
+       윈도우 이동 후 업데이트되지 않는다.
+
+================================================================
+d. 요구한 기능을 만들기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+================================================================
+
+  [핵심 메커니즘]
+    "windowStart" 변수로 현재 윈도우의 첫 번째 페이지 번호를 관리한다.
+    윈도우가 바뀔 때마다 UpdateNavBarWindow()를 호출해
+    버튼 레이블, onClick 리스너, 활성 상태, nav 버튼 표시를 일괄 갱신한다.
+
+  [필요한 변경 - GalleryMenu.cs]
+
+  1. 필드 추가
+       private int windowStart = 1;
+
+  2. UpdateNavBarWindow() 메서드 추가
+       private void UpdateNavBarWindow()
+       {
+           for (int i = 0; i < pageButtons.Count; i++)
+           {
+               int page = windowStart + i;
+               pageButtons[i].onClick.RemoveAllListeners();
+               pageButtons[i].onClick.AddListener(() => LoadPage(page));
+               pageButtons[i].GetComponentInChildren<TextMeshProUGUI>().text = page.ToString();
+               pageButtons[i].gameObject.SetActive(page <= maxPages);
+           }
+           previousButton.gameObject.SetActive(windowStart > 1);
+           nextButton.gameObject.SetActive(windowStart + pageButtons.Count <= maxPages);
+       }
+
+  3. ConstructNavBar() 수정
+       - 버튼 생성 루프에서 onClick.AddListener와 buttonText.text 제거
+         (UpdateNavBarWindow가 담당)
+       - previousButton.SetActive / nextButton.SetActive 제거
+         (UpdateNavBarWindow가 담당)
+       - 루프 종료 후 UpdateNavBarWindow() 호출 추가
+
+  4. ToNextPage() 수정
+       public void ToNextPage()
+       {
+           windowStart += PAGE_BUTTON_LIMIT;
+           UpdateNavBarWindow();
+           LoadPage(windowStart);
+           SelectPageButton(windowStart);
+       }
+
+  5. ToPreviousPage() 수정
+       public void ToPreviousPage()
+       {
+           windowStart -= PAGE_BUTTON_LIMIT;
+           if (windowStart < 1) windowStart = 1;
+           UpdateNavBarWindow();
+           LoadPage(windowStart);
+           SelectPageButton(windowStart);
+       }
+
+  6. SelectPageButton() 수정
+       private void SelectPageButton(int pageNumber)
+       {
+           int index = pageNumber - windowStart;   // ← windowStart 기준 상대 인덱스
+           if (index >= 0 && index < pageButtons.Count)
+               EventSystem.current.SetSelectedGameObject(pageButtons[index].gameObject);
+       }
+
+================================================================
+e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+================================================================
+
+[ 방법 A (채택): windowStart 변수 + UpdateNavBarWindow() ]
+
+  장점
+  ✓ 버튼 개수(3개)를 유지한 채 레이블·리스너만 교체하므로
+    Instantiate/Destroy 없이 동작함 → GC 부담 없음
+  ✓ UpdateNavBarWindow 한 곳에서 버튼 상태를 일괄 관리 → 유지보수 쉬움
+  ✓ SelectPageButton이 windowStart 기준 상대 인덱스를 사용하므로
+    Initialize / HidePreviewImage / ToNextPage 등 모든 호출 경로에서 일관성 유지
+
+  단점
+  - UpdateNavBarWindow 호출을 빠뜨리면 상태 불일치 발생 가능
+    (하지만 변경 지점이 명확하여 누락 위험 낮음)
+
+[ 방법 B: nextButton 클릭 시 버튼을 Destroy 후 재생성 ]
+
+  ✗ 매 클릭마다 Instantiate/Destroy 발생 → GC 스파이크 및 레이아웃 재계산
+  ✗ ArrangeNavBarOrder()를 매번 재호출해야 함
+
+[ 방법 C: 모든 페이지 버튼을 처음에 미리 생성 (maxPages개) ]
+
+  ✗ 페이지가 많을수록 초기 생성 비용 증가
+  ✗ 보이지 않는 버튼이 NavBar 레이아웃을 차지하지 않도록
+    SetActive를 일일이 관리해야 함
+
+  → 방법 A가 기존 3버튼 구조를 재활용하며
+    변경 범위가 최소화되므로 채택한다.
+
+================================================================
+f. 어떤 순서로 진행할 것인지
+================================================================
+
+  [코드 변경]
+  1. 필드에 private int windowStart = 1; 추가
+
+  2. UpdateNavBarWindow() 메서드 추가
+
+  3. ConstructNavBar() 수정
+       a. 버튼 생성 루프에서 onClick.AddListener 제거
+       b. 버튼 생성 루프에서 buttonText.text = i.ToString() 제거
+       c. previousButton.gameObject.SetActive(...) 제거
+       d. nextButton.gameObject.SetActive(...) 제거
+       e. ArrangeNavBarOrder() 호출 뒤에 UpdateNavBarWindow() 추가
+
+  4. SelectPageButton() 수정
+       index = pageNumber - windowStart 으로 변경
+
+  5. ToNextPage() 수정
+       windowStart += PAGE_BUTTON_LIMIT → UpdateNavBarWindow() → LoadPage → SelectPageButton
+
+  6. ToPreviousPage() 수정
+       windowStart -= PAGE_BUTTON_LIMIT (최소 1) → UpdateNavBarWindow() → LoadPage → SelectPageButton
+
+  [테스트]
+  7. Unity 실행 → 갤러리 진입
+       - 버튼 레이블 1, 2, 3 확인
+       - 1번 버튼 Selected Color 확인
+       - previousButton 비활성 확인
+       - nextButton 활성 확인 (총 페이지 > 3인 경우)
+
+  8. nextButton 클릭
+       - 버튼 레이블 4, 5, 6으로 교체 확인
+       - 갤러리 4페이지 이미지 표시 확인
+       - 첫 번째 버튼("4") Selected Color 확인
+       - previousButton 활성 확인
+
+  9. previousButton 클릭
+       - 버튼 레이블 1, 2, 3으로 복구 확인
+       - 갤러리 1페이지 이미지 표시 확인
+       - 첫 번째 버튼("1") Selected Color 확인
+
+  10. 마지막 윈도우에서 nextButton 비활성 확인
+      (예: maxPages=10, windowStart=10 → nextButton 숨김)
+
+  11. 이미지 클릭 → 미리보기 → 닫기
+       - HidePreviewImage에서 SelectPageButton(selectedPage) 호출
+       - selectedPage가 속한 윈도우의 해당 버튼에 Selected Color 복원 확인
+
+================================================================
+g. 어디가 어떤 식으로 변경되는지
+================================================================
+
+[ 파일: Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs ]
+
+  ① 필드 추가
+     - (변경 전) private List<Button> pageButtons = new List<Button>();
+     + (변경 후) private List<Button> pageButtons = new List<Button>();
+                 private int windowStart = 1;   ← 추가
+
+  ② ConstructNavBar() 수정
+     - (변경 전)
+         int page = i;
+         button.onClick.AddListener(() => LoadPage(page));
+         buttonText.text = i.ToString();
+         pageButtons.Add(button);
+         ...
+         previousButton.gameObject.SetActive(pageLimit < maxPages);
+         nextButton.gameObject.SetActive(pageLimit < maxPages);
+         ArrangeNavBarOrder();
+
+     + (변경 후)
+         pageButtons.Add(button);     ← onClick, buttonText 설정 제거
+         ...
+         // previousButton.SetActive / nextButton.SetActive 제거
+         ArrangeNavBarOrder();
+         UpdateNavBarWindow();        ← 추가
+
+  ③ 신규 메서드 추가 (ConstructNavBar 근처)
+     + private void UpdateNavBarWindow()
+     + {
+     +     for (int i = 0; i < pageButtons.Count; i++)
+     +     {
+     +         int page = windowStart + i;
+     +         pageButtons[i].onClick.RemoveAllListeners();
+     +         pageButtons[i].onClick.AddListener(() => LoadPage(page));
+     +         pageButtons[i].GetComponentInChildren<TextMeshProUGUI>().text = page.ToString();
+     +         pageButtons[i].gameObject.SetActive(page <= maxPages);
+     +     }
+     +     previousButton.gameObject.SetActive(windowStart > 1);
+     +     nextButton.gameObject.SetActive(windowStart + pageButtons.Count <= maxPages);
+     + }
+
+  ④ SelectPageButton() 수정
+     - (변경 전) int index = pageNumber - 1;
+     + (변경 후) int index = pageNumber - windowStart;
+
+  ⑤ ToNextPage() 수정
+     - (변경 전)
+         public void ToNextPage()
+         {
+             if(selectedPage < maxPages)
+                 LoadPage(selectedPage + 1);
+         }
+
+     + (변경 후)
+         public void ToNextPage()
+         {
+             windowStart += PAGE_BUTTON_LIMIT;
+             UpdateNavBarWindow();
+             LoadPage(windowStart);
+             SelectPageButton(windowStart);
+         }
+
+  ⑥ ToPreviousPage() 수정
+     - (변경 전)
+         public void ToPreviousPage()
+         {
+             if(selectedPage > 1)
+                 LoadPage(selectedPage - 1);
+         }
+
+     + (변경 후)
+         public void ToPreviousPage()
+         {
+             windowStart -= PAGE_BUTTON_LIMIT;
+             if (windowStart < 1) windowStart = 1;
+             UpdateNavBarWindow();
+             LoadPage(windowStart);
+             SelectPageButton(windowStart);
+         }
+
+[ 변경 없는 파일 ]
+  - GalleryConfig.cs
+  - CMD_DatabaseExtension_Gallery.cs
+  - Scene (Assets/Scenes/Main Menu.unity)
+
+[ 변경 요약표 ]
+  ┌────────────────────────────────┬──────────────────────────────────────────────────────┐
+  │ 위치                           │ 변경 내용                                            │
+  ├────────────────────────────────┼──────────────────────────────────────────────────────┤
+  │ 필드                           │ windowStart = 1 추가                                 │
+  │ ConstructNavBar()              │ onClick/text 설정 제거, SetActive 제거,              │
+  │                                │ UpdateNavBarWindow() 호출 추가                       │
+  │ 신규 메서드                    │ UpdateNavBarWindow() 추가                            │
+  │ SelectPageButton()             │ index 계산식 변경 (pageNumber-1 → pageNumber-windowStart) │
+  │ ToNextPage()                   │ windowStart 이동 + 윈도우 갱신 방식으로 교체        │
+  │ ToPreviousPage()               │ windowStart 이동 + 윈도우 갱신 방식으로 교체        │
+  └────────────────────────────────┴──────────────────────────────────────────────────────┘
+
+================================================================
+  끝
+================================================================

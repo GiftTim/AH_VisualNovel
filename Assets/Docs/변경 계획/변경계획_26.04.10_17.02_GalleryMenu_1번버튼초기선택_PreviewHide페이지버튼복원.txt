@@ -1,0 +1,270 @@
+================================================================
+  변경계획 - GalleryMenu 1번 버튼 초기 선택 & HidePreviewImage 후 페이지 버튼 복원
+  작성일: 2026-04-10
+================================================================
+
+[목차]
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 요구한 기능을 만들기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+  e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+  f. 어떤 순서로 진행할 것인지
+  g. 어디가 어떤 식으로 변경되는지
+
+================================================================
+b. 요구한 기능
+================================================================
+
+  [기능 1] 갤러리 진입 시 1번 페이지 버튼 초기 선택 상태
+    갤러리에 처음 진입하면 LoadPage(1)이 실행되어 1페이지가 표시된다.
+    이 시점에서 1번 페이지 버튼도 시각적으로 "선택된(Selected)" 상태여야 한다.
+
+  [기능 2] HidePreviewImage 호출 시 이전 페이지 버튼 복원
+    갤러리 이미지를 클릭해 미리보기 패널이 열린 후,
+    미리보기를 닫으면(HidePreviewImage) 직전에 선택되어 있던
+    페이지 버튼이 다시 선택 상태로 복원되어야 한다.
+
+================================================================
+c. 현재 상황 및 코드
+================================================================
+
+[ 전제: 26.04.09 변경계획 - Target Graphic TMP 교체 ]
+
+  26.04.09 계획에서 panelSelectionPrefab(Page 버튼)의
+  Button.Target Graphic을 Image → TextMeshProUGUI로 교체했다.
+  Unity EventSystem이 버튼에 포커스를 줄 때 Selected Color가 TMP 텍스트에 적용된다.
+  이 계획은 해당 변경이 이미 적용되었음을 전제로 한다.
+
+[ GalleryMenu.cs - 관련 코드 현재 상태 ]
+
+  private int selectedPage = 0;  // 현재 선택된 페이지 번호 (LoadPage 시 갱신)
+
+  private void Initialize()
+  {
+      initialized = true;
+      ConstructNavBar();
+      LoadPage(1);
+      // ← 여기서 LoadPage(1)로 1페이지를 로드하지만
+      //   1번 버튼에 EventSystem 포커스가 없으므로 Selected Color가 적용되지 않음
+  }
+
+  private void ConstructNavBar()
+  {
+      // 버튼을 동적으로 생성하지만
+      // 생성된 버튼들의 참조를 별도 리스트로 보관하지 않음
+      for (int i = 1; i <= pageLimit; i++)
+      {
+          Button button = buttonOB.GetComponent<Button>();
+          button.onClick.AddListener(() => LoadPage(page));
+          // ← 버튼 참조를 리스트에 추가하는 코드 없음
+      }
+  }
+
+  private void LoadPage(int pageNumber)
+  {
+      // ... 이미지 슬롯 설정 ...
+      selectedPage = pageNumber;
+      // ← selectedPage는 갱신되지만 버튼 포커스 변경 없음
+  }
+
+  public void HidePreviewImage()
+  {
+      previewPanelCG.Hide();
+      previewPanelCG.SetInteractableState(false);
+      // ← 미리보기를 닫아도 페이지 버튼에 포커스를 돌려주지 않음
+      //   닫기 버튼이 마지막으로 클릭된 상태가 되어 페이지 버튼 선택 해제됨
+  }
+
+[ 문제 요약 ]
+
+  ① 갤러리 진입 시: LoadPage(1)은 실행되나 1번 버튼에 포커스가 없어 Selected Color 미적용
+  ② 미리보기 닫을 때: 닫기 버튼이 마지막으로 포커스를 받아
+     선택되어 있던 페이지 버튼의 Selected Color가 해제됨
+
+================================================================
+d. 요구한 기능을 만들기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+================================================================
+
+  [핵심 메커니즘]
+    EventSystem.current.SetSelectedGameObject(gameObject)을 호출하면
+    해당 GameObject가 EventSystem 포커스를 받는다.
+    Button.Target Graphic이 TMP이고 Selected Color가 설정되어 있으면
+    Selected Color가 TMP에 즉시 적용된다.
+
+  [필요한 변경 - GalleryMenu.cs]
+
+  1. 생성된 페이지 버튼 리스트 필드 추가
+     private List<Button> pageButtons = new List<Button>();
+
+  2. ConstructNavBar()에서 버튼 생성 시 리스트에 추가
+     pageButtons.Add(button);
+
+  3. 페이지 버튼 포커스를 설정하는 헬퍼 메서드 추가
+     private void SelectPageButton(int pageNumber)
+     {
+         int index = pageNumber - 1;
+         if (index >= 0 && index < pageButtons.Count)
+             EventSystem.current.SetSelectedGameObject(pageButtons[index].gameObject);
+     }
+
+  4. Initialize()에서 1번 버튼 초기 선택 호출 추가
+     private void Initialize()
+     {
+         initialized = true;
+         ConstructNavBar();
+         LoadPage(1);
+         SelectPageButton(1);  // ← 추가
+     }
+
+  5. HidePreviewImage()에서 이전 페이지 버튼 복원 호출 추가
+     public void HidePreviewImage()
+     {
+         previewPanelCG.Hide();
+         previewPanelCG.SetInteractableState(false);
+         SelectPageButton(selectedPage);  // ← 추가
+     }
+
+  6. using 추가 (미리 없는 경우)
+     using UnityEngine.EventSystems;
+
+================================================================
+e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+================================================================
+
+[ 방법 A (채택): EventSystem.SetSelectedGameObject ]
+
+  장점
+  ✓ Selected Color를 포함한 모든 ColorBlock 상태가 자동으로 처리됨
+  ✓ 26.04.09 계획의 Target Graphic TMP 방식과 완벽히 연동
+  ✓ LoadPage()를 재실행하지 않으므로 이미지 슬롯을 불필요하게 다시 그리지 않음
+  ✓ 코드가 단순하고 의도가 명확함
+
+  단점
+  - EventSystem이 씬에 존재해야 함 (기본 Unity UI 구성이면 항상 있음)
+
+[ 방법 B: button.onClick.Invoke() ]
+
+  페이지 버튼의 onClick을 강제 실행하여 LoadPage를 다시 호출하는 방식.
+  ✗ LoadPage() 전체가 다시 실행되어 이미지 슬롯을 불필요하게 재구성함
+  ✗ 미리보기 닫을 때 페이지를 다시 로드하는 것은 과도한 처리
+
+[ 방법 C: 코드에서 TMP 색상을 직접 변경 ]
+
+  LoadPage()와 HidePreviewImage()에서 직접 TMP.color를 설정하는 방식.
+  ✗ 26.04.09 계획의 ColorBlock 방식과 이중 관리가 되어 충돌 가능성 있음
+  ✗ Normal / Highlighted / Pressed 상태까지 모두 코드로 관리해야 하여 복잡도 증가
+
+[ 방법 D: 별도 선택 표시 GameObject (언더라인 등) ]
+
+  버튼 자식에 언더라인 이미지를 두고 활성/비활성으로 선택 표시.
+  ✗ 프리팹 구조 변경 필요
+  ✗ ColorBlock 방식과 병행 관리 필요
+
+  → 방법 A가 기존 26.04.09 계획의 설계와 자연스럽게 연동되며
+    코드 추가가 최소화되므로 채택한다.
+
+================================================================
+f. 어떤 순서로 진행할 것인지
+================================================================
+
+  [전제 확인]
+  0. 26.04.09 변경계획의 Target Graphic TMP 교체가 적용되어 있는지 확인
+     → Scene에서 Navigation > Page 버튼의 Button.Target Graphic이 TMP인지 확인
+
+  [코드 변경]
+  1. GalleryMenu.cs 상단에 using UnityEngine.EventSystems; 추가 (없는 경우)
+
+  2. 클래스 필드에 pageButtons 리스트 선언 추가
+     private List<Button> pageButtons = new List<Button>();
+
+  3. ConstructNavBar() 내부 버튼 생성 루프에서
+     pageButtons.Add(button); 한 줄 추가
+
+  4. SelectPageButton(int pageNumber) 헬퍼 메서드 추가
+
+  5. Initialize() 안에서 LoadPage(1); 바로 아래에
+     SelectPageButton(1); 추가
+
+  6. HidePreviewImage() 맨 아래에
+     SelectPageButton(selectedPage); 추가
+
+  [테스트]
+  7. Unity 실행 후 갤러리 진입 → 1번 버튼 텍스트가 Selected Color로 표시되는지 확인
+  8. 다른 페이지 버튼 클릭 → 해당 버튼 Selected Color 적용, 이전 버튼 Normal Color 복구 확인
+  9. 이미지 클릭 → 미리보기 열림 → 닫기 → 이전 페이지 버튼 Selected Color 복원 확인
+
+================================================================
+g. 어디가 어떤 식으로 변경되는지
+================================================================
+
+[ 파일: Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs ]
+
+  ① using 추가 (파일 상단)
+     + using UnityEngine.EventSystems;
+
+  ② 필드 추가 (클래스 상단, 기존 필드들 아래)
+     - (변경 전) 없음
+     + (변경 후) private List<Button> pageButtons = new List<Button>();
+
+  ③ ConstructNavBar() 내부 수정
+     - (변경 전)
+         button.onClick.AddListener(() => LoadPage(page));
+         buttonText.text = i.ToString();
+     + (변경 후)
+         button.onClick.AddListener(() => LoadPage(page));
+         buttonText.text = i.ToString();
+         pageButtons.Add(button);   ← 추가
+
+  ④ 신규 메서드 추가 (LoadPage() 근처에 추가)
+     + private void SelectPageButton(int pageNumber)
+     + {
+     +     int index = pageNumber - 1;
+     +     if (index >= 0 && index < pageButtons.Count)
+     +         EventSystem.current.SetSelectedGameObject(pageButtons[index].gameObject);
+     + }
+
+  ⑤ Initialize() 수정
+     - (변경 전)
+         ConstructNavBar();
+         LoadPage(1);
+     + (변경 후)
+         ConstructNavBar();
+         LoadPage(1);
+         SelectPageButton(1);   ← 추가
+
+  ⑥ HidePreviewImage() 수정
+     - (변경 전)
+         public void HidePreviewImage()
+         {
+             previewPanelCG.Hide();
+             previewPanelCG.SetInteractableState(false);
+         }
+     + (변경 후)
+         public void HidePreviewImage()
+         {
+             previewPanelCG.Hide();
+             previewPanelCG.SetInteractableState(false);
+             SelectPageButton(selectedPage);   ← 추가
+         }
+
+[ 변경 없는 파일 ]
+  - GalleryConfig.cs
+  - CMD_DatabaseExtension_Gallery.cs
+  - Scene (Assets/Scenes/Main Menu.unity) - 26.04.09 계획 적용이 전제이므로 추가 Inspector 작업 없음
+
+[ 변경 요약표 ]
+  ┌────────────────────────────┬──────────────────────────────────────────────────┐
+  │ 위치                       │ 변경 내용                                        │
+  ├────────────────────────────┼──────────────────────────────────────────────────┤
+  │ GalleryMenu.cs - using     │ EventSystems 네임스페이스 추가                   │
+  │ GalleryMenu.cs - 필드      │ List<Button> pageButtons 추가                    │
+  │ ConstructNavBar()          │ pageButtons.Add(button) 추가                     │
+  │ 신규 메서드                │ SelectPageButton(int pageNumber) 추가            │
+  │ Initialize()               │ SelectPageButton(1) 호출 추가                    │
+  │ HidePreviewImage()         │ SelectPageButton(selectedPage) 호출 추가         │
+  └────────────────────────────┴──────────────────────────────────────────────────┘
+
+================================================================
+  끝
+================================================================

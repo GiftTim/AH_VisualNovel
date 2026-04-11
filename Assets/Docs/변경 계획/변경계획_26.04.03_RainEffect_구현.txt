@@ -1,0 +1,336 @@
+================================================================
+  변경계획 : Wallpaper Effect Panel 비 이펙트 구현
+  작성일 : 2026-04-03
+  대상 씬 : Assets/Scenes/Main Menu.unity
+================================================================
+
+
+================================================================
+  a. 목차
+================================================================
+
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 구현 방식 및 변경/추가 내용
+  e. 해당 방식을 선택한 이유
+  f. 진행 순서
+  g. 변경되는 위치 및 내용 상세
+
+
+================================================================
+  b. 요구한 기능
+================================================================
+
+  대상 위치
+    Main Menu 씬 Hierarchy 경로:
+    [VN Controller] > Render Groups > Root > Canvas-Main > Wallpaper Effect Panel
+
+  구현 내용
+    - Wallpaper Effect Panel 위에 비 내리는 시각 이펙트를 구현한다.
+    - 빗방울(Droplet)이 위에서 아래로 떨어지며
+    - 착지 시 물결(Ripple) 애니메이션이 재생된다.
+    - Canvas UI 계층 안에서 동작해야 한다.
+
+  사용할 리소스 (기존 파일)
+    - Assets/Resources/Graphics/Effect/RainEffect/Droplet.png       (빗방울 스프라이트)
+    - Assets/Resources/Graphics/Effect/RainEffect/Ripple.png        (물결 스프라이트)
+    - Assets/Resources/Graphics/Effect/RainEffect/Additive_Droplet.mat   (빗방울 머티리얼, Additive 블렌드)
+    - Assets/Resources/Graphics/Effect/RainEffect/Additive_Ripple.mat    (물결 머티리얼, Additive 블렌드)
+
+
+================================================================
+  c. 현재 상황 및 코드
+================================================================
+
+  [현재 상태 요약]
+
+  1. RainEffect.cs 파일 존재 (비어 있음)
+     경로 : Assets/Scripts/VisualNovel/Core/Effect/RainEffect.cs
+     상태 : Start()와 Update()만 선언된 빈 플레이스홀더 상태
+
+     현재 코드:
+     ----------------------------------------------------------
+     using UnityEngine;
+
+     public class RainEffect : MonoBehaviour
+     {
+         void Start() { }
+         void Update() { }
+     }
+     ----------------------------------------------------------
+
+  2. 이펙트 리소스 파일 존재
+     경로 : Assets/Resources/Graphics/Effect/RainEffect/
+     파일 :
+       - Droplet.png         (빗방울 스프라이트)
+       - Ripple.png          (물결 스프라이트)
+       - Additive_Droplet.mat  (Additive 블렌드 머티리얼)
+       - Additive_Ripple.mat   (Additive 블렌드 머티리얼)
+     상태 : 리소스만 있고 실제로 사용하는 코드 없음
+
+  3. Wallpaper Effect Panel 존재
+     경로 : [VN Controller] > Render Groups > Root > Canvas-Main > Wallpaper Effect Panel
+     상태 : Panel 오브젝트는 있지만 이펙트 관련 컴포넌트 없음
+
+  4. 그래픽 패널 시스템
+     - GraphicPanelManager.cs : 패널을 이름으로 관리하는 싱글톤
+     - GraphicPanel.cs        : 레이어 기반 그래픽 패널
+     - GraphicLayer.cs        : 텍스처/비디오를 Fade In/Out으로 전환
+     - GraphicObject.cs       : RawImage 기반 렌더링 오브젝트
+     - 위 시스템은 정적 이미지/비디오 전환용이며 반복 파티클 이펙트 용도로는 부적합
+
+
+================================================================
+  d. 구현 방식 및 변경/추가 내용
+================================================================
+
+  [채택 방식 : UI Image 동적 스폰 방식 (Coroutine 기반 Canvas 내 이펙트)]
+
+  RainEffect.cs를 아래 구조로 구현한다.
+
+  ── 핵심 구조 ────────────────────────────────────────────────
+  1. Droplet (빗방울) 파트
+     - 일정 간격(spawnInterval)으로 Droplet 이미지 오브젝트를 Wallpaper Effect Panel 내에 스폰
+     - 스폰 위치 : X는 패널 너비 내 랜덤, Y는 패널 상단 밖
+     - 아래 방향으로 이동 (fallSpeed)
+     - 패널 하단을 벗어나면 오브젝트 제거 & Ripple 트리거
+
+  2. Ripple (물결) 파트
+     - Droplet이 하단에 닿는 위치에서 Ripple 이미지 오브젝트를 스폰
+     - Scale이 0에서 목표 크기로 확대되며 Alpha가 1 → 0으로 Fade Out
+     - 애니메이션 종료 후 오브젝트 제거
+
+  3. 풀링 (Optional)
+     - 빗방울 수가 많아지면 Object Pool 도입 가능 (일단 Instantiate/Destroy로 구현)
+
+  ── 인스펙터 노출 파라미터 ────────────────────────────────────
+  - Sprite dropletSprite          : 빗방울 스프라이트
+  - Sprite rippleSprite           : 물결 스프라이트
+  - Material dropletMaterial      : Additive_Droplet 머티리얼
+  - Material rippleMaterial       : Additive_Ripple 머티리얼
+  - float spawnInterval = 0.05f   : 빗방울 스폰 간격 (초)
+  - float fallSpeed = 800f        : 낙하 속도 (pixels/sec)
+  - int maxDroplets = 80          : 화면에 존재 가능한 최대 빗방울 수
+  - Vector2 dropletSize = (8, 40) : 빗방울 Image 크기
+  - Vector2 rippleSize = (60, 20) : 물결 Image 최대 크기
+  - float rippleDuration = 0.5f   : 물결 애니메이션 지속 시간
+  - bool isPlaying = false        : 재생 여부 (외부에서 on/off 가능)
+
+  ── 추가할 Unity 컴포넌트 (씬 내) ───────────────────────────
+  - Wallpaper Effect Panel 하위에 "Rain Root" 빈 GameObject 추가
+    → RectTransform : AnchorMin(0,0) AnchorMax(1,1), Offset 0
+    → RainEffect.cs 스크립트 부착
+    → 스프라이트/머티리얼 슬롯에 리소스 연결
+
+
+================================================================
+  e. 해당 방식을 선택한 이유
+================================================================
+
+  [검토한 대안들]
+
+  방법 A : Unity ParticleSystem 사용
+    장점 : 파티클 동작을 에디터에서 직관적으로 설정 가능
+    단점 : Canvas Screen Space - Overlay 내에서 ParticleSystem을
+           렌더링하려면 CanvasRenderer를 수동으로 추가하거나
+           외부 라이브러리(UIParticle 등)가 필요하다.
+           이 프로젝트의 Canvas가 Overlay 모드이면 파티클이
+           UI 위에 제대로 정렬되지 않는 문제가 발생할 수 있다.
+    결론 : 외부 패키지 없이 구현하기 복잡 → 탈락
+
+  방법 B : RenderTexture + 오프스크린 파티클
+    장점 : 파티클을 별도 카메라에서 렌더링하여 RenderTexture로
+           UI에 표시하는 방법.
+    단점 : 추가 카메라와 RenderTexture 설정이 필요하며
+           메모리와 드로우콜이 증가한다.
+           현재 프로젝트의 단순한 2D VN 구조에 과도한 설계.
+    결론 : 리소스 낭비 과도 → 탈락
+
+  방법 C : 기존 GraphicObject 시스템 확장
+    장점 : 프로젝트 기존 시스템과 통일성 있음
+    단점 : GraphicObject는 정적 텍스처/비디오 전환 목적으로 설계됨.
+           반복 스폰·이동·Fade의 파티클성 동작을 위해
+           시스템 전체를 크게 수정해야 한다.
+           기존 기능에 side effect를 줄 위험이 있다.
+    결론 : 기존 시스템 오염 위험 → 탈락
+
+  [채택 : 방법 D - UI Image 동적 스폰 방식]
+    - Canvas UI 계층 안에서 Image 컴포넌트를 동적으로 생성/이동/제거
+    - Additive 머티리얼을 Image.material에 직접 적용하여
+      기존 Additive_Droplet / Additive_Ripple 머티리얼 활용 가능
+    - 외부 라이브러리 불필요
+    - 기존 GraphicPanel 시스템에 영향 없음
+    - Coroutine으로 낙하/페이드 애니메이션 처리 → 단순하고 명확
+    - 인스펙터 파라미터로 세부 조정 용이
+
+
+================================================================
+  f. 진행 순서
+================================================================
+
+  Step 1. 씬 수정 - Rain Root 오브젝트 생성
+    - Main Menu.unity 열기
+    - Hierarchy에서 Wallpaper Effect Panel 선택
+    - 하위에 빈 GameObject "Rain Root" 추가
+    - RectTransform 설정: Anchor Stretch(0,0 / 1,1), Offset 0
+
+  Step 2. RainEffect.cs 구현
+    - 파일: Assets/Scripts/VisualNovel/Core/Effect/RainEffect.cs
+    - 빗방울 스폰 Coroutine (SpawnLoop)
+    - 빗방울 낙하 Coroutine (DropletFall)
+    - 물결 애니메이션 Coroutine (RippleAnimation)
+    - Play() / Stop() 공개 메서드 추가
+
+  Step 3. 컴포넌트 연결
+    - Rain Root 오브젝트에 RainEffect.cs 부착
+    - 인스펙터에서 슬롯 연결:
+        dropletSprite  ← Droplet.png
+        rippleSprite   ← Ripple.png
+        dropletMaterial ← Additive_Droplet.mat
+        rippleMaterial  ← Additive_Ripple.mat
+
+  Step 4. 동작 확인
+    - Play 모드에서 isPlaying = true 로 설정하여 동작 확인
+    - spawnInterval, fallSpeed, maxDroplets 수치 조정
+
+  Step 5. (선택) 외부 제어 연결
+    - 필요 시 VN 스크립트 커맨드에서 RainEffect.Play() / Stop() 호출
+
+
+================================================================
+  g. 변경되는 위치 및 내용 상세
+================================================================
+
+  ┌─────────────────────────────────────────────────────────┐
+  │ 파일 / 오브젝트                 │ 변경 유형 │ 내용        │
+  ├─────────────────────────────────┼───────────┼─────────────┤
+  │ RainEffect.cs                   │ 수정      │ 빈 스크립트 │
+  │ (Core/Effect/RainEffect.cs)     │           │ → 전체 구현 │
+  ├─────────────────────────────────┼───────────┼─────────────┤
+  │ Main Menu.unity                 │ 수정      │ Rain Root   │
+  │ (Wallpaper Effect Panel 하위)   │           │ GameObject  │
+  │                                 │           │ 추가 및     │
+  │                                 │           │ 컴포넌트    │
+  │                                 │           │ 연결        │
+  ├─────────────────────────────────┼───────────┼─────────────┤
+  │ Additive_Droplet.mat            │ 참조만    │ Image.mat에 │
+  │ Additive_Ripple.mat             │ (변경없음)│ 런타임 적용 │
+  ├─────────────────────────────────┼───────────┼─────────────┤
+  │ Droplet.png / Ripple.png        │ 참조만    │ Image.sprite│
+  │                                 │ (변경없음)│ 에 적용     │
+  ├─────────────────────────────────┼───────────┼─────────────┤
+  │ GraphicPanel / GraphicLayer /   │ 변경없음  │ 기존 시스템 │
+  │ GraphicObject / GraphicPanel    │           │ 영향 없음   │
+  │ Manager                         │           │             │
+  └─────────────────────────────────┴───────────┴─────────────┘
+
+  [씬 Hierarchy 변경 전/후]
+
+  변경 전:
+    [VN Controller]
+      └─ Render Groups
+           └─ Root
+                └─ Canvas-Main
+                     └─ Wallpaper Effect Panel   ← 빈 패널
+
+  변경 후:
+    [VN Controller]
+      └─ Render Groups
+           └─ Root
+                └─ Canvas-Main
+                     └─ Wallpaper Effect Panel
+                          └─ Rain Root            ← NEW (RainEffect.cs 부착)
+                               ├─ [Droplet_0]    ← 런타임 동적 생성
+                               ├─ [Droplet_1]    ← 런타임 동적 생성
+                               └─ [Ripple_0]     ← 런타임 동적 생성
+
+  [RainEffect.cs 구조 요약]
+
+  public class RainEffect : MonoBehaviour
+  {
+      // Inspector 파라미터
+      [SerializeField] Sprite dropletSprite;
+      [SerializeField] Sprite rippleSprite;
+      [SerializeField] Material dropletMaterial;
+      [SerializeField] Material rippleMaterial;
+      [SerializeField] float spawnInterval = 0.05f;
+      [SerializeField] float fallSpeed = 800f;
+      [SerializeField] int maxDroplets = 80;
+      [SerializeField] Vector2 dropletSize = new Vector2(8, 40);
+      [SerializeField] Vector2 rippleSize = new Vector2(60, 20);
+      [SerializeField] float rippleDuration = 0.5f;
+
+      // 공개 제어
+      public void Play()   { isPlaying = true;  StartCoroutine(SpawnLoop()); }
+      public void Stop()   { isPlaying = false; }
+
+      // 내부 Coroutine
+      IEnumerator SpawnLoop()     // 일정 간격으로 Droplet 스폰
+      IEnumerator DropletFall()   // 낙하 이동 + 하단 도달 시 Ripple 호출
+      IEnumerator RippleAnimation() // Scale 확대 + Alpha Fade Out
+  }
+
+================================================================
+  h. 실제 씬 상태 vs 문서 c 차이점 (검토일: 2026-04-03)
+================================================================
+
+  [변경 시도 중 발견된 차이점 - 변경 중지 후 기록]
+
+  문서 c 에서 기술한 현재 상황과 실제 씬 파일의 상태가 다음과 같이 다름:
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │ 항목              │ 문서 c 기술 내용           │ 실제 현재 상태         │
+  ├───────────────────┼────────────────────────────┼────────────────────────┤
+  │ 패널 이름         │ Wallpaper Effect Panel     │ Wallpaper              │
+  ├───────────────────┼────────────────────────────┼────────────────────────┤
+  │ 패널 자식 구조    │ 이펙트 관련 컴포넌트 없음  │ "Effect" 자식 오브젝트 │
+  │                   │ (빈 패널 상태)             │ 이미 존재              │
+  ├───────────────────┼────────────────────────────┼────────────────────────┤
+  │ Effect 하위       │ (존재하지 않음)            │ "RainEffect" 빈        │
+  │                   │                            │ GameObject 존재        │
+  │                   │                            │ (RectTransform만,      │
+  │                   │                            │ Anchor 0,0~1,1, 스크립 │
+  │                   │                            │ 트 미첨부)             │
+  └───────────────────┴────────────────────────────┴────────────────────────┘
+
+  실제 씬 경로:
+    Canvas-Main
+      └─ Wallpaper                      ← 문서에서 "Wallpaper Effect Panel"로 기술
+           └─ Effect                    ← 문서 c에서 미언급 (사전 작업으로 추가된 것으로 보임)
+                └─ RainEffect           ← 문서 계획의 "Rain Root"에 해당
+                     (RectTransform: AnchorMin(0,0) AnchorMax(1,1), Offset 0)
+                     (RainEffect.cs 스크립트 미첨부 상태)
+
+  [해석 및 대응 방안]
+
+  1. "Wallpaper Effect Panel"은 실제로는 "Wallpaper"라는 이름으로 씬에 존재함
+     → 문서 표기 오류 또는 씬 이름 변경으로 판단
+
+  2. "Effect" > "RainEffect" 구조는 문서 f의 Step 1
+     (Rain Root 오브젝트 생성)이 이미 수행된 상태로 보임
+     → RainEffect GameObject는 이미 올바른 RectTransform 설정을 가지고 있음
+        (Anchor Stretch, Offset 0)
+
+  3. RainEffect.cs 스크립트는 여전히 비어있으며 미첨부 상태
+     → 이 부분은 문서 c 기술과 일치함
+
+  [변경 계획 조정]
+
+  Step 1 (씬 수정 - Rain Root 오브젝트 생성) → 이미 완료 상태
+    - "Rain Root" 이름 대신 "RainEffect"로 이미 생성되어 있음
+    - 위치: Canvas-Main > Wallpaper > Effect > RainEffect
+    - RectTransform 설정: 이미 올바르게 설정됨
+
+  Step 2 (RainEffect.cs 구현) → 미완료, 진행 필요
+
+  Step 3 (컴포넌트 연결) → 미완료, 진행 필요
+    - Rain Root 대신 기존 "RainEffect" 오브젝트에 스크립트 부착
+    - 인스펙터 슬롯 연결 필요
+
+  ※ 차이점 확인 후 계속 진행 여부를 사용자에게 확인
+
+
+================================================================
+  끝
+================================================================

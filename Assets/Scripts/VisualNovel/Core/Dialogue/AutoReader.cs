@@ -11,8 +11,6 @@ namespace DIALOGUE
         private const float READ_TIME_PADDING = 0.5f;
         private const float MAX_READ_TIME = 99f;
         private const float MIN_READ_TIME = 1f;
-        private const string STATUS_TEXT_AUTO = "Auto-Play";
-        private const string STATUS_TEXT_SKIP = "Skipping";
 
         private ConversationManager conversationManager;
         private TextArchitect architect => conversationManager.architect;
@@ -23,14 +21,13 @@ namespace DIALOGUE
         public bool isOn => co_running != null;
         private Coroutine co_running = null;
 
-        //[SerializeField] private TextMeshProUGUI statusText;
+        [SerializeField] private GameObject autoStopObject;
+        [SerializeField] private GameObject autoPlayObject;
         [HideInInspector] public bool allowToggle = true;
 
         public void Initialize(ConversationManager conversationManager)
         {
             this.conversationManager = conversationManager;
-
-            //statusText.text = string.Empty;
         }
 
         public void Enable()
@@ -43,13 +40,12 @@ namespace DIALOGUE
 
         public void Disable()
         {
-            if (!isOn) 
+            if (!isOn)
                 return;
 
             StopCoroutine(co_running);
             skip = false;
             co_running = null;
-            //statusText.text = string.Empty;
         }
 
         private IEnumerator AutoRead()
@@ -109,18 +105,37 @@ namespace DIALOGUE
             skip = false;
 
             if (prevState)
+            {
+                // Skip → Auto 전환: Auto를 켠다
+                if (autoStopObject != null) autoStopObject.SetActive(false);
+                if (autoPlayObject != null)
+                {
+                    autoPlayObject.SetActive(true);
+                    autoPlayObject.GetComponent<Animator>().Play("Enter");
+                }
                 Enable();
-
+            }
             else
             {
                 if (!isOn)
+                {
+                    // Auto 꺼진 상태 → Auto 켠다
+                    if (autoStopObject != null) autoStopObject.SetActive(false);
+                    if (autoPlayObject != null)
+                    {
+                        autoPlayObject.SetActive(true);
+                        autoPlayObject.GetComponent<Animator>().Play("Enter");
+                    }
                     Enable();
+                }
                 else
+                {
+                    // Auto 켜진 상태 → Auto 끈다
+                    if (autoPlayObject != null) autoPlayObject.SetActive(false);
+                    if (autoStopObject != null) autoStopObject.SetActive(true);
                     Disable();
+                }
             }
-
-            //if (isOn)
-              // statusText.text = STATUS_TEXT_AUTO;
         }
 
         public void Toggle_Skip()
@@ -141,9 +156,6 @@ namespace DIALOGUE
                 else
                     Disable();
             }
-
-            //if (isOn)
-                //statusText.text = STATUS_TEXT_SKIP;
         }
     }
 }

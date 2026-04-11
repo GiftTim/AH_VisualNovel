@@ -1,0 +1,131 @@
+================================================================
+  변경완료 - GalleryMenu 1번 버튼 초기 선택 & HidePreviewImage 후 페이지 버튼 복원
+  완료일: 2026-04-10
+================================================================
+
+================================================================
+1. 현재 코드와 계획(c섹션) 비교 결과
+================================================================
+
+  차이 없음. 계획의 현재 상황 설명과 실제 코드가 완전히 일치함.
+  → 변경 진행.
+
+================================================================
+2. 변경 전 / 변경 후 코드
+================================================================
+
+[ ① using 추가 ]
+
+  변경 전:
+    using UnityEngine;
+    using UnityEngine.UI;
+    using TMPro;
+
+  변경 후:
+    using System.Collections.Generic;
+    using UnityEngine;
+    using UnityEngine.EventSystems;
+    using UnityEngine.UI;
+    using TMPro;
+
+------------------------------------------------------------
+
+[ ② 필드 추가 ]
+
+  변경 전:
+    private bool initialized = false;
+
+  변경 후:
+    private List<Button> pageButtons = new List<Button>();
+    private bool initialized = false;
+
+------------------------------------------------------------
+
+[ ③ ConstructNavBar() 내부 수정 ]
+
+  변경 전:
+    button.onClick.AddListener(() => LoadPage(page));
+    buttonText.text = i.ToString();
+
+  변경 후:
+    button.onClick.AddListener(() => LoadPage(page));
+    buttonText.text = i.ToString();
+    pageButtons.Add(button);   ← 추가
+
+------------------------------------------------------------
+
+[ ④ Initialize() 수정 ]
+
+  변경 전:
+    private void Initialize()
+    {
+        initialized = true;
+        ConstructNavBar();
+        LoadPage(1);
+    }
+
+  변경 후:
+    private void Initialize()
+    {
+        initialized = true;
+        ConstructNavBar();
+        LoadPage(1);
+        SelectPageButton(1);   ← 추가
+    }
+
+------------------------------------------------------------
+
+[ ⑤ HidePreviewImage() 수정 ]
+
+  변경 전:
+    public void HidePreviewImage()
+    {
+        previewPanelCG.Hide();
+        previewPanelCG.SetInteractableState(false);
+    }
+
+  변경 후:
+    public void HidePreviewImage()
+    {
+        previewPanelCG.Hide();
+        previewPanelCG.SetInteractableState(false);
+        SelectPageButton(selectedPage);   ← 추가
+    }
+
+------------------------------------------------------------
+
+[ ⑥ 신규 메서드 추가 ]
+
+  + private void SelectPageButton(int pageNumber)
+  + {
+  +     int index = pageNumber - 1;
+  +     if (index >= 0 && index < pageButtons.Count)
+  +         EventSystem.current.SetSelectedGameObject(pageButtons[index].gameObject);
+  + }
+
+================================================================
+3. 변경 후 작동 흐름
+================================================================
+
+  [기능 1 - 갤러리 진입 시 1번 버튼 초기 선택]
+
+    Open() 호출
+      → initialized == false이면 Initialize() 호출
+        → ConstructNavBar(): 페이지 버튼 동적 생성 + pageButtons 리스트에 추가
+        → LoadPage(1): 1페이지 이미지 슬롯 구성, selectedPage = 1
+        → SelectPageButton(1): pageButtons[0].gameObject에 EventSystem 포커스 설정
+          → Button.Target Graphic(TMP)에 Selected Color 적용
+      → anim.Play("Enter"): 갤러리 열림 애니메이션 재생
+
+  [기능 2 - 미리보기 닫을 때 페이지 버튼 복원]
+
+    갤러리 이미지 클릭 → ShowPreviewImage() 호출 → 미리보기 패널 표시
+    닫기 버튼 클릭 → HidePreviewImage() 호출
+      → previewPanelCG.Hide(): 미리보기 패널 숨김
+      → previewPanelCG.SetInteractableState(false): 패널 비활성화
+      → SelectPageButton(selectedPage): 직전에 선택되어 있던 페이지 버튼에 포커스 복원
+        → Button.Target Graphic(TMP)에 Selected Color 재적용
+
+================================================================
+  끝
+================================================================

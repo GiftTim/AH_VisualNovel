@@ -1,0 +1,92 @@
+================================================================
+  변경완료 - GalleryMenu NavButton SetActive → Interactable
+  작성일: 2026-04-10
+================================================================
+
+================================================================
+변경 전 코드
+================================================================
+
+[ GalleryMenu.cs - UpdateNavBarWindow() ]
+
+    private void UpdateNavBarWindow()
+    {
+        for (int i = 0; i < pageButtons.Count; i++)
+        {
+            int page = windowStart + i;
+            pageButtons[i].onClick.RemoveAllListeners();
+            pageButtons[i].onClick.AddListener(() => LoadPage(page));
+            pageButtons[i].GetComponentInChildren<TextMeshProUGUI>().text = page.ToString();
+            pageButtons[i].gameObject.SetActive(page <= maxPages);
+        }
+        previousButton.gameObject.SetActive(windowStart > 1);               ← SetActive 사용
+        nextButton.gameObject.SetActive(windowStart + pageButtons.Count <= maxPages);  ← SetActive 사용
+    }
+
+================================================================
+변경 후 코드
+================================================================
+
+[ GalleryMenu.cs - UpdateNavBarWindow() ]
+
+    private void UpdateNavBarWindow()
+    {
+        for (int i = 0; i < pageButtons.Count; i++)
+        {
+            int page = windowStart + i;
+            pageButtons[i].onClick.RemoveAllListeners();
+            pageButtons[i].onClick.AddListener(() => LoadPage(page));
+            pageButtons[i].GetComponentInChildren<TextMeshProUGUI>().text = page.ToString();
+            pageButtons[i].gameObject.SetActive(page <= maxPages);
+        }
+        previousButton.interactable = (windowStart > 1);                    ← interactable 사용
+        nextButton.interactable = (windowStart + pageButtons.Count <= maxPages);  ← interactable 사용
+    }
+
+================================================================
+변경 요약표
+================================================================
+
+  ┌──────────────────────────────────┬──────────────────────────────────────────────────┐
+  │ 위치                             │ 변경 내용                                        │
+  ├──────────────────────────────────┼──────────────────────────────────────────────────┤
+  │ UpdateNavBarWindow() (110~111번줄)│ SetActive → interactable 로 변경 (2줄)          │
+  └──────────────────────────────────┴──────────────────────────────────────────────────┘
+
+================================================================
+변경 후 작동 흐름
+================================================================
+
+  1. 갤러리 진입 (Open() 호출)
+       → 최초 1회 Initialize() 실행
+       → ConstructNavBar() → UpdateNavBarWindow() 호출
+       → 첫 번째 윈도우(windowStart=1) 기준 설정:
+           previousButton.interactable = false  (windowStart=1 이므로 이전 불가)
+           nextButton.interactable = (totalPage > PAGE_BUTTON_LIMIT 이면 true)
+       → 두 버튼 모두 Hierarchy에 존재, UI 레이아웃 유지됨
+
+  2. nextButton 클릭 (ToNextPage() 호출)
+       → windowStart += PAGE_BUTTON_LIMIT
+       → UpdateNavBarWindow() 호출
+       → previousButton.interactable = true  (windowStart > 1 이므로)
+       → nextButton.interactable = (남은 페이지 있으면 true, 없으면 false)
+
+  3. previousButton 클릭 (ToPreviousPage() 호출)
+       → windowStart -= PAGE_BUTTON_LIMIT  (최솟값 1 보장)
+       → UpdateNavBarWindow() 호출
+       → 첫 윈도우로 돌아오면 previousButton.interactable = false
+       → nextButton.interactable = true (총 페이지 > 현재 윈도우 끝)
+
+  4. 마지막 윈도우 도달
+       → nextButton.interactable = false
+       → previousButton.interactable = true
+
+  [공통]
+  - 두 버튼은 항상 화면에 표시됨 (GameObject 비활성화 없음)
+  - 사용 불가 상태 시 Unity Button의 Disabled Color로 시각적 표시
+  - 페이지 번호 버튼(pageButtons)의 SetActive는 기존대로 유지
+    (존재하지 않는 페이지 번호는 계속 숨김)
+
+================================================================
+  끝
+================================================================

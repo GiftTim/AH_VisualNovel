@@ -1,0 +1,285 @@
+================================================================
+  버그 분석 문서
+  작성일: 2026-04-06
+  대상 프로젝트: AH_VisualNovel
+  주제: Delete 버튼 클릭 시 UIConfirmationMenu에서
+        MissingReferenceException (HorizontalLayoutGroup) 발생
+================================================================
+
+
+================================================================
+  a. 목차
+================================================================
+
+  a. 목차
+  b. 현재 상황 및 데이터 흐름
+  c. 문제점
+  d. 해결방법
+  e. 다른 해결 방법 중 그 방법을 선택한 이유
+  f. 변경 코드 상세 및 변경 후 데이터 흐름
+
+
+================================================================
+  b. 현재 상황 및 데이터 흐름
+================================================================
+
+  [ 에러 메시지 ]
+
+    MissingReferenceException: The object of type 'UnityEngine.UI.HorizontalLayoutGroup'
+    has been destroyed but you are still trying to access it.
+    UnityEngine.Component.get_transform ()
+    UIConfirmationMenu.CreateOptionButton (...)  ← UIConfirmationMenu.cs:53
+    UIConfirmationMenu.Show (...)                ← UIConfirmationMenu.cs:32
+    SaveLoadSlot.Delete ()                       ← SaveLoadSlot.cs:113
+
+  ---------------------------------------------------------------
+
+  [ 관련 구조 ]
+
+    UIConfirmationMenu (GameObject)
+    └── Panel
+        └── HorizontalLayoutGroup (choiceLayoutGroup 필드가 이것을 참조)
+            ├── Button_예   (activeOptions[0])
+            └── Button_아니오 (activeOptions[1])
+
+  ---------------------------------------------------------------
+
+  [ 정상 호출 흐름 - 첫 번째 Show 진입까지 ]
+
+    1) 유저가 SaveLoadSlot의 Delete 버튼 클릭
+    2) SaveLoadSlot.Delete() 호출
+    3) uichoiceMenu.Show("저장된 파일을 삭제하시겠습니까?", 예, 아니오)
+         → Show() 내부:
+             CreateOptionButton(options) 호출
+               → activeOptions가 비어 있으면 DestroyImmediate 루프 스킵
+               → buttonPrefab을 choiceLayoutGroup.transform 아래 2개 Instantiate
+               → activeOptions = [Button_예, Button_아니오]
+             anim.Play("Enter")
+    4) 확인 메뉴 화면에 표시됨 (정상)
+
+  ---------------------------------------------------------------
+
+  [ 문제 발생 흐름 - 유저가 "예" 클릭 이후 ]
+
+    5) 유저가 "예" 버튼 클릭
+         → Button.onClick 이벤트 발화
+         → 등록된 리스너 순서대로 실행:
+
+         [리스너 1] option.action.Invoke()
+           = 아래 람다 실행:
+             () => uichoiceMenu.Show("정말로 삭제하시겠습니까?", 예2, 아니오2)
+
+               → Show() 진입
+               → CreateOptionButton(options) 호출
+                   → activeOptions 루프: DestroyImmediate(Button_예) 실행
+                                         ↑
+                                    ★ 이 시점이 문제
+                                    현재 실행 중인 onClick이
+                                    Button_예 위에서 발생했는데,
+                                    Button_예를 즉시 파괴함
+
+                   → DestroyImmediate(Button_아니오) 실행
+                   → activeOptions = new GameObject[2]
+                   → Instantiate(buttonPrefab, choiceLayoutGroup.transform)
+                                                ↑
+                                    ★ MissingReferenceException 발생
+                                    choiceLayoutGroup (HorizontalLayoutGroup)이
+                                    이미 파괴된 것으로 Unity가 인식함
+
+         [리스너 2] (실행되지 못함 - 이미 에러 발생)
+
+
+================================================================
+  c. 문제점
+================================================================
+
+  [ 핵심 원인: DestroyImmediate를 런타임 이벤트 핸들러 내부에서 사용 ]
+
+    DestroyImmediate()는 에디터 스크립트(Edit Mode)용 API다.
+    Play Mode에서 DestroyImmediate를 호출하면 해당 오브젝트를
+    동일 프레임 내에서 즉시 파괴한다.
+
+    문제는 '파괴 대상이 현재 실행 중인 이벤트의 발신자(Button_예)'
+    라는 점이다.
+
+    DestroyImmediate(Button_예)가 실행되는 순간, Unity는 아래를
+    동기적으로 처리한다:
+      1) Button_예 파괴
+      2) HorizontalLayoutGroup이 자식 변경 감지
+         (OnTransformChildrenChanged 내부 콜백)
+      3) LayoutGroup이 레이아웃 재계산을 위해 dirty 상태로 표시
+         → 이 과정에서 Unity 내부(C++ 레이어)에서 컴포넌트 참조가
+           정리되어 C# 래퍼가 가리키는 HorizontalLayoutGroup 오브젝트가
+           파괴된(destroyed) 것으로 마킹됨
+
+    결과적으로 이후에 choiceLayoutGroup.transform을 접근하면
+    "destroyed object에 접근" 예외가 발생한다.
+
+  ---------------------------------------------------------------
+
+  [ 요약 ]
+
+    DestroyImmediate()
+      → 이벤트 발신 버튼 즉시 파괴
+        → HorizontalLayoutGroup OnTransformChildrenChanged 동기 실행
+          → Unity 내부에서 LayoutGroup 컴포넌트 참조 무효화
+            → choiceLayoutGroup.transform 접근 시 MissingReferenceException
+
+
+================================================================
+  d. 해결방법
+================================================================
+
+  [ 채택 방법: DestroyImmediate → SetActive(false) + Destroy() 로 변경 ]
+
+    Destroy()는 오브젝트 파괴를 현재 프레임 말미(end-of-frame)로 예약한다.
+    현재 실행 중인 이벤트 핸들러가 모두 끝난 뒤에 실제 파괴가 이루어지므로
+    이벤트 처리 도중 레퍼런스가 무효화되는 문제가 발생하지 않는다.
+
+    SetActive(false)를 함께 사용하는 이유:
+      Destroy()만 사용하면 오브젝트가 end-of-frame까지 화면에 남아
+      새 버튼과 일시적으로 겹쳐 보일 수 있다.
+      SetActive(false)로 즉시 숨겨 시각적 이중 표시를 방지한다.
+
+  ---------------------------------------------------------------
+
+  [ 변경 대상 ]
+
+    파일: Assets/Scripts/VisualNovel/Core/Menus/UIConfirmationMenu.cs
+    위치: CreateOptionButton() 메서드 내 foreach 루프
+
+
+================================================================
+  e. 다른 해결 방법 중 그 방법을 선택한 이유
+================================================================
+
+  방법 1 (채택): SetActive(false) + Destroy()
+  -----------------------------------------------
+  장점:
+    - 근본 원인(이벤트 실행 중 동기 파괴)을 직접 제거
+    - 변경 범위가 CreateOptionButton() 루프 2줄로 최소
+    - SetActive(false)로 시각적 이중 표시 방지
+    - Unity 공식 런타임 권장 패턴
+  단점:
+    - 없음 (이 컨텍스트에서)
+
+  방법 2: choiceLayoutGroup에 null 체크 추가
+  -----------------------------------------------
+  장점:
+    - 크래시를 막는 빠른 방어 코드
+  단점:
+    - null 체크는 증상을 막을 뿐, 원인(DestroyImmediate)을 해결하지 않음
+    - null일 때 버튼이 생성되지 않아 확인 메뉴가 빈 채로 표시됨
+    - 실제로 두 번째 확인 단계("정말로 삭제?")가 나타나지 않게 됨
+
+  방법 3: Delete()의 중첩 Show 구조를 콜백 밖으로 분리
+  -----------------------------------------------
+  예:
+    두 번째 Show를 별도 메서드로 분리하고,
+    첫 번째 Show가 Hide된 이후 코루틴/Invoke로 호출
+  장점:
+    - Show 안에서 Show를 부르는 중첩 구조를 제거해 설계가 깔끔해짐
+  단점:
+    - 변경 범위가 SaveLoadSlot.Delete() + UIConfirmationMenu 양쪽에 걸침
+    - 프레임 지연(Invoke(0f))을 사용하면 확인 메뉴 전환이 1프레임 늦어짐
+    - 현재 버그 원인(DestroyImmediate)은 여전히 남아 있어
+      다른 Show 중첩 시나리오에서 동일 버그가 재발할 수 있음
+
+  방법 4: 오브젝트 풀 방식으로 버튼 재사용
+  -----------------------------------------------
+  장점:
+    - GC 압박 감소, 버튼 재사용으로 성능 개선
+  단점:
+    - 구현 복잡도가 대폭 상승
+    - 현재 확인 메뉴의 버튼 수가 2~3개 수준이라 풀이 필요한 규모가 아님
+    - 과잉 설계
+
+  → 방법 1이 최소 변경으로 근본 원인을 직접 해결하며,
+    Unity 런타임 권장 패턴에도 부합하므로 채택
+
+
+================================================================
+  f. 어떤 코드가 어떻게 변경되는지 그리고 그렇게 변경된 뒤의 데이터 흐름
+================================================================
+
+  ---------------------------------------------------------------
+  파일: Assets/Scripts/VisualNovel/Core/Menus/UIConfirmationMenu.cs
+  위치: CreateOptionButton() 메서드
+  ---------------------------------------------------------------
+
+  변경 전:
+  ---------
+    private void CreateOptionButton(ConfirmationButton[] options)
+    {
+        foreach (GameObject g in activeOptions)
+        {
+            DestroyImmediate(g);          ← Play Mode에서 즉시 파괴 (문제)
+        }
+        activeOptions = new GameObject[options.Length];
+        ...
+    }
+
+  변경 후:
+  ---------
+    private void CreateOptionButton(ConfirmationButton[] options)
+    {
+        foreach (GameObject g in activeOptions)
+        {
+            if (g != null)
+            {
+                g.SetActive(false);       ← 즉시 숨김 (시각적 이중 표시 방지)
+                Destroy(g);               ← end-of-frame에 파괴 예약 (안전)
+            }
+        }
+        activeOptions = new GameObject[options.Length];
+        ...
+    }
+
+  ---------------------------------------------------------------
+
+  [ 변경 후 데이터 흐름 ]
+
+    1) 유저가 Delete 버튼 클릭
+    2) SaveLoadSlot.Delete() → uichoiceMenu.Show("저장된 파일을 삭제하시겠습니까?", ...)
+         → CreateOptionButton(): activeOptions 비어 있음 → 루프 스킵
+         → Button_예, Button_아니오 Instantiate → choiceLayoutGroup 아래 배치
+         → activeOptions = [Button_예, Button_아니오]
+         → anim.Play("Enter")
+    3) 유저가 "예" 클릭 → Button.onClick 발화
+
+         [리스너 1] option.action.Invoke()
+           → uichoiceMenu.Show("정말로 삭제하시겠습니까?", ...)
+               → CreateOptionButton() 진입
+                   → foreach:
+                       Button_예.SetActive(false)   ← 즉시 숨김
+                       Destroy(Button_예)            ← 파괴 예약만 (즉시 파괴 X)
+                       Button_아니오.SetActive(false)
+                       Destroy(Button_아니오)
+                   → choiceLayoutGroup은 여전히 유효
+                     (HorizontalLayoutGroup 내부 콜백이 동기 실행되지 않음)
+                   → 새 Button_예2, Button_아니오2 Instantiate 성공
+                   → activeOptions = [Button_예2, Button_아니오2]
+               → anim.Play("Enter")
+
+         [리스너 2] Hide()
+           → anim.Play("Exit")  (이미 Enter가 재생 중이므로 덮어씌워짐)
+
+         ★ 프레임 종료 시점
+           → Destroy 예약된 Button_예, Button_아니오 실제 파괴
+           → 이때 HorizontalLayoutGroup OnTransformChildrenChanged 실행
+           → 이미 새 버튼 표시가 완료된 상태이므로 문제 없음
+
+    4) 두 번째 확인 메뉴("정말로 삭제하시겠습니까?") 정상 표시
+    5) 유저가 "예2" 클릭 → OnConfirmDelete() 실행 → 파일 삭제
+
+
+================================================================
+  관련 파일 요약
+================================================================
+
+  No.  파일                                변경 내용
+  ---  ------------------------------------  --------------------------------
+  1    UIConfirmationMenu.cs               CreateOptionButton() 루프 수정
+                                            DestroyImmediate → SetActive(false) + Destroy
+
+================================================================

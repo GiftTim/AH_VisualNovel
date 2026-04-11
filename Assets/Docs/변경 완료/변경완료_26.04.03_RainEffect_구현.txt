@@ -1,0 +1,162 @@
+================================================================
+  변경완료 : Wallpaper Effect Panel 비 이펙트 구현
+  작성일 : 2026-04-03
+  대상 씬 : Assets/Scenes/Main Menu.unity
+================================================================
+
+
+================================================================
+  1. 변경 전 / 후 코드
+================================================================
+
+  ── RainEffect.cs ───────────────────────────────────────────
+
+  [변경 전]
+  ----------------------------------------------------------
+  using UnityEngine;
+
+  public class RainEffect : MonoBehaviour
+  {
+      void Start() { }
+      void Update() { }
+  }
+  ----------------------------------------------------------
+
+  [변경 후]
+  ----------------------------------------------------------
+  using System.Collections;
+  using UnityEngine;
+  using UnityEngine.UI;
+
+  public class RainEffect : MonoBehaviour
+  {
+      [SerializeField] Sprite dropletSprite;
+      [SerializeField] Sprite rippleSprite;
+      [SerializeField] Material dropletMaterial;
+      [SerializeField] Material rippleMaterial;
+      [SerializeField] float spawnInterval = 0.05f;
+      [SerializeField] float fallSpeed = 800f;
+      [SerializeField] int maxDroplets = 80;
+      [SerializeField] Vector2 dropletSize = new Vector2(8, 40);
+      [SerializeField] Vector2 rippleSize = new Vector2(60, 20);
+      [SerializeField] float rippleDuration = 0.5f;
+      [SerializeField] bool isPlaying = false;
+
+      private RectTransform _rectTransform;
+      private int _activeDroplets = 0;
+
+      void Awake() { _rectTransform = GetComponent<RectTransform>(); }
+      void Start() { if (isPlaying) Play(); }
+
+      public void Play()  { isPlaying = true; StartCoroutine(SpawnLoop()); }
+      public void Stop()  { isPlaying = false; }
+
+      IEnumerator SpawnLoop()       // 일정 간격으로 Droplet 스폰
+      IEnumerator DropletFall()     // 낙하 이동 + 하단 도달 시 Ripple 호출
+      IEnumerator RippleAnimation() // Scale 확대 + Alpha Fade Out
+  }
+  ----------------------------------------------------------
+
+
+  ── Main Menu.unity (씬 파일) ────────────────────────────────
+
+  [변경 전]
+    RainEffect GameObject:
+      m_Component:
+        - RectTransform (fileID: 1483019135)
+
+  [변경 후]
+    RainEffect GameObject:
+      m_Component:
+        - RectTransform (fileID: 1483019135)
+        - MonoBehaviour / RainEffect.cs (fileID: 1483019136)  ← NEW
+
+    MonoBehaviour 슬롯 연결:
+      dropletSprite   : Droplet.png  (guid: 8a6a1fc6927c0dc4091d8c35f6f794ed)
+      rippleSprite    : Ripple.png   (guid: cfa5c0be0aef81f4f9dadb516157e39d)
+      dropletMaterial : Additive_Droplet.mat (guid: de9171955dbb16b4c963d51f7cdd8815)
+      rippleMaterial  : Additive_Ripple.mat  (guid: f3bd64fc44012824fbe5e3ea2426353a)
+      spawnInterval   : 0.05
+      fallSpeed       : 800
+      maxDroplets     : 80
+      dropletSize     : (8, 40)
+      rippleSize      : (60, 20)
+      rippleDuration  : 0.5
+      isPlaying       : false
+
+
+================================================================
+  2. 씬 Hierarchy 변경 전 / 후
+================================================================
+
+  [변경 전]
+    Canvas-Main
+      └─ Wallpaper
+           ├─ (배경 레이어들)
+           └─ Effect
+                └─ RainEffect     ← RectTransform만, 스크립트 없음
+
+  [변경 후]
+    Canvas-Main
+      └─ Wallpaper
+           ├─ (배경 레이어들)
+           └─ Effect
+                └─ RainEffect     ← RainEffect.cs 스크립트 부착 + 리소스 연결
+                     ├─ [Droplet_N]   ← 런타임 동적 생성
+                     └─ [Ripple_N]    ← 런타임 동적 생성
+
+
+================================================================
+  3. 동작 흐름
+================================================================
+
+  [시작 조건]
+    - Play()를 외부에서 호출하거나, 인스펙터에서 isPlaying = true 로 설정 후 실행
+
+  [SpawnLoop 코루틴]
+    1. isPlaying == true 인 동안 spawnInterval(0.05초) 간격으로 반복
+    2. 현재 활성 빗방울 수(_activeDroplets)가 maxDroplets(80) 미만이면
+       SpawnDroplet() 호출
+
+  [SpawnDroplet]
+    1. "Droplet" GameObject를 RainEffect 오브젝트 하위에 생성
+    2. RectTransform: 크기 = dropletSize(8×40)
+                      X = 패널 너비 내 랜덤, Y = 패널 상단 위
+    3. Image 컴포넌트: dropletSprite + Additive_Droplet 머티리얼 적용
+    4. _activeDroplets++ 후 DropletFall 코루틴 시작
+
+  [DropletFall 코루틴]
+    1. 매 프레임 anchoredPosition.y를 fallSpeed(800px/s) 속도로 감소
+    2. 패널 하단(bottomY)을 벗어나면:
+       - Droplet GameObject 제거
+       - _activeDroplets--
+       - 착지 위치에서 RippleAnimation 코루틴 시작
+
+  [RippleAnimation 코루틴]
+    1. 착지 위치에 "Ripple" GameObject 생성
+    2. Image 컴포넌트: rippleSprite + Additive_Ripple 머티리얼 적용
+    3. rippleDuration(0.5초) 동안:
+       - sizeDelta : (0,0) → rippleSize(60×20) 으로 선형 확대
+       - color.a   : 1.0 → 0.0 으로 Fade Out
+    4. 애니메이션 완료 후 Ripple GameObject 제거
+
+  [종료]
+    - Stop() 호출 시 isPlaying = false → SpawnLoop 코루틴 자연 종료
+    - 이미 낙하 중인 Droplet은 패널 하단 도달까지 계속 동작 후 제거
+
+
+================================================================
+  4. 참고 - 차이점 (문서 c vs 실제 씬)
+================================================================
+
+  변경 진행 전 씬 파일을 확인한 결과, 문서 c 기술과 다른 점이 있었음:
+  - 패널 이름이 "Wallpaper Effect Panel" 이 아닌 "Wallpaper" 로 존재
+  - Effect > RainEffect 빈 GameObject가 이미 사전 생성되어 있었음
+    (RectTransform Anchor Stretch 설정까지 완료된 상태)
+  - 이는 문서 f Step 1(Rain Root 생성)이 이미 완료된 것으로 판단
+  - 해당 차이점을 변경계획 문서 h 항목에 기록 후 진행
+
+
+================================================================
+  끝
+================================================================

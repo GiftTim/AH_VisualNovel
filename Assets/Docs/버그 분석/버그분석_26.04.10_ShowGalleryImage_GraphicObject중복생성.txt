@@ -1,0 +1,321 @@
+================================================================
+  버그 분석 문서
+  작성일: 2026-04-10
+  대상 프로젝트: AH_VisualNovel
+  주제: ShowGalleryImage 호출 시 Graphic-[1_VillageInn] 오브젝트가
+        Layer:0에 2개 생성되고, HideGalleryImage가 빈 RawImage 오브젝트만
+        제거하는 문제
+================================================================
+
+
+----------------------------------------------------------------
+  a. 목차
+----------------------------------------------------------------
+
+  a. 목차
+  b. 문제점
+  c. 현재 상황 및 코드
+  d. 해결 방법 (변경·생성 방향)
+  e. 다른 방법과의 비교 — 왜 d를 선택하는가
+  f. 진행 순서
+  g. 변경 위치 및 내용 상세
+
+----------------------------------------------------------------
+
+
+================================================================
+  b. 문제점
+================================================================
+
+  [ 재현 조건 ]
+    ShowGalleryImage(1_VillageInn) 명령 실행
+    → HideGalleryImage(-spd 1) 명령 실행
+
+  [ 증상 ]
+    1) ShowGalleryImage 실행 후, 4-Cinematic 패널의 Layer:0에
+       동일한 이름의 Graphic-[1_VillageInn] 게임 오브젝트가 2개 생성된다.
+         - 오브젝트 A: RawImage.texture에 1_VillageInn 이미지가 채워져 있음
+         - 오브젝트 B: RawImage.texture가 비워져 있음 (텍스처는 Material에만 존재)
+
+    2) HideGalleryImage(-spd 1) 실행 후,
+       currentGraphic인 오브젝트 B(빈 RawImage)만 사라지고
+       오브젝트 A(채워진 RawImage)는 화면에 고아 상태로 남아있다.
+
+  [ 영향 ]
+    - 갤러리 이미지 표시 후 Hide해도 이미지가 화면에서 완전히 사라지지 않음
+    - 이후 ShowGalleryImage를 다시 호출할 경우 오브젝트가 계속 누적될 수 있음
+
+
+================================================================
+  c. 현재 상황 및 코드
+================================================================
+
+  [ 버그를 유발하는 핵심 흐름 ]
+
+  ─────────────────────────────────────────────────────────────
+  버그 원인 1:  CommandManager.KillProcess()가 정상 완료 시에도
+               onTerminateAction을 호출함
+  ─────────────────────────────────────────────────────────────
+
+  파일: Assets/Scripts/VisualNovel/Core/Commands/CommandManager.cs
+
+    private IEnumerator RunningProcess(CommandProcess process)
+    {
+        yield return WaitingForProcessToComplete(process.command, process.args);
+        KillProcess(process);     ← 정상 완료 후 KillProcess 호출
+    }
+
+    public void KillProcess(CommandProcess cmd)
+    {
+        activeProcesses.Remove(cmd);
+        if (cmd.runningProcess != null && !cmd.runningProcess.IsDone)
+            cmd.runningProcess.Stop();
+        cmd.onTerminateAction?.Invoke();   ← 항상 호출됨 (정상 완료여도)
+    }
+
+  KillProcess는 "강제 종료" 전용 메서드여야 하지만,
+  RunningProcess(정상 완료 경로)도 KillProcess를 호출하고 있어
+  onTerminateAction이 정상 완료 시에도 무조건 실행된다.
+
+  ─────────────────────────────────────────────────────────────
+  버그 원인 2:  GraphicLayer.CreateGraphic()의 oldGraphics.Contains
+               조건이 반전되어 있어 이전 currentGraphic이 추적 목록에
+               추가되지 않음
+  ─────────────────────────────────────────────────────────────
+
+  파일: Assets/Scripts/VisualNovel/Core/Graphic Panels/GraphicLayer.cs (Line 66)
+
+    private Coroutine CreateGraphic<T>(...)
+    {
+        GraphicObject newGraphic = null;
+        // ... newGraphic 생성 ...
+
+        if (currentGraphic != null && oldGraphics.Contains(currentGraphic))  ← 버그
+        {
+            oldGraphics.Add(currentGraphic);
+        }
+        // ...
+    }
+
+  Contains가 true일 때 Add하므로 "이미 있는 것만 또 추가"하는 로직이 됨.
+  실제 의도는 "아직 없을 때만 추가"여야 하므로 !Contains가 맞다.
+  이 버그로 인해 이전 currentGraphic은 oldGraphics에 들어가지 않고,
+  교체 시 DestroyOldGraphics()에서도 정리되지 않아 고아 오브젝트가 된다.
+
+  ─────────────────────────────────────────────────────────────
+  두 버그의 결합 → 현재 증상 발생 과정
+  ─────────────────────────────────────────────────────────────
+
+  [Step 1] ShowGalleryImage(1_VillageInn) 실행
+    - AddTerminationActionToCurrentProcess 등록:
+        () => { graphicLayer.SetTexture(graphic, immediate: true); }
+    - yield return graphicLayer.SetTexture(tex, speed=1, ...)
+        → CreateGraphic: GraphicObject A 생성 (opacity=0 → FadeIn 시작)
+        → currentGraphic = A
+    - FadeIn 코루틴 1초 후 완료:
+        → renderer.texture = tex  (텍스처를 RawImage에 직접 이동)
+        → renderer.material = null
+        → 오브젝트 A: RawImage.texture = 1_VillageInn ✓
+
+  [Step 2] yield return 완료 → RunningProcess가 KillProcess 호출
+    → onTerminateAction 발동! (정상 완료인데 실행됨 ← 버그 1)
+        graphicLayer.SetTexture(graphic, immediate: true) 실행
+        → CreateGraphic: GraphicObject B 생성 (immediate, opacity=1)
+        → currentGraphic != null(A임) && oldGraphics.Contains(A) = false
+          → !Contains 조건이 맞아야 하므로 A는 oldGraphics에 미추가 ← 버그 2
+        → currentGraphic = B
+        → DestroyOldGraphics() → oldGraphics 비어있음 → A 삭제 안 됨
+
+  결과:
+    - 오브젝트 A: 고아 (renderer.texture = 1_VillageInn, 채워진 RawImage)
+    - 오브젝트 B: currentGraphic (renderer.texture = null, 빈 RawImage)
+
+  [Step 3] HideGalleryImage(-spd 1) 실행
+    - currentGraphic = B → Clear(speed=1) → B FadeOut → B Destroy ✓
+    - 오브젝트 A: 고아 상태 그대로 화면에 남음 ✗
+
+
+================================================================
+  d. 해결 방법 (변경·생성 방향)
+================================================================
+
+  [ 수정 1: RunningProcess의 정상 완료 경로에서 onTerminateAction 호출 제거 ]
+
+    RunningProcess(정상 완료) 시 KillProcess를 직접 호출하지 않고,
+    activeProcesses에서만 제거한다.
+    onTerminateAction은 StopAllProcesses / 강제 KillProcess 경로에서만 호출되도록 유지.
+
+  [ 수정 2: GraphicLayer.CreateGraphic의 Contains 조건 반전 수정 ]
+
+    oldGraphics.Contains(currentGraphic)
+    →
+    !oldGraphics.Contains(currentGraphic)
+
+    이로써 이전 currentGraphic이 oldGraphics에 올바르게 추가되고,
+    다음 CreateGraphic 또는 Clear 시 정상적으로 정리된다.
+
+
+================================================================
+  e. 다른 방법과의 비교 — 왜 d를 선택하는가
+================================================================
+
+  ─── 버그 1 수정 방안 비교 ───────────────────────────────────
+
+  방법 A (채택): RunningProcess에서 KillProcess 대신 직접 제거
+  ───────────────────────────────────────────────────────────────
+  RunningProcess 정상 완료 시:
+      activeProcesses.Remove(process) 만 수행
+      onTerminateAction은 호출하지 않음
+
+  장점:
+    - 정상 완료와 강제 종료의 의미 분리가 명확해짐
+    - KillProcess의 기존 강제 종료 동작은 그대로 유지
+    - StopAllProcesses 쪽은 변경 불필요
+    - 다른 커맨드들(ShowGallery 이외)의 termination 동작에 영향 없음
+  단점:
+    - runningProcess.Stop() 체크 코드가 정상 완료 경로에 불필요하게
+      실행되지 않도록 주의 필요 (사실 완료 후에는 IsDone=true이므로 무해)
+
+  방법 B: ShowGalleryImage에서 termination action 제거
+  ───────────────────────────────────────────────────────────────
+  장점:
+    - 수정 범위 최소
+  단점:
+    - 실제 스킵(강제 종료) 시에도 텍스처가 즉시 표시되지 않음
+    - KillProcess의 근본 문제(정상 완료 시 호출)가 잔존
+    - 다른 커맨드들의 termination action도 영향받을 수 있음
+
+  방법 C: KillProcess에 bool 파라미터 추가 (isForced)
+  ───────────────────────────────────────────────────────────────
+  장점:
+    - 기존 호출 구조 유지
+  단점:
+    - KillProcess 호출부 다수 수정 필요 (RunningProcess, StopAllProcesses 등)
+    - 파라미터 증가로 가독성 저하
+    - 방법 A보다 코드 복잡도가 높음
+
+  → 방법 A가 의미 분리가 명확하고 변경 범위가 최소화됨
+
+  ─── 버그 2 수정 방안 비교 ───────────────────────────────────
+
+  방법 A (채택): Contains → !Contains 한 글자 수정
+  ───────────────────────────────────────────────────────────────
+  장점:
+    - 원래 의도에 맞는 최소 수정
+    - 사이드 이펙트 없음
+  단점:
+    - 없음
+
+  방법 B: oldGraphics 관리 로직을 전면 재설계
+  ───────────────────────────────────────────────────────────────
+  장점:
+    - 더 방어적인 구조
+  단점:
+    - 현재 버그는 단순 조건 반전이므로 과도한 변경
+    - 테스트 범위 증가
+
+  → 단순 조건 오타 수정인 방법 A가 적합
+
+
+================================================================
+  f. 진행 순서
+================================================================
+
+  Step 1: GraphicLayer.cs 수정 (버그 2 — 조건 반전)
+    → oldGraphics.Contains → !oldGraphics.Contains
+
+  Step 2: CommandManager.cs 수정 (버그 1 — 정상 완료 시 termination 제거)
+    → RunningProcess의 KillProcess 호출을 activeProcesses.Remove 로 대체
+
+  Step 3: Unity Editor에서 재생하여 동작 검증
+    → ShowGalleryImage(1_VillageInn) 실행 시 오브젝트 1개만 생성되는지 확인
+    → HideGalleryImage(-spd 1) 실행 시 오브젝트 완전히 제거되는지 확인
+    → 스킵(StopAllProcesses) 시에도 termination action이 정상 동작하는지 확인
+
+
+================================================================
+  g. 변경 위치 및 내용 상세
+================================================================
+
+  ───────────────────────────────────────────────────────────────
+  파일 1: Assets/Scripts/VisualNovel/Core/Graphic Panels/GraphicLayer.cs
+  ───────────────────────────────────────────────────────────────
+  변경 위치: CreateGraphic<T>() 내부 (Line 66 근방)
+
+  변경 전:
+    if (currentGraphic != null && oldGraphics.Contains(currentGraphic))
+    {
+        oldGraphics.Add(currentGraphic);
+    }
+
+  변경 후:
+    if (currentGraphic != null && !oldGraphics.Contains(currentGraphic))
+    {
+        oldGraphics.Add(currentGraphic);
+    }
+
+  설명:
+    이전 currentGraphic이 oldGraphics에 없을 때만 추가하도록 수정.
+    이로써 교체 전 그래픽이 oldGraphics에 정상 추가되어
+    DestroyOldGraphics()에서 올바르게 정리됨.
+
+  ───────────────────────────────────────────────────────────────
+  파일 2: Assets/Scripts/VisualNovel/Core/Commands/CommandManager.cs
+  ───────────────────────────────────────────────────────────────
+  변경 위치: RunningProcess() 코루틴
+
+  변경 전:
+    private IEnumerator RunningProcess(CommandProcess process)
+    {
+        yield return WaitingForProcessToComplete(process.command, process.args);
+        KillProcess(process);
+    }
+
+  변경 후:
+    private IEnumerator RunningProcess(CommandProcess process)
+    {
+        yield return WaitingForProcessToComplete(process.command, process.args);
+        activeProcesses.Remove(process);   // 정상 완료: 목록에서만 제거
+                                           // onTerminateAction 호출하지 않음
+    }
+
+  설명:
+    정상 완료 경로에서는 KillProcess(강제 종료 전용)를 호출하지 않고
+    activeProcesses에서만 제거한다.
+    강제 종료 시에는 StopAllProcesses / KillProcess 경로가 그대로 사용되어
+    onTerminateAction이 정상적으로 발동된다.
+
+  ───────────────────────────────────────────────────────────────
+  [ 변경하지 않는 파일 ]
+    - CMD_DatabaseExtension_Gallery.cs:
+        ShowGalleryImage / HideGalleryImage 로직 자체는 올바름.
+        termination action의 등록 방식 및 내용은 유지.
+  ───────────────────────────────────────────────────────────────
+
+  [ 기대 동작 (수정 후) ]
+
+    ShowGalleryImage(1_VillageInn) 실행:
+      → GraphicObject A 생성, FadeIn (1초)
+      → FadeIn 완료: renderer.texture = 1_VillageInn, material = null
+      → RunningProcess 정상 완료: activeProcesses.Remove만 실행
+         onTerminateAction 호출 안 됨 → SetTexture 두 번째 호출 없음
+      → Hierarchy에 Graphic-[1_VillageInn] 1개만 존재 ✓
+
+    HideGalleryImage(-spd 1) 실행:
+      → currentGraphic = A → FadeOut → A Destroy → 화면 완전 정리 ✓
+
+    스킵(StopAllProcesses) 실행:
+      → onTerminateAction 발동 → SetTexture(immediate: true) → 즉시 표시 ✓
+      → Contains 조건 수정으로 이전 그래픽이 oldGraphics에 추가됨
+         → DestroyOldGraphics()에서 정상 정리 ✓
+
+================================================================
+  관련 파일 요약
+================================================================
+
+  No.  파일                                   변경 내용
+  ---  ─────────────────────────────────────  ──────────────────────────────────────
+  1    GraphicLayer.cs                        CreateGraphic: Contains → !Contains
+  2    CommandManager.cs                      RunningProcess: KillProcess → Remove만
+
+================================================================

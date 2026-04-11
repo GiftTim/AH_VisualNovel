@@ -1,0 +1,248 @@
+====================================================
+  ButtonBehaviours 이펙트 2방식 분리
+  (Image 토글 방식 / Animator 방식)
+  작성일: 2026-04-05
+====================================================
+
+----------------------------------------------------
+a. 목차
+----------------------------------------------------
+
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 요구한 기능을 만들기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+  e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+  f. 어떤 순서로 진행할 것인지
+  g. 어디가 어떤 식으로 변경되는지
+
+
+----------------------------------------------------
+b. 요구한 기능
+----------------------------------------------------
+
+  - ButtonBehaviours의 호버 이펙트를 2가지 방식으로 나누어 독립 스크립트로 분리
+
+  [ 방식 1 - Image 토글 ]
+    · 마우스 커서가 버튼 위에 올라가면(PointerEnter)
+      → [SerializeField]로 연결된 selectImageObject를 SetActive(true)
+    · 마우스 커서가 버튼 밖으로 나가면(PointerExit)
+      → selectImageObject를 SetActive(false)
+    · 클래스명: ButtonBehaviours_Image
+
+  [ 방식 2 - Animator ]
+    · 마우스 커서가 버튼 위에 올라가면(PointerEnter)
+      → Animator의 "Enter" 상태 재생
+      → 이전에 선택된 버튼이 있으면 먼저 그 버튼의 Exit 처리
+    · 마우스 커서가 버튼 밖으로 나가면(PointerExit)
+      → Animator의 "Exit" 상태 재생
+    · static 변수로 현재 선택된 버튼을 추적하여 중복 Enter 방지
+    · 클래스명: ButtonBehaviours_Animator
+
+  - 두 방식은 독립적으로 작동하며, 버튼마다 원하는 방식을 선택해 컴포넌트로 부착
+
+
+----------------------------------------------------
+c. 현재 상황 및 코드
+----------------------------------------------------
+
+  [ 현재 파일 구조 ]
+    Assets/Scripts/VisualNovel/Core/Effect/ButtonBehaviours.cs  ← 단일 파일 존재
+
+  [ ButtonBehaviours.cs - 현재 코드 ]
+  -------------------------------------------------------
+  using UnityEngine;
+  using UnityEngine.EventSystems;
+
+  public class ButtonBehaviours : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+  {
+      [SerializeField] private GameObject selectImageObject;
+
+      public void OnPointerEnter(PointerEventData eventData)
+      {
+          if (selectImageObject != null)
+              selectImageObject.SetActive(true);
+      }
+
+      public void OnPointerExit(PointerEventData eventData)
+      {
+          if (selectImageObject != null)
+              selectImageObject.SetActive(false);
+      }
+  }
+  -------------------------------------------------------
+
+  - 문제점:
+      · Image 토글 방식만 지원, Animator 방식 사용 불가
+      · 하나의 클래스에 모든 기능이 묶여 있어 방식 전환이 어려움
+      · Animator 방식처럼 여러 버튼 간 상태 관리가 필요한 경우 확장 불가
+      · 클래스명 ButtonBehaviours가 범용적이라 어떤 방식인지 구분 불가
+
+
+----------------------------------------------------
+d. 요구한 기능을 만들기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+----------------------------------------------------
+
+  [ 방식: 기존 파일 대체 + 신규 파일 추가 ]
+
+  ① ButtonBehaviours_Image.cs (신규 생성)
+    - 기존 ButtonBehaviours.cs 로직을 그대로 이전
+    - 클래스명을 ButtonBehaviours_Image로 변경
+    - selectImageObject 필드명 유지
+
+  ② ButtonBehaviours_Animator.cs (신규 생성)
+    - Animator 컴포넌트를 public 필드로 노출 (anim)
+    - static ButtonBehaviours_Animator selectedButton 로 현재 선택된 버튼 추적
+    - OnPointerEnter: 이전 버튼 Exit 처리 후 "Enter" 재생 및 selectedButton 갱신
+    - OnPointerExit: "Exit" 재생
+    - ※ static 변수 타입은 ButtonBehaviours_Animator 여야 함
+      (ButtonBehaviours로 쓸 경우 컴파일 오류 또는 잘못된 참조 발생)
+
+  ③ 기존 ButtonBehaviours.cs 삭제
+    - 두 방식으로 분리된 후에는 불필요
+
+  [ 각 파일의 최종 코드 ]
+
+  -- ButtonBehaviours_Image.cs --
+  -------------------------------------------------------
+  using UnityEngine;
+  using UnityEngine.EventSystems;
+
+  public class ButtonBehaviours_Image : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+  {
+      [SerializeField] private GameObject selectImageObject;
+
+      public void OnPointerEnter(PointerEventData eventData)
+      {
+          if (selectImageObject != null)
+              selectImageObject.SetActive(true);
+      }
+
+      public void OnPointerExit(PointerEventData eventData)
+      {
+          if (selectImageObject != null)
+              selectImageObject.SetActive(false);
+      }
+  }
+  -------------------------------------------------------
+
+  -- ButtonBehaviours_Animator.cs --
+  -------------------------------------------------------
+  using UnityEngine;
+  using UnityEngine.EventSystems;
+
+  public class ButtonBehaviours_Animator : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+  {
+      private static ButtonBehaviours_Animator selectedButton = null;
+      public Animator anim;
+
+      public void OnPointerEnter(PointerEventData eventData)
+      {
+          if (selectedButton != null && selectedButton != this)
+          {
+              selectedButton.OnPointerExit(null);
+          }
+
+          anim.Play("Enter");
+          selectedButton = this;
+      }
+
+      public void OnPointerExit(PointerEventData eventData)
+      {
+          anim.Play("Exit");
+      }
+  }
+  -------------------------------------------------------
+
+
+----------------------------------------------------
+e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+----------------------------------------------------
+
+  방법 A (기각): 기존 ButtonBehaviours.cs에 bool 플래그 추가로 방식 전환
+    - 단점:
+        · 클래스 하나에 두 방식의 필드/로직이 혼재 → 코드 복잡도 증가
+        · 사용하지 않는 필드가 인스펙터에 노출됨
+        · Animator 방식의 static 상태 관리를 Image 방식에서도 불필요하게 포함
+
+  방법 B (채택): 방식별로 클래스를 분리하여 독립 스크립트 생성
+    - 장점:
+        · 각 스크립트가 단일 책임을 가짐 → 유지보수 용이
+        · 버튼마다 원하는 컴포넌트만 선택적으로 부착 가능
+        · 인스펙터에 필요한 필드만 노출됨
+        · 두 방식이 서로 영향을 주지 않아 독립적으로 동작 보장
+        · 나중에 방식 3, 4 추가 시 동일한 패턴으로 확장 가능
+
+  방법 C (기각): 인터페이스 또는 추상 클래스로 공통화 후 상속
+    - 단점:
+        · 현재 두 방식의 공통 로직이 거의 없어 추상화 이점이 없음
+        · 오히려 클래스 계층 구조로 인한 복잡도가 증가
+
+  → 방법 B 채택.
+    단순하고 명확한 분리로 각 방식의 독립성 확보.
+    Unity 컴포넌트 시스템의 특성상 분리된 클래스가 가장 자연스러운 구조.
+
+
+----------------------------------------------------
+f. 어떤 순서로 진행할 것인지
+----------------------------------------------------
+
+  Step 1. ButtonBehaviours_Image.cs 생성
+    - Assets/Scripts/VisualNovel/Core/Buttons/ 또는 Effect/ 폴더에 생성
+    - 기존 ButtonBehaviours.cs 로직 이전, 클래스명 ButtonBehaviours_Image로 변경
+
+  Step 2. ButtonBehaviours_Animator.cs 생성
+    - 동일 폴더에 생성
+    - static 변수 타입이 ButtonBehaviours_Animator임을 확인
+
+  Step 3. 기존 ButtonBehaviours.cs 삭제
+    - 두 파일로 완전히 대체된 것을 확인한 후 삭제
+    - Unity 에디터에서 참조 오류(Missing Script) 발생 여부 확인
+
+  Step 4. Unity 에디터 - 씬에서 기존 ButtonBehaviours 컴포넌트 교체
+    - ButtonBehaviours가 부착된 버튼들을 찾아
+      → Image 방식 버튼: ButtonBehaviours_Image 컴포넌트로 교체 후 selectImageObject 연결
+      → Animator 방식 버튼: ButtonBehaviours_Animator 컴포넌트로 교체 후 anim 연결
+
+  Step 5. Animator Controller 확인
+    - ButtonBehaviours_Animator를 사용하는 버튼의 Animator Controller에
+      "Enter", "Exit" 상태(State)가 정의되어 있는지 확인
+
+  Step 6. 테스트
+    - Play 모드에서 Image 방식 버튼 호버 시 이미지 토글 확인
+    - Animator 방식 버튼 호버 시 애니메이션 재생 확인
+    - 여러 Animator 버튼 간 호버 이동 시 이전 버튼 Exit 처리 확인
+
+
+----------------------------------------------------
+g. 어디가 어떤 식으로 변경되는지
+----------------------------------------------------
+
+  [ 삭제 ]
+    · Assets/Scripts/VisualNovel/Core/Effect/ButtonBehaviours.cs
+      → 두 방식으로 완전히 대체되어 불필요
+
+  [ 신규 생성 ]
+    · Assets/Scripts/VisualNovel/Core/Buttons/ButtonBehaviours_Image.cs
+        - 클래스명: ButtonBehaviours_Image
+        - 필드: [SerializeField] private GameObject selectImageObject
+        - 로직: PointerEnter/Exit 시 SetActive(true/false)
+
+    · Assets/Scripts/VisualNovel/Core/Buttons/ButtonBehaviours_Animator.cs
+        - 클래스명: ButtonBehaviours_Animator
+        - 필드: public Animator anim
+        - 필드: private static ButtonBehaviours_Animator selectedButton
+        - 로직: PointerEnter 시 이전 버튼 Exit + "Enter" 재생 + selectedButton 갱신
+                PointerExit 시 "Exit" 재생
+
+  [ Unity 에디터 씬 변경 ]
+    - ButtonBehaviours 컴포넌트가 부착된 버튼 오브젝트들
+      → Missing Script 정리 후 원하는 방식의 컴포넌트로 교체
+      → 각 컴포넌트의 필드(selectImageObject 또는 anim) 인스펙터에서 연결
+
+  [ 변경 없는 파일 ]
+    - MainMenu.cs        : 변경 없음
+    - VNManager.cs       : 변경 없음
+    - 기타 스크립트      : 변경 없음
+
+====================================================

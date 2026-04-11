@@ -1,0 +1,141 @@
+================================================================
+  변경완료_26.04.10_16.31
+  대상: GalleryMenu.cs / ConstructNavBar() 내 버튼 생성 순서 변경
+  원본 계획: 변경계획_26.04.10_16.31
+================================================================
+
+[목차]
+  a. 현재 코드와 계획서(c) 비교 결과
+  b. 변경 전 코드
+  c. 변경 후 코드
+  d. 변경 후 동작 흐름
+
+
+================================================================
+a. 현재 코드와 계획서(c) 비교 결과
+================================================================
+
+  ※ 차이 없음 → 변경 진행
+
+  계획서의 'c. 현재 상황 및 코드'에 기재된 ConstructNavBar() 코드와
+  실제 GalleryMenu.cs의 ConstructNavBar() 코드가 완전히 일치하였음.
+  변경 중지 없이 계획대로 진행.
+
+
+================================================================
+b. 변경 전 코드
+================================================================
+
+[파일: Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs]
+
+  private void ConstructNavBar()
+  {
+      int totalImages = galleryImages.Length;
+
+      maxPages = Mathf.CeilToInt((float)totalImages / previewsPerPage);
+      int pageLimit = PAGE_BUTTON_LIMIT < maxPages ? PAGE_BUTTON_LIMIT : maxPages;
+
+      for(int i = 1; i <= pageLimit; i++)
+      {
+          GameObject buttonOB = Instantiate(panelSelectionPrefab.gameObject, panelSelectionPrefab.transform.parent);
+          buttonOB.SetActive(true);
+
+          Button button = buttonOB.GetComponent<Button>();
+          TextMeshProUGUI buttonText = button.GetComponentInChildren<TextMeshProUGUI>();
+
+          buttonOB.name = i.ToString();
+          int page = i;
+          button.onClick.AddListener(() => LoadPage(page));
+          buttonText.text = i.ToString();
+      }
+
+      previousButton.gameObject.SetActive(pageLimit < maxPages);
+      nextButton.gameObject.SetActive(pageLimit < maxPages);
+      RightEndButton.transform.SetAsLastSibling();   ← 기존: 순서 보정 인라인
+  }
+
+  ※ ArrangeNavBarOrder() 메서드 없음
+
+
+================================================================
+c. 변경 후 코드
+================================================================
+
+[파일: Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs]
+
+  private void ConstructNavBar()
+  {
+      int totalImages = galleryImages.Length;
+
+      maxPages = Mathf.CeilToInt((float)totalImages / previewsPerPage);
+      int pageLimit = PAGE_BUTTON_LIMIT < maxPages ? PAGE_BUTTON_LIMIT : maxPages;
+
+      for(int i = 1; i <= pageLimit; i++)
+      {
+          GameObject buttonOB = Instantiate(panelSelectionPrefab.gameObject, panelSelectionPrefab.transform.parent);
+          buttonOB.SetActive(true);
+
+          Button button = buttonOB.GetComponent<Button>();
+          TextMeshProUGUI buttonText = button.GetComponentInChildren<TextMeshProUGUI>();
+
+          buttonOB.name = i.ToString();
+          int page = i;
+          button.onClick.AddListener(() => LoadPage(page));
+          buttonText.text = i.ToString();
+      }
+
+      previousButton.gameObject.SetActive(pageLimit < maxPages);
+      nextButton.gameObject.SetActive(pageLimit < maxPages);
+      ArrangeNavBarOrder();   ← 변경: 전용 함수 호출로 교체
+  }
+
+  private void ArrangeNavBarOrder()   ← 신규 추가
+  {
+      nextButton.transform.SetSiblingIndex(nextButton.transform.parent.childCount - 2);
+      RightEndButton.transform.SetAsLastSibling();
+  }
+
+
+================================================================
+d. 변경 후 동작 흐름
+================================================================
+
+[Initialize() 호출 시]
+  1. ConstructNavBar() 실행
+     - 페이지 버튼을 pageLimit 개수만큼 Instantiate
+       → 각 버튼은 panelSelectionPrefab.transform.parent의 마지막 자식으로 추가됨
+
+  2. 버튼 생성 직후 NavBar 자식 순서 (Instantiate 직후):
+       0: LeftEndButton
+       1: panelSelectionPrefab (비활성 템플릿)
+       2: previousButton
+       3: nextButton
+       4: RightEndButton
+       5: [생성된 페이지 버튼 1]
+       6: [생성된 페이지 버튼 2]
+       ...
+
+  3. ArrangeNavBarOrder() 호출
+     ① nextButton.transform.SetSiblingIndex(childCount - 2)
+        → nextButton을 RightEndButton 바로 앞 위치로 이동
+     ② RightEndButton.transform.SetAsLastSibling()
+        → RightEndButton을 마지막으로 고정
+
+  4. ArrangeNavBarOrder() 실행 후 NavBar 자식 순서:
+       0: LeftEndButton
+       1: previousButton
+       2: panelSelectionPrefab (비활성, UI 표시 안 됨)
+       3: [생성된 페이지 버튼 1]
+       4: [생성된 페이지 버튼 2]
+       5: nextButton
+       6: RightEndButton
+
+  5. 시각적 NavBar 표시 순서 (비활성 제외):
+       LeftEndButton → previousButton → [페이지버튼들] → nextButton → RightEndButton
+
+  ※ panelSelectionPrefab은 비활성(SetActive false) 상태이므로
+     UI HorizontalLayoutGroup에서 무시되어 시각적으로는 영향 없음
+
+================================================================
+  END
+================================================================

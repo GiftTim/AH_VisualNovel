@@ -63,7 +63,7 @@ public class GraphicLayer
         }
 
 
-        if (currentGraphic != null && oldGraphics.Contains(currentGraphic))
+        if (currentGraphic != null && !oldGraphics.Contains(currentGraphic))
         {
             oldGraphics.Add(currentGraphic);
         }

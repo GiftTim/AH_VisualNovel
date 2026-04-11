@@ -1,0 +1,173 @@
+====================================================
+  HideGalleryImage CLEAR 발동 후 이미지 미숨김 버그 수정
+  작성일: 2026-04-10
+====================================================
+
+----------------------------------------------------
+a. 버그 증상
+----------------------------------------------------
+
+  - hidegalleryimage 명령어 실행 후 CLEAR 로그는 출력되지만
+    화면에서 이미지가 사라지지 않음
+  - MissingReferenceException 발생
+      UnityEngine.UI.RawImage 오브젝트가 이미 파괴됐으나 접근 시도
+
+----------------------------------------------------
+b. 원인 분석
+----------------------------------------------------
+
+  [ 원인 1 - WaitUntil 조건 오류 ]
+
+    변경 전:
+      var graphicObject = graphicLayer.currentGraphic;
+      yield return new WaitUntil(() => graphicObject == null);
+
+    GraphicObject는 순수 C# 클래스 (MonoBehaviour/UnityEngine.Object 아님).
+    C# 클래스 참조는 명시적으로 null 대입하지 않는 한 절대 null이 되지 않음.
+    → WaitUntil 조건이 영원히 false → 코루틴 무한 대기.
+
+  [ 원인 2 - termination action이 currentGraphic 참조 ]
+
+    termination action 등록:
+      () => { graphicLayer.Clear(immediate: true); }
+
+    Fading 애니메이션이 정상 완료되면:
+      Fading() → Destroy() → layer.currentGraphic = null
+
+    이후 WaitUntil이 해소되어 코루틴 완료 → KillProcess → CLEAR 발동 시점에
+      graphicLayer.currentGraphic == null
+      → Clear(immediate: true) 내부의 if(currentGraphic != null) 조건 false
+      → 아무것도 하지 않음 → 이미지 화면에 잔존
+
+  [ 원인 3 - Fading 코루틴 미중단으로 MissingReferenceException 발생 ]
+
+    termination action에서 Destroy() 호출 시:
+      Object.Destroy(renderer.gameObject) 큐에 등록
+
+    그러나 panelManager에서 실행 중인 Fading 코루틴은 중단되지 않음.
+    다음 프레임에서 Fading이 계속 실행되어 renderer.gameObject 접근 시
+      → MissingReferenceException 발생
+
+----------------------------------------------------
+c. 변경 전/후 코드
+----------------------------------------------------
+
+  [ 파일 1 ]
+    Assets/Scripts/VisualNovel/Core/Commands/Database/Extensions/CMD_DatabaseExtension_Gallery.cs
+
+  -------------------------------------------------------
+  [ HideGalleryImage() 변경 전 (109번 줄) ]
+  -------------------------------------------------------
+
+    if (!immediate)
+    {
+        CommandManager.instance.AddTerminationActionToCurrentProcess(
+            () => { Debug.Log("CLEAR"); graphicLayer.Clear(immediate: true); });
+    }
+
+    graphicLayer.Clear(transitionSpeed, blendTex, immediate);
+
+    if (graphicLayer.currentGraphic != null)
+    {
+        var graphicObject = graphicLayer.currentGraphic;
+
+        yield return new WaitUntil(() => graphicObject == null);
+            // ↑ GraphicObject는 C# 클래스 → 절대 null이 되지 않음
+    }
+
+  -------------------------------------------------------
+  [ HideGalleryImage() 변경 후 ]
+  -------------------------------------------------------
+
+    GraphicObject targetGraphic = graphicLayer.currentGraphic;
+        // ↑ 현재 그래픽 객체를 직접 캡처
+
+    if (!immediate)
+    {
+        CommandManager.instance.AddTerminationActionToCurrentProcess(
+            () => { Debug.Log("CLEAR"); targetGraphic.Destroy(); });
+            // ↑ currentGraphic(나중에 null됨)이 아닌 targetGraphic을 직접 파괴
+    }
+
+    graphicLayer.Clear(transitionSpeed, blendTex, immediate);
+
+    if (!immediate)
+    {
+        yield return new WaitUntil(() => targetGraphic.renderer == null);
+            // ↑ renderer는 UnityEngine.Object → Destroy 후 Unity fake null 반환
+    }
+
+  -------------------------------------------------------
+
+  [ 파일 2 ]
+    Assets/Scripts/VisualNovel/Core/Graphic Panels/GraphicObject.cs
+
+  -------------------------------------------------------
+  [ Destroy() 변경 전 (204번 줄) ]
+  -------------------------------------------------------
+
+    public void Destroy()
+    {
+        if(layer.currentGraphic != null && layer.currentGraphic.renderer == renderer)
+        {
+            layer.currentGraphic = null;
+        }
+        ...
+        Object.Destroy(renderer.gameObject);
+            // ↑ Fading 코루틴 중단 없이 gameObject 파괴
+            //   → 다음 프레임에서 Fading이 renderer 접근 시 예외 발생
+    }
+
+  -------------------------------------------------------
+  [ Destroy() 변경 후 ]
+  -------------------------------------------------------
+
+    public void Destroy()
+    {
+        if (co_fadingIn != null) { panelManager.StopCoroutine(co_fadingIn); co_fadingIn = null; }
+        if (co_fadingOut != null) { panelManager.StopCoroutine(co_fadingOut); co_fadingOut = null; }
+            // ↑ 실행 중인 Fading 코루틴을 먼저 중단 → MissingReferenceException 방지
+
+        if(layer.currentGraphic != null && layer.currentGraphic.renderer == renderer)
+        {
+            layer.currentGraphic = null;
+        }
+        ...
+        if (renderer != null)
+        {
+            Object.Destroy(renderer.gameObject);
+        }
+    }
+
+----------------------------------------------------
+d. 변경 후 작동 흐름
+----------------------------------------------------
+
+  [ 정상 FadeOut 완료 흐름 ]
+    Fading(target=0) 실행 → opacity가 0에 도달
+      → Destroy() 호출: co_fadingOut 중단, currentGraphic=null, Object.Destroy 큐 등록
+      → 프레임 끝: renderer.gameObject 파괴 → renderer == null (Unity fake null)
+      → WaitUntil(targetGraphic.renderer == null) 해소
+      → HideGalleryImage 완료 → KillProcess → CLEAR 발동
+        → targetGraphic.Destroy() 호출 (renderer 이미 null → Object.Destroy 생략)
+      → 이미지 이미 사라진 상태 ✓
+
+  [ 스킵(중간 강제 종료) 흐름 ]
+    FadeOut 애니메이션 진행 중 KillProcess 호출
+      → CLEAR 발동 → targetGraphic.Destroy()
+        → co_fadingOut 중단 (Fading 코루틴 즉시 종료)
+        → Object.Destroy(renderer.gameObject) 큐 등록
+      → 프레임 끝: 이미지 파괴 ✓
+      → MissingReferenceException 발생 없음 ✓
+
+----------------------------------------------------
+e. 변경된 파일
+----------------------------------------------------
+
+  - Assets/Scripts/VisualNovel/Core/Commands/Database/Extensions/CMD_DatabaseExtension_Gallery.cs
+      · HideGalleryImage() : targetGraphic 직접 캡처 / termination action 및 WaitUntil 수정
+
+  - Assets/Scripts/VisualNovel/Core/Graphic Panels/GraphicObject.cs
+      · Destroy() : Fading 코루틴 중단 로직 추가
+
+====================================================

@@ -1,0 +1,216 @@
+================================================================
+  변경완료 - GalleryMenu LeftEndButton / RightEndButton 기능 구현
+  작성일: 2026-04-10  21:34
+  대상 파일: Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs
+================================================================
+
+================================================================
+1. 변경 전 코드
+================================================================
+
+  ─────────────────────────────────────────────────
+  [ ConstructNavBar() ]
+  ─────────────────────────────────────────────────
+
+    private void ConstructNavBar()
+    {
+        int totalImages = galleryImages.Length;
+        maxPages = Mathf.CeilToInt((float)totalImages / previewsPerPage);
+        int pageLimit = PAGE_BUTTON_LIMIT < maxPages ? PAGE_BUTTON_LIMIT : maxPages;
+
+        for(int i = 1; i <= pageLimit; i++)
+        {
+            GameObject buttonOB = Instantiate(panelSelectionPrefab.gameObject, panelSelectionPrefab.transform.parent);
+            buttonOB.SetActive(true);
+            Button button = buttonOB.GetComponent<Button>();
+            TextMeshProUGUI buttonText = button.GetComponentInChildren<TextMeshProUGUI>();
+            buttonOB.name = i.ToString();
+            pageButtons.Add(button);
+        }
+
+        ArrangeNavBarOrder();        // ← LeftEndButton/RightEndButton onClick 등록 없음
+        UpdateNavBarWindow();
+    }
+
+  ─────────────────────────────────────────────────
+  [ UpdateNavBarWindow() ]
+  ─────────────────────────────────────────────────
+
+    private void UpdateNavBarWindow()
+    {
+        for (int i = 0; i < pageButtons.Count; i++)
+        {
+            int page = windowStart + i;
+            pageButtons[i].onClick.RemoveAllListeners();
+            pageButtons[i].onClick.AddListener(() => LoadPage(page));
+            pageButtons[i].GetComponentInChildren<TextMeshProUGUI>().text = page.ToString();
+            pageButtons[i].gameObject.SetActive(page <= maxPages);
+        }
+        previousButton.interactable = (windowStart > 1);
+        nextButton.interactable = (windowStart + pageButtons.Count <= maxPages);
+        // ← LeftEndButton, RightEndButton interactable 미설정
+    }
+
+  ─────────────────────────────────────────────────
+  [ ToLeftEnd / ToRightEnd ]
+  ─────────────────────────────────────────────────
+
+    (존재하지 않음)
+
+================================================================
+2. 변경 후 코드
+================================================================
+
+  ─────────────────────────────────────────────────
+  [ ConstructNavBar() ] — onClick 리스너 2줄 추가
+  ─────────────────────────────────────────────────
+
+    private void ConstructNavBar()
+    {
+        int totalImages = galleryImages.Length;
+        maxPages = Mathf.CeilToInt((float)totalImages / previewsPerPage);
+        int pageLimit = PAGE_BUTTON_LIMIT < maxPages ? PAGE_BUTTON_LIMIT : maxPages;
+
+        for(int i = 1; i <= pageLimit; i++)
+        {
+            GameObject buttonOB = Instantiate(panelSelectionPrefab.gameObject, panelSelectionPrefab.transform.parent);
+            buttonOB.SetActive(true);
+            Button button = buttonOB.GetComponent<Button>();
+            TextMeshProUGUI buttonText = button.GetComponentInChildren<TextMeshProUGUI>();
+            buttonOB.name = i.ToString();
+            pageButtons.Add(button);
+        }
+
+        LeftEndButton.onClick.AddListener(ToLeftEnd);    // ← 추가
+        RightEndButton.onClick.AddListener(ToRightEnd);  // ← 추가
+        ArrangeNavBarOrder();
+        UpdateNavBarWindow();
+    }
+
+  ─────────────────────────────────────────────────
+  [ UpdateNavBarWindow() ] — interactable 2줄 추가
+  ─────────────────────────────────────────────────
+
+    private void UpdateNavBarWindow()
+    {
+        for (int i = 0; i < pageButtons.Count; i++)
+        {
+            int page = windowStart + i;
+            pageButtons[i].onClick.RemoveAllListeners();
+            pageButtons[i].onClick.AddListener(() => LoadPage(page));
+            pageButtons[i].GetComponentInChildren<TextMeshProUGUI>().text = page.ToString();
+            pageButtons[i].gameObject.SetActive(page <= maxPages);
+        }
+        previousButton.interactable  = (windowStart > 1);
+        nextButton.interactable       = (windowStart + pageButtons.Count <= maxPages);
+        LeftEndButton.interactable    = (windowStart > 1);                             // ← 추가
+        RightEndButton.interactable   = (windowStart + pageButtons.Count <= maxPages); // ← 추가
+    }
+
+  ─────────────────────────────────────────────────
+  [ ToLeftEnd() ] — 신규 추가
+  ─────────────────────────────────────────────────
+
+    private void ToLeftEnd()
+    {
+        windowStart = 1;
+        UpdateNavBarWindow();
+        LoadPage(1);
+        StartCoroutine(SelectPageButtonNextFrame(1));
+    }
+
+  ─────────────────────────────────────────────────
+  [ ToRightEnd() ] — 신규 추가
+  ─────────────────────────────────────────────────
+
+    private void ToRightEnd()
+    {
+        int lastWindowStart = ((maxPages - 1) / PAGE_BUTTON_LIMIT) * PAGE_BUTTON_LIMIT + 1;
+        windowStart = lastWindowStart;
+        UpdateNavBarWindow();
+        LoadPage(maxPages);
+        StartCoroutine(SelectPageButtonNextFrame(maxPages));
+    }
+
+================================================================
+3. 변경 후 작동 흐름
+================================================================
+
+  ─────────────────────────────────────────────────
+  [ 초기화 시 ]
+  ─────────────────────────────────────────────────
+
+    갤러리 최초 Open()
+      → Initialize() → ConstructNavBar()
+        → LeftEndButton.onClick = ToLeftEnd  (1회 등록)
+        → RightEndButton.onClick = ToRightEnd (1회 등록)
+        → UpdateNavBarWindow()
+          → LeftEndButton.interactable  = false  (windowStart=1이므로)
+          → RightEndButton.interactable = true   (페이지 더 있으면)
+
+  ─────────────────────────────────────────────────
+  [ LeftEndButton 클릭 시 ]
+  ─────────────────────────────────────────────────
+
+    ToLeftEnd() 호출
+      → windowStart = 1
+      → UpdateNavBarWindow()
+          버튼 레이블을 [1, 2, 3]으로 갱신
+          LeftEndButton.interactable  = false  (이미 첫 윈도우)
+          RightEndButton.interactable = true
+      → LoadPage(1): 1페이지 이미지 표시, selectedPage = 1
+      → SelectPageButtonNextFrame(1): 다음 프레임에 "1" 버튼 Selected
+
+  ─────────────────────────────────────────────────
+  [ RightEndButton 클릭 시 (maxPages=10 예시) ]
+  ─────────────────────────────────────────────────
+
+    ToRightEnd() 호출
+      → lastWindowStart = ((10-1)/3)*3 + 1 = 10
+      → windowStart = 10
+      → UpdateNavBarWindow()
+          버튼 레이블을 [10, -, -]으로 갱신 (11,12 비활성)
+          LeftEndButton.interactable  = true
+          RightEndButton.interactable = false  (이미 마지막 윈도우)
+      → LoadPage(10): 10페이지 이미지 표시, selectedPage = 10
+      → SelectPageButtonNextFrame(10): 다음 프레임에 "10" 버튼 Selected
+
+  ─────────────────────────────────────────────────
+  [ 윈도우가 1개뿐인 경우 (maxPages <= PAGE_BUTTON_LIMIT) ]
+  ─────────────────────────────────────────────────
+
+    UpdateNavBarWindow() 시
+      → LeftEndButton.interactable  = false  (windowStart=1)
+      → RightEndButton.interactable = false  (windowStart+count > maxPages)
+    → 두 버튼 모두 비활성 (클릭 불가)
+
+  ─────────────────────────────────────────────────
+  [ interactable 갱신 타이밍 ]
+  ─────────────────────────────────────────────────
+
+    UpdateNavBarWindow()가 호출되는 모든 시점에서 자동 갱신:
+      - ConstructNavBar() (초기화)
+      - ToNextPage()
+      - ToPreviousPage()
+      - ToLeftEnd()       ← 신규
+      - ToRightEnd()      ← 신규
+
+================================================================
+4. 변경 요약
+================================================================
+
+  ┌────────────────────────────────┬──────────────────────────────────────────────────────────┐
+  │ 위치                           │ 변경 내용                                                │
+  ├────────────────────────────────┼──────────────────────────────────────────────────────────┤
+  │ ConstructNavBar()              │ LeftEndButton, RightEndButton onClick 리스너 등록 2줄 추가│
+  │ UpdateNavBarWindow()           │ LeftEndButton, RightEndButton interactable 갱신 2줄 추가 │
+  │ 신규 메서드 ToLeftEnd()        │ windowStart=1, LoadPage(1), 버튼 Selected               │
+  │ 신규 메서드 ToRightEnd()       │ 마지막 윈도우 계산, LoadPage(maxPages), 버튼 Selected    │
+  └────────────────────────────────┴──────────────────────────────────────────────────────────┘
+
+  변경 파일: Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs
+  변경 없는 파일: 그 외 모든 파일, 씬 파일
+
+================================================================
+  끝
+================================================================

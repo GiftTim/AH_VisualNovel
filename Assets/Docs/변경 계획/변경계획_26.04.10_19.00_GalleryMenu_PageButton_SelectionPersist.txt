@@ -1,0 +1,313 @@
+================================================================
+  변경계획 - GalleryMenu 페이지 버튼 선택 상태 유지
+  (버튼 클릭 / 빈 공간 클릭 시 선택 사라지는 문제 해결)
+  작성일: 2026-04-10
+================================================================
+
+[목차]
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 요구한 기능을 만들기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+  e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+  f. 어떤 순서로 진행할 것인지
+  g. 어디가 어떤 식으로 변경되는지
+
+================================================================
+b. 요구한 기능
+================================================================
+
+  [현재 증상]
+    ① 갤러리 진입 시 1번 페이지 버튼이 선택(하이라이트)되어 있음
+    ② nextButton(interactable=true) 클릭 시 1번 버튼 선택이 사라짐
+       → 새 윈도우의 페이지 버튼도 선택되지 않음
+    ③ 아무런 관계 없는 빈 공간을 클릭해도 선택이 사라짐
+
+  [원하는 동작]
+    - 갤러리가 열려 있는 동안 항상 현재 페이지에 해당하는 페이지 버튼이
+      선택(하이라이트) 상태를 유지해야 함
+    - 내비게이션 버튼(next/previous) 클릭 후에도 새 윈도우의 해당 페이지 버튼이
+      선택 상태를 유지해야 함
+    - 빈 공간을 클릭해도 선택이 해제되지 않아야 함
+
+================================================================
+c. 현재 상황 및 코드
+================================================================
+
+  ─────────────────────────────────────────────────
+  [ 원인 A: 내비게이션 버튼 클릭 시 선택 사라짐 ]
+  ─────────────────────────────────────────────────
+
+  Unity EventSystem의 버튼 클릭 처리 순서:
+
+    1. OnPointerDown  → EventSystem.SetSelectedGameObject(nextButton)
+                        (nextButton이 EventSystem 선택 대상이 됨)
+    2. OnPointerClick → Button.onClick.Invoke()
+                        → ToNextPage() 실행
+                        → SelectPageButton(windowStart) 실행
+                        → EventSystem.SetSelectedGameObject(pageButtons[0])
+
+  문제:
+    Step 2에서 SelectPageButton이 같은 프레임 내에 호출되지만,
+    Unity의 StandaloneInputModule이 이벤트 처리를 마친 후
+    클릭 대상(nextButton)을 기준으로 내부 상태를 다시 정리하면서
+    SetSelectedGameObject 결과가 덮어씌워질 수 있음.
+
+    결과: 다음 프레임에서 EventSystem.currentSelectedGameObject == null
+    → 어떤 페이지 버튼도 하이라이트되지 않음
+
+  ─────────────────────────────────────────────────
+  [ 원인 B: 빈 공간 클릭 시 선택 사라짐 ]
+  ─────────────────────────────────────────────────
+
+  Unity EventSystem 표준 동작:
+    - 클릭한 대상 GameObject에 Selectable 컴포넌트가 없거나
+      ISelectHandler를 구현하지 않은 경우,
+      EventSystem은 currentSelectedGameObject를 null로 설정함
+    - 이는 Unity의 기본 동작이며, 별도 처리 없이는 막을 수 없음
+
+  ─────────────────────────────────────────────────
+  [ 현재 관련 코드: GalleryMenu.cs ]
+  ─────────────────────────────────────────────────
+
+    private int selectedPage = 0;   ← LoadPage()에서 현재 페이지 번호 저장됨
+
+    private void SelectPageButton(int pageNumber)
+    {
+        int index = pageNumber - windowStart;
+        if (index >= 0 && index < pageButtons.Count)
+            EventSystem.current.SetSelectedGameObject(pageButtons[index].gameObject);
+    }
+
+    public void ToNextPage()
+    {
+        windowStart += PAGE_BUTTON_LIMIT;
+        UpdateNavBarWindow();
+        LoadPage(windowStart);
+        SelectPageButton(windowStart);  ← 동일 프레임 내 호출 → 타이밍 문제
+    }
+
+    public void ToPreviousPage()
+    {
+        windowStart -= PAGE_BUTTON_LIMIT;
+        if (windowStart < 1) windowStart = 1;
+        UpdateNavBarWindow();
+        LoadPage(windowStart);
+        SelectPageButton(windowStart);  ← 동일 프레임 내 호출 → 타이밍 문제
+    }
+
+    private void LoadPage(int pageNumber)
+    {
+        // ...
+        selectedPage = pageNumber;      ← selectedPage 업데이트됨 (이미 존재)
+    }
+
+  → selectedPage 필드가 이미 현재 페이지를 추적하고 있음
+  → 이 값을 Update()에서 활용하면 두 원인 모두 해결 가능
+
+================================================================
+d. 요구한 기능을 만들기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+================================================================
+
+  [핵심 메커니즘]
+
+    Update()를 사용해 매 프레임,
+    EventSystem의 currentSelectedGameObject가 null인 경우
+    현재 selectedPage에 해당하는 페이지 버튼을 다시 선택시킨다.
+
+    추가로 SelectPageButton 자체를 Coroutine으로 한 프레임 지연 실행하여
+    버튼 클릭 타이밍 문제도 함께 해결한다.
+
+  ─────────────────────────────────────────────────
+  [ 변경 1: Update() 추가 - 선택 상태 복원 ]
+  ─────────────────────────────────────────────────
+
+    void Update()
+    {
+        if (!initialized) return;
+        if (previewPanelCG != null && previewPanelCG.isVisible) return;
+
+        if (EventSystem.current != null &&
+            EventSystem.current.currentSelectedGameObject == null)
+        {
+            SelectPageButton(selectedPage);
+        }
+    }
+
+    조건 설명:
+      - initialized가 false면 pageButtons가 없으므로 건너뜀
+      - previewPanel이 열려있는 동안은 페이지 버튼에 간섭하지 않음
+      - EventSystem 선택이 null이 되는 순간 selectedPage 기준으로 복원
+
+  ─────────────────────────────────────────────────
+  [ 변경 2: SelectPageButton Coroutine 지연 실행 ]
+  ─────────────────────────────────────────────────
+
+    기존:
+      SelectPageButton(windowStart);   ← 동일 프레임, 타이밍 불안정
+
+    변경 후:
+      StartCoroutine(SelectPageButtonNextFrame(windowStart));
+
+    추가 Coroutine 메서드:
+      private IEnumerator SelectPageButtonNextFrame(int pageNumber)
+      {
+          yield return null;   ← 한 프레임 대기
+          SelectPageButton(pageNumber);
+      }
+
+    적용 위치:
+      - ToNextPage() 마지막 줄
+      - ToPreviousPage() 마지막 줄
+      - Initialize() → SelectPageButton(1) 도 동일하게 적용
+
+  ─────────────────────────────────────────────────
+  [ 변경 3: CanvasGroupController.isVisible 확인 ]
+  ─────────────────────────────────────────────────
+
+    Update()에서 previewPanelCG.isVisible을 사용하므로,
+    CanvasGroupController 클래스에 isVisible 프로퍼티가 있는지 확인 필요.
+
+    → 진행 전 확인 항목 (현재 미확인)
+
+================================================================
+e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+================================================================
+
+[ 방법 A (채택): Update() null 감지 + Coroutine 지연 ]
+
+  장점
+  ✓ 두 원인(타이밍 문제 / 빈 공간 클릭)을 동시에 해결
+  ✓ 기존 selectedPage 필드를 그대로 활용 → 새 필드 불필요
+  ✓ previewPanel 예외처리로 다른 UI 흐름에 간섭 없음
+  ✓ 구현 복잡도 낮음 (Update 1개 + Coroutine 1개 추가)
+
+  단점
+  △ Update()가 매 프레임 실행 (성능 영향 미미)
+
+[ 방법 B: IDeselectHandler 구현 ]
+
+  페이지 버튼 Prefab에 OnDeselect 콜백을 달아 스스로 재선택
+
+  ✗ 페이지 버튼 Prefab 수정 필요
+  ✗ Prefab에 추가 스크립트 컴포넌트 필요
+  ✗ 다른 UI 요소 선택 시에도 간섭할 수 있음
+
+[ 방법 C: EventSystem 커스텀 InputModule ]
+
+  StandaloneInputModule을 상속해 포인터 클릭 시 선택 해제 동작 억제
+
+  ✗ 구현 복잡도 높음
+  ✗ 프로젝트 전체 EventSystem에 영향
+  ✗ 다른 메뉴의 동작을 의도치 않게 변경할 위험
+
+[ 방법 D: Coroutine 지연만 적용 ]
+
+  SelectPageButton만 Coroutine으로 지연 → 타이밍 문제 해결
+
+  △ 빈 공간 클릭 문제는 해결 안 됨
+  ✗ 원인 B는 여전히 남음
+
+  → 방법 A가 두 원인을 모두 최소한의 변경으로 해결하므로 채택
+
+================================================================
+f. 어떤 순서로 진행할 것인지
+================================================================
+
+  [사전 확인]
+  0. CanvasGroupController 클래스에 isVisible 프로퍼티가 있는지 확인
+     → 없으면 대안 조건식 사용 (canvasGroup.alpha > 0 등)
+
+  [코드 변경]
+  1. GalleryMenu.cs - Coroutine 메서드 추가
+       SelectPageButtonNextFrame(int pageNumber) 추가
+
+  2. GalleryMenu.cs - ToNextPage() 수정
+       SelectPageButton(windowStart)
+       → StartCoroutine(SelectPageButtonNextFrame(windowStart))
+
+  3. GalleryMenu.cs - ToPreviousPage() 수정
+       SelectPageButton(windowStart)
+       → StartCoroutine(SelectPageButtonNextFrame(windowStart))
+
+  4. GalleryMenu.cs - Initialize() 수정
+       SelectPageButton(1)
+       → StartCoroutine(SelectPageButtonNextFrame(1))
+
+  5. GalleryMenu.cs - Update() 추가
+       null 감지 → selectedPage 기준 복원 로직 추가
+
+  [테스트]
+  6. 갤러리 진입 시 1번 버튼 하이라이트 확인
+  7. nextButton 클릭 → 새 윈도우 첫 번째 페이지 버튼 하이라이트 확인
+  8. previousButton 클릭 → 이전 윈도우 첫 번째 페이지 버튼 하이라이트 확인
+  9. 빈 공간 클릭 → 선택 복원 확인
+  10. previewPanel 열기 → 페이지 버튼 선택 간섭 없는지 확인
+  11. previewPanel 닫기 → 선택 복원 확인
+
+================================================================
+g. 어디가 어떤 식으로 변경되는지
+================================================================
+
+[ 파일: Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs ]
+
+  ① Update() 추가 (신규)
+
+     + void Update()
+     + {
+     +     if (!initialized) return;
+     +     if (previewPanelCG != null && previewPanelCG.isVisible) return;
+     +
+     +     if (EventSystem.current != null &&
+     +         EventSystem.current.currentSelectedGameObject == null)
+     +     {
+     +         SelectPageButton(selectedPage);
+     +     }
+     + }
+
+  ② Coroutine 메서드 추가 (신규)
+
+     + private IEnumerator SelectPageButtonNextFrame(int pageNumber)
+     + {
+     +     yield return null;
+     +     SelectPageButton(pageNumber);
+     + }
+
+  ③ ToNextPage() 수정
+
+     - SelectPageButton(windowStart);
+     + StartCoroutine(SelectPageButtonNextFrame(windowStart));
+
+  ④ ToPreviousPage() 수정
+
+     - SelectPageButton(windowStart);
+     + StartCoroutine(SelectPageButtonNextFrame(windowStart));
+
+  ⑤ Initialize() 수정
+
+     - SelectPageButton(1);
+     + StartCoroutine(SelectPageButtonNextFrame(1));
+
+[ 변경 없는 파일 ]
+  - 그 외 모든 파일
+
+[ 변경 요약표 ]
+  ┌─────────────────────────────────────────┬──────────────────────────────────────────────────────────┐
+  │ 위치                                    │ 변경 내용                                                │
+  ├─────────────────────────────────────────┼──────────────────────────────────────────────────────────┤
+  │ Update() (신규)                         │ EventSystem 선택이 null이면 selectedPage 기준 복원       │
+  │ SelectPageButtonNextFrame() (신규)      │ 한 프레임 지연 후 SelectPageButton 호출 Coroutine        │
+  │ ToNextPage()                            │ SelectPageButton → StartCoroutine(지연) 으로 교체        │
+  │ ToPreviousPage()                        │ SelectPageButton → StartCoroutine(지연) 으로 교체        │
+  │ Initialize()                            │ SelectPageButton → StartCoroutine(지연) 으로 교체        │
+  └─────────────────────────────────────────┴──────────────────────────────────────────────────────────┘
+
+[ 사전 확인 필요 항목 ]
+  ┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ CanvasGroupController.isVisible 프로퍼티 존재 여부 확인 후 진행                                 │
+  │ → 없으면 Update() 조건을 previewPanel.alpha < 0.5f 등 다른 방식으로 대체                       │
+  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+================================================================
+  끝
+================================================================

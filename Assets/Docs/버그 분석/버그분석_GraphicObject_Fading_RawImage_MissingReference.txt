@@ -1,0 +1,333 @@
+================================================================
+  버그 분석 문서
+  작성일: 2026-04-09
+  대상 프로젝트: AH_VisualNovel
+  주제: Fading 코루틴 종료 시 GraphicObject.Destroy()에서
+        MissingReferenceException (RawImage) 발생
+================================================================
+
+
+================================================================
+  a. 목차
+================================================================
+
+  a. 목차
+  b. 문제점
+  c. 현재 상황 및 코드
+  d. 요구한 문제점을 해결하기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+  e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+  f. 어떤 순서로 진행할 것인지
+  g. 어디가 어떤 식으로 변경되는지
+
+
+================================================================
+  b. 문제점
+================================================================
+
+  [ 에러 메시지 ]
+
+    MissingReferenceException: The object of type 'UnityEngine.UI.RawImage'
+    has been destroyed but you are still trying to access it.
+    Your script should either check if it is null or you should not destroy the object.
+    UnityEngine.Object+MarshalledUnityObject.TryThrowEditorNullExceptionObject (...)
+    UnityEngine.Bindings.ThrowHelper.ThrowNullReferenceException (...)
+    UnityEngine.Component.get_gameObject ()
+    GraphicObject.Destroy ()                            ← GraphicObject.cs:214
+    GraphicObject+<Fading>d__31.MoveNext ()             ← GraphicObject.cs:192
+
+  ---------------------------------------------------------------
+
+  [ 핵심 원인: Fading 코루틴 실행 도중 renderer가 외부에서 파괴됨 ]
+
+    Fading() 코루틴은 yield return null을 사용해 여러 프레임에 걸쳐 실행된다.
+    코루틴이 실행되는 동안, 외부(다른 코드 경로)에서 renderer(RawImage)가
+    부착된 GameObject를 먼저 파괴할 수 있다.
+
+    코루틴이 target == 0 조건을 만족해 Destroy()를 호출하는 시점에는
+    renderer는 이미 파괴된 상태다.
+
+    Destroy() 내부의 Object.Destroy(renderer.gameObject)는
+    renderer가 null인지(또는 파괴된 객체인지) 확인하지 않고 바로 접근하므로
+    MissingReferenceException이 발생한다.
+
+  ---------------------------------------------------------------
+
+  [ 발생 시나리오 ]
+
+    1) FadeOut 코루틴 시작 → Fading(target=0) 실행 중
+    2) 동일 GraphicLayer에 새 그래픽이 로드되거나,
+       Layer 전체가 초기화되어 renderer.gameObject가 외부에서 먼저 Destroy됨
+    3) Fading 코루틴이 while 루프를 빠져나와 target == 0 분기 진입
+    4) Destroy() 호출 → renderer.gameObject 접근 → 예외 발생
+
+
+================================================================
+  c. 현재 상황 및 코드
+================================================================
+
+  [ 관련 구조 ]
+
+    GraphicObject
+    ├── renderer (RawImage)  ← 파괴되면 null로 취급되어야 하나 체크 없음
+    ├── co_fadingIn
+    └── co_fadingOut
+
+  ---------------------------------------------------------------
+
+  [ 문제 코드 1: Fading() 코루틴 - GraphicObject.cs:155~200 ]
+
+    private IEnumerator Fading(float target, float speed, Texture blend)
+    {
+        ...
+        while(renderer.material.GetFloat(opacityParam) != target)   // ← renderer 유효성 미체크
+        {
+            ...
+            yield return null;   // ← 이 사이에 renderer가 외부에서 파괴될 수 있음
+        }
+
+        co_fadingIn = null;
+        co_fadingOut = null;
+
+        if(target == 0)
+        {
+            Destroy();   // ← 192번 줄: renderer가 이미 파괴된 상태로 진입 가능
+        }
+        ...
+    }
+
+  ---------------------------------------------------------------
+
+  [ 문제 코드 2: Destroy() - GraphicObject.cs:203~215 ]
+
+    public void Destroy()
+    {
+        if(layer.currentGraphic != null && layer.currentGraphic.renderer == renderer)
+        {
+            layer.currentGraphic = null;
+        }
+        if(layer.oldGraphics.Contains(this))
+        {
+            layer.oldGraphics.Remove(this);
+        }
+
+        Object.Destroy(renderer.gameObject);   // ← 214번 줄: null 체크 없이 접근
+    }
+
+  ---------------------------------------------------------------
+
+  [ 현재 흐름 요약 ]
+
+    Fading(target=0) 실행
+      → yield return null (복수 프레임)
+        → [외부] renderer.gameObject 파괴
+          → while 루프 종료 (renderer.material 접근 자체도 잠재적 위험)
+            → Destroy() 호출
+              → renderer.gameObject 접근 → MissingReferenceException
+
+
+================================================================
+  d. 요구한 문제점을 해결하기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+================================================================
+
+  [ 채택 방법 ]
+
+    1) Destroy() 메서드 첫 줄에 renderer null 체크 추가
+       → renderer가 이미 파괴된 객체라면 즉시 반환해 예외를 방지한다.
+
+    2) Fading() 코루틴의 yield return null 직후에 renderer null 체크 추가
+       → 코루틴이 재개될 때마다 renderer가 유효한지 확인한 뒤 진행한다.
+       → renderer가 파괴된 경우 코루틴을 즉시 종료해 이후 접근을 원천 차단한다.
+
+  ---------------------------------------------------------------
+
+  [ 변경 대상 ]
+
+    파일: Assets/Scripts/VisualNovel/Core/Graphic Panels/GraphicObject.cs
+    위치 1: Destroy() 메서드 (203번 줄)
+    위치 2: Fading() 코루틴의 yield return null 다음 (184번 줄 이후)
+
+
+================================================================
+  e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+================================================================
+
+  방법 1 (채택): Destroy() null 체크 + Fading() yield 직후 null 체크
+  -----------------------------------------------------------------------
+  장점:
+    - Destroy()가 어떤 경로에서 호출되더라도 renderer 파괴 여부를 검증함
+    - Fading() 코루틴이 재개되는 모든 시점에서 조기 종료 가능
+    - 변경 범위가 GraphicObject.cs 한 파일, 두 위치로 최소화됨
+    - Unity의 null 체크(== null) 는 파괴된 UnityEngine.Object를
+      정상적으로 감지하므로 별도 플래그 불필요
+  단점:
+    - 없음 (이 컨텍스트에서)
+
+  방법 2: try-catch로 MissingReferenceException 포착
+  -----------------------------------------------------------------------
+  장점:
+    - 코드 변경이 매우 단순함
+  단점:
+    - 예외를 발생시킨 뒤 잡는 방식이므로 성능 비용 존재
+    - 예외 처리는 근본 원인(null 접근)을 해결하지 않음
+    - 동일 코루틴 내 다른 renderer 접근 지점에서도 예외가 전파될 위험
+
+  방법 3: 외부에서 renderer를 파괴하는 코드 경로를 제거
+  -----------------------------------------------------------------------
+  장점:
+    - 충돌 원인 자체를 없앰
+  단점:
+    - 파괴 경로가 여러 곳에 분산되어 있어 추적 비용이 높음
+    - Fading 중 외부 파괴가 발생하는 모든 시나리오를 완전히 차단하기 어려움
+    - 변경 범위가 GraphicLayer, GraphicPanelManager 등 여러 파일로 확대됨
+
+  방법 4: isDestroyed 전용 플래그 필드 추가
+  -----------------------------------------------------------------------
+  장점:
+    - 파괴 상태를 명시적으로 관리할 수 있음
+  단점:
+    - Unity의 == null 연산자가 파괴된 오브젝트를 이미 null로 취급하므로 중복
+    - 추가 필드로 상태 동기화 관리 비용 발생
+    - 방법 1보다 코드가 복잡해지고 이점이 없음
+
+  → 방법 1이 최소 변경으로 근본 원인을 직접 방어하며,
+    Unity의 관용적인 null 체크 패턴에 부합하므로 채택
+
+
+================================================================
+  f. 어떤 순서로 진행할 것인지
+================================================================
+
+  Step 1. Destroy() 메서드 수정
+  ------------------------------
+    파일: GraphicObject.cs
+    대상: Destroy() 메서드 상단에 null 체크 추가
+    → renderer가 파괴된 상태라면 layer 참조 정리 후 즉시 반환
+
+  Step 2. Fading() 코루틴 수정
+  ------------------------------
+    파일: GraphicObject.cs
+    대상: while 루프 내 yield return null 직후에 null 체크 추가
+    → renderer가 파괴된 경우 코루틴 즉시 종료 (yield break)
+
+  Step 3. 검증
+  --------------
+    - FadeOut 진행 중 강제로 GraphicLayer를 초기화하거나
+      다른 그래픽을 덮어씌우는 시나리오를 재현하여 예외가 사라지는지 확인
+    - FadeOut이 정상 완료되는 경우(renderer 유효)에도 Destroy()가
+      정상 동작하는지 확인
+
+
+================================================================
+  g. 어디가 어떤 식으로 변경되는지
+================================================================
+
+  ---------------------------------------------------------------
+  파일: Assets/Scripts/VisualNovel/Core/Graphic Panels/GraphicObject.cs
+  ---------------------------------------------------------------
+
+  [변경 1] Destroy() 메서드 (203번 줄)
+  ----------------------------------------
+
+  변경 전:
+  ---------
+    public void Destroy()
+    {
+        if(layer.currentGraphic != null && layer.currentGraphic.renderer == renderer)
+        {
+            layer.currentGraphic = null;
+        }
+        if(layer.oldGraphics.Contains(this))
+        {
+            layer.oldGraphics.Remove(this);
+        }
+
+        Object.Destroy(renderer.gameObject);   // ← null 체크 없이 접근
+    }
+
+  변경 후:
+  ---------
+    public void Destroy()
+    {
+        if(layer.currentGraphic != null && layer.currentGraphic.renderer == renderer)
+        {
+            layer.currentGraphic = null;
+        }
+        if(layer.oldGraphics.Contains(this))
+        {
+            layer.oldGraphics.Remove(this);
+        }
+
+        if (renderer == null)   // ← 추가: 이미 파괴된 경우 조기 반환
+            return;
+
+        Object.Destroy(renderer.gameObject);
+    }
+
+  ---------------------------------------------------------------
+
+  [변경 2] Fading() 코루틴 (184번 줄 이후)
+  -------------------------------------------
+
+  변경 전:
+  ---------
+    while(renderer.material.GetFloat(opacityParam) != target)
+    {
+        float current = renderer.material.GetFloat(opacityParam);
+        float opacity = Mathf.MoveTowards(current, target, speed * Time.deltaTime);
+        renderer.material.SetFloat(opacityParam, opacity);
+
+        if(isVideo)
+        {
+            audio.volume = opacity;
+        }
+
+        yield return null;   // ← 이후 renderer 유효성 재확인 없음
+    }
+
+  변경 후:
+  ---------
+    while(renderer.material.GetFloat(opacityParam) != target)
+    {
+        float current = renderer.material.GetFloat(opacityParam);
+        float opacity = Mathf.MoveTowards(current, target, speed * Time.deltaTime);
+        renderer.material.SetFloat(opacityParam, opacity);
+
+        if(isVideo)
+        {
+            audio.volume = opacity;
+        }
+
+        yield return null;
+
+        if (renderer == null)   // ← 추가: 재개 시점에 renderer 파괴 여부 확인
+            yield break;        // ← 파괴된 경우 코루틴 즉시 종료
+    }
+
+  ---------------------------------------------------------------
+
+  [ 변경 후 흐름 ]
+
+    Fading(target=0) 실행
+      → yield return null 반복
+        → [외부] renderer.gameObject 파괴
+
+        → (다음 프레임 재개)
+          → if (renderer == null) → yield break  ★ 코루틴 안전 종료
+
+    또는 while 완료 후 Destroy() 호출 경우:
+
+      → Destroy() 진입
+        → if (renderer == null) → return          ★ 예외 없이 조기 반환
+
+  ---------------------------------------------------------------
+
+================================================================
+  관련 파일 요약
+================================================================
+
+  No.  파일                                        변경 내용
+  ---  ------------------------------------------  ----------------------------------
+  1    GraphicObject.cs                            Destroy() null 체크 추가
+                                                   Fading() yield break null 체크 추가
+
+================================================================

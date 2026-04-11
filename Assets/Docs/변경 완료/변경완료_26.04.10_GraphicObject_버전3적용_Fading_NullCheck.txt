@@ -1,0 +1,156 @@
+====================================================
+  변경 완료 문서
+  작성일: 2026-04-10
+  대상 프로젝트: AH_VisualNovel
+  주제: GraphicObject.Destroy() 버전 3 적용 +
+        Fading() null 체크 추가 + 구 주석 코드 삭제
+====================================================
+
+
+----------------------------------------------------
+1. 현재 코드와 계획 문서(c) 비교 결과
+----------------------------------------------------
+
+  비교 항목:
+    - Destroy() L206~238 : 문서와 완전 일치 ✓
+    - Fading() yield return null 부분 : 문서와 완전 일치 ✓
+
+  → 차이 없음, 변경 진행
+
+
+----------------------------------------------------
+2. 변경 전 / 변경 후 코드
+----------------------------------------------------
+
+  변경 파일: Assets/Scripts/VisualNovel/Core/Graphic Panels/GraphicObject.cs
+
+  -------------------------------------------------------
+  [변경 1] using 정리 — System.Linq 제거
+
+  변경 전:
+  ─────────
+    using System.Collections;
+    using Unity.VisualScripting;
+    using UnityEngine;
+    using UnityEngine.UI;
+    using UnityEngine.Video;
+    using System.Linq;
+
+  변경 후:
+  ─────────
+    using System.Collections;
+    using Unity.VisualScripting;
+    using UnityEngine;
+    using UnityEngine.UI;
+    using UnityEngine.Video;
+
+  변경 이유: FirstOrDefault(LINQ) 제거로 인해 System.Linq 불필요
+
+  -------------------------------------------------------
+  [변경 2] Destroy() 전체 교체 — 버전 3 적용 + 구 주석 코드 삭제
+
+  변경 전:
+  ─────────
+    public void Destroy()
+    {
+
+        if(layer.currentGraphic != null && layer.currentGraphic.renderer == renderer)
+        {
+            layer.currentGraphic = null;
+        }
+
+        var oldGraphic = layer.oldGraphics.FirstOrDefault(g => g.renderer == renderer);
+
+        if (oldGraphic != null)
+        {
+            layer.oldGraphics.Remove(oldGraphic);
+        }
+
+        if (renderer != null)
+        {
+            Object.Destroy(renderer.gameObject);
+        }
+
+        /*
+        if(layer.currentGraphic != null && layer.currentGraphic.renderer == renderer)
+        {
+             layer.currentGraphic = null;
+        }
+        if(layer.oldGraphics.Contains(this))
+        {
+             layer.oldGraphics.Remove(this);
+        }
+
+        Object.Destroy(renderer.gameObject);
+        */
+    }
+
+  변경 후:
+  ─────────
+    public void Destroy()
+    {
+        if (layer.currentGraphic != null && layer.currentGraphic.renderer == renderer)
+            layer.currentGraphic = null;
+
+        layer.oldGraphics.Remove(this);
+
+        if (renderer != null)
+            Object.Destroy(renderer.gameObject);
+    }
+
+  -------------------------------------------------------
+  [변경 3] Fading() 코루틴 — yield return null 직후 null 체크 추가
+
+  변경 전:
+  ─────────
+            yield return null;
+        }
+
+        co_fadingIn = null;
+
+  변경 후:
+  ─────────
+            yield return null;
+
+            if (renderer == null)
+                yield break;
+        }
+
+        co_fadingIn = null;
+
+
+----------------------------------------------------
+3. 변경 후 작동 흐름
+----------------------------------------------------
+
+  [ Destroy() 흐름 ]
+
+    1. layer.currentGraphic 이 자신(this)의 renderer를 가리키고 있으면
+       → layer.currentGraphic = null 로 참조 해제
+
+    2. layer.oldGraphics.Remove(this)
+       → this 기준 동일성 비교(참조 동일)로 1회 순회 후 제거.
+          oldGraphics에 없어도 조용히 무시 (bool 반환 버려짐).
+          renderer가 Unity null 상태여도 다른 오브젝트와 오매칭 없음.
+
+    3. renderer != null 이면 GameObject를 Unity에서 파괴.
+
+
+  [ Fading() null 체크 흐름 ]
+
+    1. while 루프 내에서 매 프레임 opacity를 MoveTowards로 이동.
+    2. yield return null 로 1프레임 대기.
+    3. 프레임 재개 직후 renderer == null 체크.
+       → null이면 yield break로 코루틴 즉시 종료.
+          (외부에서 renderer가 파괴된 경우 MissingReferenceException 방지)
+    4. null이 아니면 while 조건 재평가 후 계속 진행.
+    5. 루프 종료 후 co_fadingIn / co_fadingOut = null 정리.
+    6. target == 0 이면 Destroy() 호출, 아니면 DestroyBackgroundGraphicsOnLayer().
+
+
+  [ 변경 없는 파일 ]
+    - GraphicLayer.cs     : 변경 없음
+    - CommandManager.cs   : 변경 없음
+    - 기타 스크립트       : 변경 없음
+
+====================================================

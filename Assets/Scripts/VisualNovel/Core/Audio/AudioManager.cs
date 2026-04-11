@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
-using UnityEngine.Rendering;
+
 
 public class AudioManager : MonoBehaviour
 {
@@ -12,7 +12,9 @@ public class AudioManager : MonoBehaviour
     public const float MUTED_VOLUME_LEVEL = -80f;
 
     private const string SFX_PARENT_NAME = "SFX";
-    private const string SFX_NAME_FORMAT = "SFX - [{0}]";
+    public  static readonly char[] SFX_NAME_FORMAT_CONTAINERS = new char[] { '[', ']' };
+    private static string SFX_NAME_FORMAT = $"SFX - {SFX_NAME_FORMAT_CONTAINERS[0]}" + "{0}" + $"{SFX_NAME_FORMAT_CONTAINERS[1]}";
+
     public  const float  TRACK_TRANSITION_SPEED = 1f;
 
     public static AudioManager instance { get; private set; }
@@ -26,6 +28,8 @@ public class AudioManager : MonoBehaviour
     public AnimationCurve audioFalloffCurve;
 
     private Transform sfxRoot;
+
+    public AudioSource[] allSFX => sfxRoot.GetComponentsInChildren<AudioSource>();
 
     private void Awake()
     {
@@ -45,6 +49,27 @@ public class AudioManager : MonoBehaviour
         sfxRoot.SetParent(transform);
     }
 
+#region AudioPlayManager
+    public AudioTrack PlayTrack(string filePath, int Channel = 0, bool loop = true, float startingVolume = 0f, float volumeCap = 1f, float pitch = 1f)
+    {
+        AudioClip clip = Resources.Load<AudioClip>(filePath);
+
+        if(clip == null)
+        {
+            Debug.LogError($"Could not load audio file '{filePath}'. Please make sure this file exists in the Resources directory!");
+            return null;
+        }
+
+        return PlayTrack(clip, Channel, loop, startingVolume, volumeCap, pitch, filePath);
+    }
+
+    public AudioTrack PlayTrack(AudioClip clip, int Channel = 0, bool loop = true, float startingVolume = 0f, float volumeCap = 1f, float pitch = 1f, string filePath = "")
+    {
+        AudioChannel audioChannel = TryGetChannel(Channel, createIfNotExists: true);
+        AudioTrack track = audioChannel.PlayTrack(clip, loop, startingVolume, volumeCap, pitch, filePath);
+        return track;
+    }
+
     public AudioSource PlaySoundEffect(string filePath, AudioMixerGroup mixer = null, float volume = 1, float pitch = 1, bool loop = false)
     {
         AudioClip clip = Resources.Load<AudioClip>(filePath);
@@ -55,13 +80,20 @@ public class AudioManager : MonoBehaviour
             return null;
         }
 
-        return PlaySoundEffect(clip, mixer, volume, pitch, loop);
+        return PlaySoundEffect(clip, mixer, volume, pitch, loop, filePath);
 
     }
 
-    public AudioSource PlaySoundEffect(AudioClip clip, AudioMixerGroup mixer = null, float volume = 1, float pitch = 1, bool loop = false)
+    public AudioSource PlaySoundEffect(AudioClip clip, AudioMixerGroup mixer = null, float volume = 1, float pitch = 1, bool loop = false, string filePath = "")
     {
-        AudioSource effectSource = new GameObject(string.Format(SFX_NAME_FORMAT, clip.name)).AddComponent<AudioSource>();
+        string fileName = clip.name;
+
+        if(filePath != string.Empty)
+        {
+            fileName = filePath;
+        }
+
+        AudioSource effectSource = new GameObject(string.Format(SFX_NAME_FORMAT, fileName)).AddComponent<AudioSource>();
         effectSource.transform.SetParent(sfxRoot);
         effectSource.transform.position = sfxRoot.position;
 
@@ -97,45 +129,15 @@ public class AudioManager : MonoBehaviour
     {
         return PlaySoundEffect(clip, voicesMixer, volume, pitch, loop);
     }
+#endregion
 
-    public void StopSoundEffect(AudioClip clip)
+#region AudioStopManager
+    public void StopAllTracks()
     {
-        StopSoundEffect(clip.name);
-    }
-
-    public void StopSoundEffect(string soundName)
-    {
-        soundName = soundName.ToLower();
-
-        AudioSource[] sources = sfxRoot.GetComponentsInChildren<AudioSource>();
-        foreach(AudioSource source in sources)
+        foreach(AudioChannel channel in channels.Values)
         {
-            if(source.clip.name.ToLower() == soundName)
-            {
-                Destroy(source.gameObject);
-                return;
-            }
+            channel.StopTrack();
         }
-    }
-
-    public AudioTrack PlayTrack(string filePath, int Channel = 0, bool loop = true, float startingVolume = 0f, float volumeCap = 1f, float pitch = 1f)
-    {
-        AudioClip clip = Resources.Load<AudioClip>(filePath);
-
-        if(clip == null)
-        {
-            Debug.LogError($"Could not load audio file '{filePath}'. Please make sure this file exists in the Resources directory!");
-            return null;
-        }
-
-        return PlayTrack(clip, Channel, loop, startingVolume, volumeCap, pitch, filePath);
-    }
-
-    public AudioTrack PlayTrack(AudioClip clip, int Channel = 0, bool loop = true, float startingVolume = 0f, float volumeCap = 1f, float pitch = 1f, string filePath = "")
-    {
-        AudioChannel audioChannel = TryGetChannel(Channel, createIfNotExists: true);
-        AudioTrack track = audioChannel.PlayTrack(clip, loop, startingVolume, volumeCap, pitch, filePath);
-        return track;
     }
 
     public void StopTrack(int channel)
@@ -163,24 +165,36 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    public AudioChannel TryGetChannel(int ChannelNumber, bool createIfNotExists = false)
+    public void StopAllSoundEffects()
     {
-        AudioChannel channel = null;
-
-        if (channels.TryGetValue(ChannelNumber, out channel))
+        foreach(AudioSource source in allSFX)
         {
-            return channel;
+            Destroy(source.gameObject);
         }
-        else if (createIfNotExists)
-        {
-            channel = new AudioChannel(ChannelNumber);
-            channels.Add(ChannelNumber, channel);
-            return channel;
-        }
-
-        return null;
     }
 
+    public void StopSoundEffect(AudioClip clip)
+    {
+        StopSoundEffect(clip.name);
+    }
+
+    public void StopSoundEffect(string soundName)
+    {
+        soundName = soundName.ToLower();
+
+        AudioSource[] sources = sfxRoot.GetComponentsInChildren<AudioSource>();
+        foreach(AudioSource source in sources)
+        {
+            if(source.clip.name.ToLower() == soundName)
+            {
+                Destroy(source.gameObject);
+                return;
+            }
+        }
+    }
+#endregion
+
+#region AudioMuteManager
     public void SetMusicVolume(float volume, bool muted)
     {
         volume = muted ? MUTED_VOLUME_LEVEL : audioFalloffCurve.Evaluate(volume);
@@ -198,5 +212,40 @@ public class AudioManager : MonoBehaviour
         volume = muted ? MUTED_VOLUME_LEVEL : audioFalloffCurve.Evaluate(volume);
         voicesMixer.audioMixer.SetFloat(VOICES_VOLUME_PARAMETER_NAME, volume);
     }
+#endregion
 
+    public AudioChannel TryGetChannel(int ChannelNumber, bool createIfNotExists = false)
+    {
+        AudioChannel channel = null;
+
+        if (channels.TryGetValue(ChannelNumber, out channel))
+        {
+            return channel;
+        }
+        else if (createIfNotExists)
+        {
+            channel = new AudioChannel(ChannelNumber);
+            channels.Add(ChannelNumber, channel);
+            return channel;
+        }
+
+        return null;
+    }
+    
+    public bool IsPlayingSoundEffect(string soundName)
+    {
+        soundName = soundName.ToLower();
+
+        AudioSource[] sources = sfxRoot.GetComponentsInChildren<AudioSource>();
+        foreach(var source in sources)
+        {
+            if(source.clip.name.ToLower() == soundName)
+            {
+                Destroy(source.gameObject);
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

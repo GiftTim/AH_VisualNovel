@@ -1,0 +1,182 @@
+================================================================
+  변경계획 - GalleryMenu NavBar 선택 버튼 TMP 색상 변경
+  작성일: 2026-04-09
+================================================================
+
+[목차]
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 요구한 기능을 만들기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+  e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+  f. 어떤 순서로 진행할 것인지
+  g. 어디가 어떤 식으로 변경되는지
+
+================================================================
+b. 요구한 기능
+================================================================
+
+  GalleryMenu의 ConstructNavBar()로 생성된 페이지 번호 버튼(panelSelectionPrefab 복제본)을
+  클릭하면 해당 버튼의 자식 TextMeshProUGUI(숫자 텍스트) 색상이 변경된다.
+  다른 페이지 버튼을 클릭하면:
+    - 이전에 색이 바뀌어 있던 버튼의 TMP 텍스트는 흰색(원래 색)으로 복구
+    - 새로 클릭한 버튼의 TMP 텍스트는 선택 색상으로 변경
+
+================================================================
+c. 현재 상황 및 코드
+================================================================
+
+[ Hierarchy 구조 (Gallery 관련 부분) ]
+
+  Gallery  (GalleryMenu 컴포넌트)
+  └── Panel
+  └── GalleryImage  (GridLayoutGroup)
+      └── Gallery Image Container (0~5)   ← galleryPreviewButtons
+  └── Navigation  (HorizontalLayoutGroup)
+      ├── LeftLeft   (Button)
+      ├── Page       (Button, m_IsActive: 0)  ← panelSelectionPrefab (복제 템플릿)
+      │   └── [자식] TextMeshProUGUI  ← 숫자 텍스트
+      ├── RightRight (Button)
+      └── (ConstructNavBar 실행 시 Page를 복제하여 Navigation 하위에 추가)
+  └── PreviewPanel
+
+[ GalleryMenu.cs - 현재 ConstructNavBar 코드 ]
+
+  private void ConstructNavBar()
+  {
+      int totalImages = galleryImages.Length;
+      int targetPage = Mathf.CeilToInt((float)totalImages / previewsPerPage);
+
+      for (int i = 1; i <= targetPage; i++)
+      {
+          GameObject buttonOB = Instantiate(panelSelectionPrefab.gameObject,
+                                            panelSelectionPrefab.transform.parent);
+          buttonOB.SetActive(true);
+
+          Button button = buttonOB.GetComponent<Button>();
+          TextMeshProUGUI buttonText = button.GetComponentInChildren<TextMeshProUGUI>();
+
+          buttonOB.name = i.ToString();
+          int page = i;
+          button.onClick.AddListener(() => LoadPage(page));
+          buttonText.text = i.ToString();
+      }
+      nextButton.transform.SetAsLastSibling();
+      RightEndButton.transform.SetAsLastSibling();
+  }
+
+  private void LoadPage(int pageNumber)
+  {
+      // 현재 비어 있음
+  }
+
+[ Page 버튼 (panelSelectionPrefab) - 현재 상태 ]
+
+  Button 컴포넌트
+    Transition     : Color Tint
+    Target Graphic : Image (버튼 배경)  ← 문제: TMP가 아닌 배경 Image를 가리킴
+    Normal Color   : 흰색
+    Highlighted Color : 연한 회색
+    Selected Color    : 연한 회색
+
+  자식 GameObject
+    TextMeshProUGUI  ← 페이지 번호 숫자 표시
+
+[ 핵심 문제 ]
+
+  Button의 Target Graphic이 Image(배경)를 가리키고 있어서
+  ColorBlock(Normal / Selected / Highlighted Color)이 배경 이미지 색에만 적용된다.
+  TMP 텍스트 색에는 아무런 영향을 주지 않는다.
+
+================================================================
+d. 요구한 기능을 만들기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+================================================================
+
+  Button 컴포넌트의 Target Graphic을 Image에서 TextMeshProUGUI로 교체한다.
+
+  Target Graphic이 TMP가 되면 ColorBlock이 TMP 텍스트 색상에 직접 적용된다.
+  Unity EventSystem은 버튼 클릭 시 해당 버튼에 포커스를 이동시키므로:
+
+    - 버튼 클릭 → EventSystem 포커스 이동 → Selected Color가 TMP에 적용
+    - 다른 버튼 클릭 → 이전 버튼 포커스 해제 → Normal Color(흰색)로 자동 복구
+                       새 버튼에 포커스 → Selected Color 적용
+
+  이 자연스러운 포커스 이동이 요구사항(이전 색 복구 + 새 버튼 색 변경)과 정확히 일치한다.
+  추가 코드 없이 Inspector 설정만으로 완전히 해결된다.
+
+[ Inspector 설정값 ]
+
+  Target Graphic  : TextMeshProUGUI (자식의 TMP 컴포넌트)
+  Normal Color    : 흰색 (RGBA 255, 255, 255, 255)
+  Highlighted Color : 원하는 호버 색상 (예: 연한 노란색)
+  Selected Color  : 원하는 선택 색상 (예: 밝은 노란색)
+  Pressed Color   : 원하는 누르는 순간 색상
+
+================================================================
+e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+================================================================
+
+[ 방법 A (채택): Target Graphic을 TMP로 교체 + ColorBlock 활용 ]
+  ✓ 추가 코드 없음 - Inspector 설정만으로 완결
+  ✓ Unity 내장 기능이므로 안정적
+  ✓ EventSystem의 포커스 이동이 "이전 버튼 복구 + 새 버튼 선택" 동작과 정확히 일치
+  ✓ Highlighted(호버), Pressed(클릭 순간), Selected(선택 유지) 모두 자동 처리
+
+[ 방법 B: 코드에서 직접 TMP 색상 제어 ]
+  - selectedNavText 변수로 이전 버튼을 추적하고 LoadPage()에서 색상을 수동으로 변경
+  ✗ 방법 A로 동일한 결과를 얻을 수 있는데 코드가 추가되어 불필요하게 복잡해짐
+  ✗ Highlighted(호버) 등 다른 상태 처리를 추가로 구현해야 함
+
+[ 방법 C: Button Animator + Animation Clip ]
+  ✗ 단순 색상 변경에 비해 설정 비용 과다
+  ✗ 런타임 동적 생성 버튼에 Animator Controller 연결이 복잡
+
+================================================================
+f. 어떤 순서로 진행할 것인지
+================================================================
+
+  1. Scene에서 panelSelectionPrefab(Page 버튼) 선택
+
+  2. Inspector의 Button 컴포넌트에서
+     Target Graphic 필드를 Image → 자식 TextMeshProUGUI 로 교체
+
+  3. ColorBlock 색상 값 설정
+     - Normal Color    : 흰색
+     - Highlighted Color : 호버 시 원하는 색
+     - Selected Color  : 선택 시 원하는 색
+     - Pressed Color   : 누르는 순간 원하는 색
+
+  4. 실행 테스트
+     - 갤러리 진입 후 페이지 버튼 클릭 시 TMP 텍스트 색이 변경되는지 확인
+     - 다른 버튼 클릭 시 이전 버튼이 흰색으로 복구되는지 확인
+     - 호버(마우스 올림) 시 Highlighted Color가 적용되는지 확인
+
+================================================================
+g. 어디가 어떤 식으로 변경되는지
+================================================================
+
+[ 변경 위치 ]
+  Scene: Assets/Scenes/Main Menu.unity
+  대상 GameObject: Navigation > Page (panelSelectionPrefab)
+
+[ 변경 내용 ]
+
+  Button 컴포넌트
+  ┌────────────────────┬──────────────────────────────┬──────────────────────────────┐
+  │ 항목               │ 변경 전                      │ 변경 후                      │
+  ├────────────────────┼──────────────────────────────┼──────────────────────────────┤
+  │ Target Graphic     │ Image (버튼 배경)            │ TextMeshProUGUI (자식 TMP)   │
+  │ Normal Color       │ 흰색                         │ 흰색 (유지)                  │
+  │ Highlighted Color  │ 연한 회색                    │ 원하는 호버 색상             │
+  │ Selected Color     │ 연한 회색                    │ 원하는 선택 색상             │
+  │ Pressed Color      │ 어두운 회색                  │ 원하는 색상                  │
+  └────────────────────┴──────────────────────────────┴──────────────────────────────┘
+
+[ 코드 변경 없음 ]
+  GalleryMenu.cs는 수정하지 않는다.
+  ConstructNavBar()에서 복제된 버튼들도 panelSelectionPrefab의 설정을 그대로 상속받으므로
+  Scene에서 Page 버튼 하나만 수정하면 모든 복제 버튼에 동일하게 적용된다.
+
+================================================================
+  끝
+================================================================

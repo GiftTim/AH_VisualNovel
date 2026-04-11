@@ -173,8 +173,8 @@ namespace COMMANDS
         {
             yield return WaitingForProcessToComplete(process.command, process.args);
 
-            KillProcess(process);
-
+            activeProcesses.Remove(process);   // 정상 완료: 목록에서만 제거
+                                               // onTerminateAction 호출하지 않음
         }
 
         public void KillProcess(CommandProcess cmd)

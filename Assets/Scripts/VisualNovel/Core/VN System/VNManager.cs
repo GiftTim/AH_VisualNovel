@@ -7,6 +7,8 @@ namespace VISUALNOVEL
     public class VNManager : MonoBehaviour
     {
         public static VNManager instance { get; private set; }
+        [SerializeField] private VisualNovelSO config;
+
         public Camera mainCamera;
 
         private void Awake()
@@ -27,24 +29,28 @@ namespace VISUALNOVEL
             {
                 VNGameSave.activeFile = new VNGameSave();
             }
+
         }
 
-        public void LoadFile(string filePath)
+        private void Start()
         {
-            List<string> lines = new List<string>();
-            TextAsset file = Resources.Load<TextAsset>(filePath);
-
-            try
-            {
-                lines = FileManager.ReadTextAsset(file);
-            }
-            catch
-            {
-                Debug.LogError($":'Resources/{filePath}' 경로의 대화 파일이 존재하지 않습니다!");
-            }
-
-            DialogueSystem.instance.Say(lines, filePath);
+            LoadGame();
         }
+
+        private void LoadGame()
+        {
+            if(VNGameSave.activeFile.newGame)
+            {
+                List<string> lines = FileManager.ReadTextAsset(config.startingFile);
+                Conversation start = new Conversation(lines);
+                DialogueSystem.instance.Say(start);
+            }
+            else
+            {
+                VNGameSave.activeFile.Activate();
+            }
+        }
+
     }
 
 }

@@ -14,6 +14,8 @@ public class VNMenuManager : MonoBehaviour
     
     private CanvasGroupController rootCG;
 
+    private UIConfirmationMenu uiChoiceMenu => UIConfirmationMenu.instance;
+
     private void Awake()
     {
         if (instance == null)
@@ -96,15 +98,16 @@ public class VNMenuManager : MonoBehaviour
 
     public void Click_Home()
     {
-        UnityEngine.SceneManagement.SceneManager.LoadScene("Main Menu");
+        VN_Configuration.activeConfig.Save();
+
+        UnityEngine.SceneManagement.SceneManager.LoadScene(MainMenu.MAIN_MENU_SCENE);
+        
     }
 
     public void Click_Quit()
     {
-        #if UNITY_EDITOR 
-        UnityEditor.EditorApplication.isPlaying = false;
-        #else 
-        Application.Quit();
-        #endif
+        uiChoiceMenu.Show("게임을 종료하시겠습니까?", 
+        new UIConfirmationMenu.ConfirmationButton("예", () => Application.Quit()), 
+        new UIConfirmationMenu.ConfirmationButton("아니오", null));
     }
 }

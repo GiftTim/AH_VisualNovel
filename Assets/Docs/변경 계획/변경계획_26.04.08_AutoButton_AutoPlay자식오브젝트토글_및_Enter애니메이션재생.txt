@@ -1,0 +1,233 @@
+====================================================
+  Auto 버튼 클릭 시 자식 Auto-Play 오브젝트 SetActive 토글 및 Enter 애니메이션 재생
+  작성일: 2026-04-08
+====================================================
+
+----------------------------------------------------
+a. 목차
+----------------------------------------------------
+
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 요구한 기능을 만들기 위해서 어떤 식으로 추가/변경할 것인지
+  e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+  f. 어떤 순서로 진행할 것인지
+  g. 어디가 어떤 식으로 변경되는지
+
+
+----------------------------------------------------
+b. 요구한 기능
+----------------------------------------------------
+
+  - Auto 버튼을 클릭하면:
+      · Auto 버튼의 자식 오브젝트인 Auto-Play GameObject가 SetActive(true)
+      · Auto-Play에 붙어있는 Animator가 "Enter" Animation Clip을 재생
+
+  - Auto 버튼을 다시 클릭하면 (Auto 해제 시):
+      · Auto-Play GameObject가 SetActive(false)
+      · (Animator는 오브젝트가 꺼지므로 자동 정지)
+
+  - 오브젝트 구조 (예시):
+      Auto (버튼, 부모)
+      └── Auto-Play  ← SetActive 토글 대상, Animator 컴포넌트 보유
+            └── Animator → "Enter" Clip 재생
+
+
+----------------------------------------------------
+c. 현재 상황 및 코드
+----------------------------------------------------
+
+  [ 애니메이션 에셋 현황 ]
+    - Assets/Animations/UI/Buttons/Auto Button/Auto-Play.controller
+        → Animator Controller가 존재하며, "Enter" Animation Clip을 보유
+    - Assets/Animations/UI/Buttons/Auto Button/Enter.anim
+        → 실제 Enter Animation Clip
+
+  [ AutoReader.cs (핵심 발췌) ]
+  -------------------------------------------------------
+  namespace DIALOGUE
+  {
+      public class AutoReader : MonoBehaviour
+      {
+          public bool isOn => co_running != null;
+          private Coroutine co_running = null;
+
+          [HideInInspector] public bool allowToggle = true;
+
+          public void Enable()
+          {
+              if (isOn) return;
+              co_running = StartCoroutine(AutoRead());
+          }
+
+          public void Disable()
+          {
+              if (!isOn) return;
+              StopCoroutine(co_running);
+              skip = false;
+              co_running = null;
+          }
+
+          public void Toggle_Auto()
+          {
+              if (!allowToggle) return;
+
+              bool prevState = skip;
+              skip = false;
+
+              if (prevState)
+                  Enable();
+              else
+              {
+                  if (!isOn) Enable();
+                  else       Disable();
+              }
+          }
+      }
+  }
+  -------------------------------------------------------
+
+  - 현재 문제:
+      · Enable() / Disable() 호출 시 Auto-Play 오브젝트의 활성/비활성을
+        처리하는 코드가 전혀 없음
+      · Auto 버튼을 눌러도 시각적 피드백(Auto-Play 오브젝트, 애니메이션)이
+        아무것도 없음
+
+
+----------------------------------------------------
+d. 요구한 기능을 만들기 위해서 어떤 식으로 추가/변경할 것인지
+----------------------------------------------------
+
+  [ 방식: AutoReader.cs 에 Auto-Play 오브젝트 참조 추가 ]
+
+    1. [SerializeField] private GameObject autoPlayIndicator 필드 추가
+       → 인스펙터에서 Auto-Play 자식 오브젝트를 직접 연결
+
+    2. Enable() 에 시각 처리 추가
+       → autoPlayIndicator.SetActive(true)
+       → autoPlayIndicator.GetComponent<Animator>().Play("Enter")
+
+    3. Disable() 에 시각 처리 추가
+       → autoPlayIndicator.SetActive(false)
+
+  변경 후 주요 메서드 예시:
+  -------------------------------------------------------
+  [SerializeField] private GameObject autoPlayIndicator;
+
+  public void Enable()
+  {
+      if (isOn) return;
+
+      if (autoPlayIndicator != null)
+      {
+          autoPlayIndicator.SetActive(true);
+          autoPlayIndicator.GetComponent<Animator>().Play("Enter");
+      }
+
+      co_running = StartCoroutine(AutoRead());
+  }
+
+  public void Disable()
+  {
+      if (!isOn) return;
+
+      StopCoroutine(co_running);
+      skip = false;
+      co_running = null;
+
+      if (autoPlayIndicator != null)
+          autoPlayIndicator.SetActive(false);
+  }
+  -------------------------------------------------------
+
+
+----------------------------------------------------
+e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+----------------------------------------------------
+
+  방법 A (기각): Auto 버튼 OnClick 이벤트에 별도 스크립트를 추가하여 처리
+    - 단점:
+        · Auto의 실제 On/Off 상태(isOn)와 시각적 상태가
+          별개로 관리되어 동기화 문제 발생 가능
+        · Toggle_Auto() 내부에서 상태 분기가 복잡하여
+          버튼 쪽 스크립트만으로는 정확한 켜짐/꺼짐 시점 파악이 어려움
+
+  방법 B (기각): DialogueSystem.cs 에서 autoPlayIndicator를 관리
+    - 단점:
+        · DialogueSystem은 이미 여러 시스템을 조율하는 중앙 허브
+          → 시각적 UI 처리까지 추가하면 단일 책임 원칙(SRP) 위반
+        · AutoReader와의 결합도가 높아짐
+
+  방법 C (채택, d의 방식): AutoReader.cs 내부에서 직접 관리
+    - 장점:
+        · Enable() / Disable() 은 Auto 상태 진입·해제의 유일한 진입점
+          → 여기에 시각 처리를 넣으면 상태와 시각이 항상 동기화됨
+        · Toggle_Auto() / Toggle_Skip() 어느 경로로 호출되어도
+          반드시 Enable / Disable 을 거치므로 누락 없이 처리됨
+        · AutoReader가 자신의 시각 표현을 스스로 관리 → 응집도 높음
+        · [SerializeField] 방식으로 인스펙터에서 연결 → 유연하고 명확
+
+  → 방법 C 채택.
+    Auto의 활성 상태와 시각적 상태를 항상 일치시킬 수 있는 가장 안전한 방식.
+
+
+----------------------------------------------------
+f. 어떤 순서로 진행할 것인지
+----------------------------------------------------
+
+  Step 1. AutoReader.cs 코드 수정
+    - [SerializeField] private GameObject autoPlayIndicator 필드 추가
+    - Enable() 에 SetActive(true) + Animator.Play("Enter") 추가
+    - Disable() 에 SetActive(false) 추가
+    - null 체크 포함
+
+  Step 2. Unity 에디터 - Auto-Play 초기 상태 확인
+    - Auto 버튼 자식의 Auto-Play 오브젝트가
+      씬에서 기본적으로 비활성화(SetActive false) 상태인지 확인
+    - 활성화 상태라면 인스펙터에서 체크박스 해제
+
+  Step 3. Unity 에디터 - 인스펙터 연결
+    - VisualNovel 씬에서 AutoReader 컴포넌트가 붙은 오브젝트 선택
+    - Auto Play Indicator 필드에 Auto-Play 자식 오브젝트를 드래그하여 연결
+
+  Step 4. Auto-Play Animator Controller 확인
+    - Auto-Play.controller 에서 "Enter" 상태가 존재하는지 확인
+    - Default State 또는 Any State → Enter 트랜지션 설정 확인
+
+  Step 5. 테스트
+    - Play 모드에서 Auto 버튼 클릭 시 Auto-Play 오브젝트 활성화 + Enter 애니메이션 재생 확인
+    - 다시 클릭 시 Auto-Play 오브젝트 비활성화 확인
+    - Toggle_Skip() 경로(Skip 버튼)로도 Disable 시 Auto-Play가 꺼지는지 확인
+
+
+----------------------------------------------------
+g. 어디가 어떤 식으로 변경되는지
+----------------------------------------------------
+
+  [ 수정 - AutoReader.cs ]
+
+    추가:
+      · [SerializeField] private GameObject autoPlayIndicator;
+      · Enable() 내부:
+          autoPlayIndicator.SetActive(true);
+          autoPlayIndicator.GetComponent<Animator>().Play("Enter");
+      · Disable() 내부:
+          autoPlayIndicator.SetActive(false);
+
+    변경 없는 코드:
+      · Toggle_Auto(), Toggle_Skip(), AutoRead() 코루틴 로직 — 그대로 유지
+
+  [ Unity 에디터 변경 (인스펙터) ]
+    - AutoReader 컴포넌트의 Auto Play Indicator 필드
+      → Auto 버튼의 자식 Auto-Play GameObject 연결
+    - Auto-Play 오브젝트의 초기 활성 상태: false (비활성)
+
+  [ 변경 없는 파일 ]
+    - DialogueSystem.cs     : 변경 없음
+    - VNMenuManager.cs      : 변경 없음
+    - PlayerInputManager.cs : 변경 없음
+    - Auto-Play.controller  : 변경 없음 (이미 Enter 클립 보유)
+    - Enter.anim            : 변경 없음
+
+====================================================

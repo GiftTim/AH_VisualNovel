@@ -1,0 +1,112 @@
+================================================================
+  변경 완료 문서
+  작성일: 2026-04-10
+  대상 프로젝트: AH_VisualNovel
+  주제: ShowGalleryImage 호출 시 GraphicObject 중복 생성 버그 수정
+  참조 분석 문서: 버그분석_26.04.10_ShowGalleryImage_GraphicObject중복생성.txt
+================================================================
+
+
+================================================================
+  현재 코드와 분석 문서(c.) 비교 결과
+================================================================
+
+  GraphicLayer.cs L66   → 문서와 일치 (변경 진행)
+  CommandManager.cs     → 문서와 일치 (변경 진행)
+  차이 없음. 계획대로 수정 실행.
+
+
+================================================================
+  변경 1: GraphicLayer.cs
+================================================================
+
+  파일: Assets/Scripts/VisualNovel/Core/Graphic Panels/GraphicLayer.cs
+  위치: CreateGraphic<T>() 내부 (Line 66)
+
+  [ 변경 전 ]
+    if (currentGraphic != null && oldGraphics.Contains(currentGraphic))
+    {
+        oldGraphics.Add(currentGraphic);
+    }
+
+  [ 변경 후 ]
+    if (currentGraphic != null && !oldGraphics.Contains(currentGraphic))
+    {
+        oldGraphics.Add(currentGraphic);
+    }
+
+
+================================================================
+  변경 2: CommandManager.cs
+================================================================
+
+  파일: Assets/Scripts/VisualNovel/Core/Commands/CommandManager.cs
+  위치: RunningProcess() 코루틴
+
+  [ 변경 전 ]
+    private IEnumerator RunningProcess(CommandProcess process)
+    {
+        yield return WaitingForProcessToComplete(process.command, process.args);
+        KillProcess(process);
+    }
+
+  [ 변경 후 ]
+    private IEnumerator RunningProcess(CommandProcess process)
+    {
+        yield return WaitingForProcessToComplete(process.command, process.args);
+        activeProcesses.Remove(process);   // 정상 완료: 목록에서만 제거
+                                           // onTerminateAction 호출하지 않음
+    }
+
+
+================================================================
+  변경 후 동작 흐름
+================================================================
+
+  ─── 정상 재생 흐름 ───────────────────────────────────────────
+
+  [1] ShowGalleryImage(1_VillageInn) 실행
+      - graphicLayer.SetTexture() 호출
+      - CreateGraphic(): GraphicObject A 생성 (opacity=0)
+      - currentGraphic = A
+      - FadeIn 코루틴 시작 (1초)
+
+  [2] FadeIn 완료
+      - renderer.texture = 1_VillageInn (RawImage에 직접 이동)
+      - renderer.material = null
+      - Hierarchy: Graphic-[1_VillageInn] 1개만 존재 ✓
+
+  [3] RunningProcess 정상 완료
+      - activeProcesses.Remove(process) 만 실행
+      - onTerminateAction 호출 안 됨 → SetTexture 두 번째 호출 없음
+      - GraphicObject B 가 생성되지 않음 ✓
+
+  [4] HideGalleryImage(-spd 1) 실행
+      - currentGraphic = A → FadeOut → A Destroy
+      - 화면 완전 정리 ✓
+
+  ─── 스킵(StopAllProcesses) 흐름 ─────────────────────────────
+
+  [1] ShowGalleryImage 진행 중 스킵 발동
+      - StopAllProcesses(): runningProcess.Stop() + onTerminateAction 호출
+      - onTerminateAction: SetTexture(immediate: true) 실행
+
+  [2] SetTexture(immediate: true) → CreateGraphic() 실행
+      - currentGraphic(A) != null &&
+        !oldGraphics.Contains(A) = true  → oldGraphics.Add(A) ✓  (버그 2 수정)
+      - currentGraphic = B (immediate, opacity=1)
+      - DestroyOldGraphics() → oldGraphics에 A 있음 → A 정상 삭제 ✓
+      - Hierarchy: Graphic-[1_VillageInn] 1개 (B), A 고아 없음 ✓
+
+  [3] HideGalleryImage 실행
+      - currentGraphic = B → FadeOut → B Destroy → 완전 정리 ✓
+
+================================================================
+  변경하지 않은 파일
+================================================================
+
+  - CMD_DatabaseExtension_Gallery.cs:
+      ShowGalleryImage / HideGalleryImage 로직 및 termination action
+      등록 방식 유지. 변경 불필요.
+
+================================================================

@@ -1,0 +1,162 @@
+================================================================
+  변경계획_2026-04-09
+  GalleryMenu – 빈 슬롯 부모 패널 비활성화
+================================================================
+
+[목차]
+  1. 요구한 기능
+  2. 현재 상황 및 코드
+  3. 변경 방법 (d)
+  4. 다른 방법과 비교 – 왜 d 방식인가 (e)
+  5. 진행 순서 (f)
+  6. 변경 위치 및 상세 내용 (g)
+
+================================================================
+1. 요구한 기능
+================================================================
+
+  현재 선택된 페이지(targetPage)에서
+  galleryPreviewButtons 중 표시할 이미지가 없는 슬롯은
+  해당 슬롯의 부모 패널(panelSelectionPrefab)을
+  SetActive(false) 처리해야 한다.
+
+  예) 갤러리 이미지 19장, 페이지당 6슬롯 기준
+      - 페이지 1~3 : 각 6슬롯 모두 이미지 채워짐
+      - 페이지 4   : 슬롯 1개만 이미지 있음
+                     → 나머지 5개 슬롯의 부모 패널은 비활성화
+
+================================================================
+2. 현재 상황 및 코드
+================================================================
+
+  파일 : Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs
+
+  문제가 되는 LoadPage() 메서드:
+
+    private void LoadPage(int pageNumber)
+    {
+        int startingIndex = (pageNumber - 1) * previewsPerPage;
+
+        for (int i = 0; i < previewsPerPage; i++)
+        {
+            int index = i + startingIndex;
+            Button button = galleryPreviewButtons[i];
+
+            if (index >= galleryImages.Length)
+            {
+                button.gameObject.SetActive(false);   // ← 버튼만 숨김
+                continue;                              //   부모 패널은 그대로!
+            }
+            else
+            {
+                button.transform.parent.gameObject.SetActive(true);   // 부모 패널 활성화
+                RawImage renderer = button.targetGraphic as RawImage;
+                Texture previewImage = galleryImages[index];
+
+                if (GalleryConfig.ImageIsUnlocked(previewImage.name))
+                {
+                    renderer.color   = Color.white;
+                    renderer.texture = previewImage;
+                }
+                else
+                {
+                    renderer.color   = Color.black;
+                    renderer.texture = null;
+                }
+            }
+        }
+    }
+
+  버그 원인:
+    index >= galleryImages.Length 분기에서
+    button.gameObject.SetActive(false) 만 호출하고
+    button.transform.parent.gameObject 는 숨기지 않아
+    빈 슬롯의 부모 패널이 화면에 그대로 남아있다.
+
+================================================================
+3. 변경 방법 (d)
+================================================================
+
+  LoadPage() 내부, 이미지가 없을 때의 분기를 수정한다.
+
+  [변경 전]
+    if (index >= galleryImages.Length)
+    {
+        button.gameObject.SetActive(false);
+        continue;
+    }
+
+  [변경 후]
+    if (index >= galleryImages.Length)
+    {
+        button.transform.parent.gameObject.SetActive(false);   // 부모 패널까지 숨김
+        continue;
+    }
+
+  button.gameObject.SetActive(false) 대신
+  button.transform.parent.gameObject.SetActive(false) 를 호출하면
+  버튼을 감싸는 부모 패널 전체가 비활성화된다.
+
+================================================================
+4. 다른 방법과 비교 – 왜 d 방식인가 (e)
+================================================================
+
+  방법 A. button.gameObject.SetActive(false) [현재 코드, 문제 있음]
+    - 버튼만 숨기고 부모 레이아웃 오브젝트는 살아있어 빈 공간이 남는다.
+
+  방법 B. button.transform.parent.gameObject.SetActive(false) [채택, d]
+    - 이미 이미지가 있는 분기에서 부모를 SetActive(true) 하는 패턴을 그대로 역방향 적용.
+    - 코드 일관성이 높고 추가 필드/컴포넌트 없이 기존 계층구조를 활용.
+    - Layout Group 이 부모에 있을 경우에도 빈 공간이 자동으로 정리됨.
+
+  방법 C. 부모 패널에 별도 스크립트/참조 추가
+    - 관리 포인트가 늘어나고 현재 구조에서 불필요한 복잡도를 더한다.
+
+  → 기존 코드의 SetActive(true) 패턴과 대칭되는 방법 B가 가장 단순하고 일관적.
+
+================================================================
+5. 진행 순서 (f)
+================================================================
+
+  1) GalleryMenu.cs 의 LoadPage() 를 열어 버그 위치를 확인한다.
+  2) if (index >= galleryImages.Length) 분기를 찾는다.
+  3) button.gameObject.SetActive(false)
+       → button.transform.parent.gameObject.SetActive(false) 로 교체한다.
+  4) Unity 에디터에서 Play 모드 진입 후 갤러리 페이지 4를 눌러 검증한다.
+     - 이미지 있는 슬롯 1개 : 부모 패널 활성화(보임) ✓
+     - 이미지 없는 슬롯 5개 : 부모 패널 비활성화(안 보임) ✓
+  5) 페이지 1~3도 눌러 기존 슬롯이 정상 표시되는지 회귀 확인한다.
+
+================================================================
+6. 변경 위치 및 상세 내용 (g)
+================================================================
+
+  파일  : Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs
+  메서드 : LoadPage(int pageNumber)
+  위치  : if (index >= galleryImages.Length) 블록 내부
+
+  ──────────────────────────────────────────────────────────────
+  [변경 전] (약 109~111번째 줄)
+  ──────────────────────────────────────────────────────────────
+    if (index >= galleryImages.Length)
+    {
+        button.gameObject.SetActive(false);
+        continue;
+    }
+
+  ──────────────────────────────────────────────────────────────
+  [변경 후]
+  ──────────────────────────────────────────────────────────────
+    if (index >= galleryImages.Length)
+    {
+        button.transform.parent.gameObject.SetActive(false);
+        continue;
+    }
+
+  변경 범위 : 1줄 교체 (button.gameObject → button.transform.parent.gameObject)
+  영향 범위 : LoadPage() 호출 시 빈 슬롯을 가진 모든 페이지에 적용됨
+              (이미지가 딱 맞아떨어지는 페이지 1~3에서는 해당 분기 자체가 실행되지 않으므로 영향 없음)
+
+================================================================
+  작성일 : 2026-04-09
+================================================================

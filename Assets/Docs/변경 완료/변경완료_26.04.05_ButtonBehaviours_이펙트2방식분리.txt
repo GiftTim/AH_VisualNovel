@@ -1,0 +1,175 @@
+====================================================
+  변경완료: ButtonBehaviours 이펙트 2방식 분리
+  완료일: 2026-04-05
+====================================================
+
+----------------------------------------------------
+1. 현재 상황 vs 변경 계획 비교 (Step 1)
+----------------------------------------------------
+
+  [ ButtonBehaviours.cs (삭제 전) vs 계획 c ]
+    → 완전히 일치. 변경 전 상태 확인 완료.
+
+  [ ButtonBehaviours_Image.cs (이미 존재) vs 계획 d ]
+    → 완전히 일치. 이미 정상 생성된 상태.
+
+  [ ButtonBehaviours_Animator.cs (이미 존재) vs 계획 d ]
+    → 로직 완전히 일치.
+       메서드 순서만 다름 (OnPointerExit가 OnPointerEnter보다 앞에 선언)
+       → 기능에 영향 없음. 정상 상태.
+
+  → Step 1, 2는 이미 완료 상태. Step 3(삭제)만 진행.
+
+
+----------------------------------------------------
+2. 변경 전 코드
+----------------------------------------------------
+
+  [ 삭제된 파일: Assets/Scripts/VisualNovel/Core/Effect/ButtonBehaviours.cs ]
+  -------------------------------------------------------
+  using UnityEngine;
+  using UnityEngine.EventSystems;
+
+  public class ButtonBehaviours : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+  {
+      [SerializeField] private GameObject selectImageObject;
+
+      public void OnPointerEnter(PointerEventData eventData)
+      {
+          if (selectImageObject != null)
+              selectImageObject.SetActive(true);
+      }
+
+      public void OnPointerExit(PointerEventData eventData)
+      {
+          if (selectImageObject != null)
+              selectImageObject.SetActive(false);
+      }
+  }
+  -------------------------------------------------------
+
+
+----------------------------------------------------
+3. 변경 후 코드
+----------------------------------------------------
+
+  [ 신규: Assets/Scripts/VisualNovel/Core/Buttons/ButtonBehaviours_Image.cs ]
+  -------------------------------------------------------
+  using UnityEngine;
+  using UnityEngine.EventSystems;
+
+  public class ButtonBehaviours_Image : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+  {
+      [SerializeField] private GameObject selectImageObject;
+
+      public void OnPointerEnter(PointerEventData eventData)
+      {
+          if (selectImageObject != null)
+              selectImageObject.SetActive(true);
+      }
+
+      public void OnPointerExit(PointerEventData eventData)
+      {
+          if (selectImageObject != null)
+              selectImageObject.SetActive(false);
+      }
+  }
+  -------------------------------------------------------
+
+  [ 신규: Assets/Scripts/VisualNovel/Core/Buttons/ButtonBehaviours_Animator.cs ]
+  -------------------------------------------------------
+  using UnityEngine;
+  using UnityEngine.EventSystems;
+
+  public class ButtonBehaviours_Animator : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+  {
+      private static ButtonBehaviours_Animator selectedButton = null;
+      public Animator anim;
+
+      public void OnPointerExit(PointerEventData eventData)
+      {
+          anim.Play("Exit");
+      }
+
+      public void OnPointerEnter(PointerEventData eventData)
+      {
+          if (selectedButton != null && selectedButton != this)
+          {
+              selectedButton.OnPointerExit(null);
+          }
+
+          anim.Play("Enter");
+          selectedButton = this;
+      }
+  }
+  -------------------------------------------------------
+
+
+----------------------------------------------------
+4. 변경 후 작동 흐름
+----------------------------------------------------
+
+  [ ButtonBehaviours_Image 흐름 ]
+
+    마우스가 버튼 위에 올라감
+      → OnPointerEnter 호출
+      → selectImageObject.SetActive(true) → 이미지 오브젝트 활성화
+
+    마우스가 버튼 밖으로 나감
+      → OnPointerExit 호출
+      → selectImageObject.SetActive(false) → 이미지 오브젝트 비활성화
+
+  [ ButtonBehaviours_Animator 흐름 ]
+
+    마우스가 버튼 A 위에 올라감
+      → OnPointerEnter 호출
+      → selectedButton이 null이 아니고 자신이 아니면 → 이전 버튼의 OnPointerExit(null) 호출 → "Exit" 재생
+      → anim.Play("Enter") → 현재 버튼의 Enter 애니메이션 재생
+      → selectedButton = this → 현재 버튼을 선택 상태로 등록
+
+    마우스가 버튼 A에서 버튼 B로 이동
+      → 버튼 B의 OnPointerEnter 호출
+      → selectedButton(버튼 A) != this(버튼 B) → 버튼 A의 Exit 재생
+      → 버튼 B의 Enter 재생
+      → selectedButton = 버튼 B
+
+    마우스가 버튼 밖으로 나감
+      → OnPointerExit 호출
+      → anim.Play("Exit") → Exit 애니메이션 재생
+      (※ selectedButton은 갱신하지 않음 - 다음 Enter 시 처리)
+
+
+----------------------------------------------------
+5. 파일 변경 요약
+----------------------------------------------------
+
+  [ 삭제 ]
+    · Assets/Scripts/VisualNovel/Core/Effect/ButtonBehaviours.cs  ← 삭제 완료
+    · Assets/Scripts/VisualNovel/Core/Effect/ButtonBehaviours.cs.meta  ← 삭제 완료
+
+  [ 신규 (이미 존재, 내용 확인 완료) ]
+    · Assets/Scripts/VisualNovel/Core/Buttons/ButtonBehaviours_Image.cs
+    · Assets/Scripts/VisualNovel/Core/Buttons/ButtonBehaviours_Animator.cs
+
+  [ 변경 없음 ]
+    · MainMenu.cs / VNManager.cs / 기타 스크립트
+
+
+----------------------------------------------------
+6. 미완료 항목 (수동 작업 필요)
+----------------------------------------------------
+
+  Step 4. Unity 에디터 - 씬에서 컴포넌트 교체
+    - ButtonBehaviours 컴포넌트가 부착된 버튼 오브젝트를 Unity 에디터에서 찾아
+      → Image 방식 버튼: ButtonBehaviours_Image 컴포넌트 부착 + selectImageObject 연결
+      → Animator 방식 버튼: ButtonBehaviours_Animator 컴포넌트 부착 + anim 연결
+    ※ 기존 ButtonBehaviours.cs가 삭제되어 씬에 Missing Script 발생 가능
+
+  Step 5. Animator Controller 확인
+    - Animator 방식 버튼의 Controller에 "Enter", "Exit" State 정의 여부 확인
+
+  Step 6. Play 모드 테스트
+    - Image 방식: 호버 시 이미지 토글 동작 확인
+    - Animator 방식: 호버/이동 시 애니메이션 전환 확인
+
+====================================================

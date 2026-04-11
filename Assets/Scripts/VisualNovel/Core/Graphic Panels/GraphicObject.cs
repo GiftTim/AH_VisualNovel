@@ -31,6 +31,8 @@ public class GraphicObject
     private Coroutine co_fadingIn = null;
     private Coroutine co_fadingOut = null;
 
+    public bool isFading => (co_fadingIn != null || co_fadingOut != null);
+
     public GraphicObject(GraphicLayer layer, string graphicPath, Texture tex, bool immediate)
     {
         this.graphicPath = graphicPath;
@@ -182,6 +184,9 @@ public class GraphicObject
             }
 
             yield return null;
+
+            if (renderer == null)
+                yield break;
         }
 
         co_fadingIn = null;
@@ -202,16 +207,13 @@ public class GraphicObject
     
     public void Destroy()
     {
-        if(layer.currentGraphic != null && layer.currentGraphic.renderer == renderer)
-        {
+        if (layer.currentGraphic != null && layer.currentGraphic.renderer == renderer)
             layer.currentGraphic = null;
-        }
-        if(layer.oldGraphics.Contains(this))
-        {
-            layer.oldGraphics.Remove(this);
-        }
 
-        Object.Destroy(renderer.gameObject);
+        layer.oldGraphics.Remove(this);
+
+        if (renderer != null)
+            Object.Destroy(renderer.gameObject);
     }
 
     private void DestroyBackgroundGraphicsOnLayer()

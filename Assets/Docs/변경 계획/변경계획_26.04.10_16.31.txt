@@ -1,0 +1,258 @@
+================================================================
+  변경계획_26.04.10_16.31
+  대상: GalleryMenu.cs / ConstructNavBar() 내 버튼 생성 순서 변경
+  (이전 계획 변경계획_26.04.10_16.18 의 d/e 항목 방법 수정)
+================================================================
+
+[목차]
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 요구한 기능을 구현하기 위한 변경 방법
+  e. 다른 방법들과 비교 / d 방식 선택 이유
+  f. 진행 순서
+  g. 변경 위치 및 내용 상세
+
+
+================================================================
+a. 목차
+================================================================
+  위 [목차] 참조
+
+
+================================================================
+b. 요구한 기능
+================================================================
+  GalleryMenu.cs의 ConstructNavBar() 실행 결과로,
+  NavBar 컨테이너 내 자식 오브젝트(버튼)가 아래 순서로 배치되어야 한다.
+
+    1. LeftEndButton
+    2. previousButton
+    3. [panelSelectionPrefab 기반으로 생성된 페이지 버튼들]
+    4. nextButton
+    5. RightEndButton
+
+  즉, previousButton이 생성된 페이지 선택 버튼들보다 앞에 와야 한다.
+
+
+================================================================
+c. 현재 상황 및 코드
+================================================================
+
+[씬 계층 구조 (NavBar 자식 순서 추정)]
+  0: LeftEndButton
+  1: panelSelectionPrefab   ← 템플릿 (비활성 상태로 존재)
+  2: previousButton
+  3: nextButton
+  4: RightEndButton
+
+[ConstructNavBar() 실행 후 자식 순서]
+  Instantiate(panelSelectionPrefab.gameObject, panelSelectionPrefab.transform.parent)
+  → 새 오브젝트는 부모의 마지막 자식으로 추가됨
+
+  0: LeftEndButton
+  1: panelSelectionPrefab (비활성)
+  2: previousButton
+  3: nextButton
+  4: RightEndButton
+  5: [생성된 페이지 버튼 1]
+  6: [생성된 페이지 버튼 2]
+  ...
+
+  이후 RightEndButton.transform.SetAsLastSibling() 호출로:
+  0: LeftEndButton
+  1: panelSelectionPrefab (비활성)
+  2: previousButton
+  3: nextButton
+  4: [생성된 페이지 버튼 1]
+  5: [생성된 페이지 버튼 2]
+  6: RightEndButton
+
+  → nextButton이 생성 버튼들 앞에 위치하는 문제가 남아있음
+
+[관련 코드 - GalleryMenu.cs, ConstructNavBar()]
+  private void ConstructNavBar()
+  {
+      int totalImages = galleryImages.Length;
+
+      maxPages = Mathf.CeilToInt((float)totalImages / previewsPerPage);
+      int pageLimit = PAGE_BUTTON_LIMIT < maxPages ? PAGE_BUTTON_LIMIT : maxPages;
+
+      for(int i = 1; i <= pageLimit; i++)
+      {
+          GameObject buttonOB = Instantiate(panelSelectionPrefab.gameObject, panelSelectionPrefab.transform.parent);
+          buttonOB.SetActive(true);
+
+          Button button = buttonOB.GetComponent<Button>();
+          TextMeshProUGUI buttonText = button.GetComponentInChildren<TextMeshProUGUI>();
+
+          buttonOB.name = i.ToString();
+          int page = i;
+          button.onClick.AddListener(() => LoadPage(page));
+          buttonText.text = i.ToString();
+      }
+
+      previousButton.gameObject.SetActive(pageLimit < maxPages);
+      nextButton.gameObject.SetActive(pageLimit < maxPages);
+      RightEndButton.transform.SetAsLastSibling();   // ← 현재 유일한 순서 보정
+  }
+
+
+================================================================
+d. 요구한 기능을 구현하기 위한 변경 방법
+================================================================
+
+[변경 전략]
+  ConstructNavBar()에서 루프(버튼 생성) 완료 후,
+  버튼들의 계층 순서를 전담하는 별도 함수 ArrangeNavBarOrder()를 생성하고
+  ConstructNavBar() 끝에서 호출한다.
+
+  → 버튼 생성 로직(루프)과 배치 정렬 로직을 분리함으로써
+    각 함수가 단일 역할만 담당하도록 구조화한다.
+
+[신규 함수 ArrangeNavBarOrder()]
+  private void ArrangeNavBarOrder()
+  {
+      nextButton.transform.SetSiblingIndex(nextButton.transform.parent.childCount - 2);
+      RightEndButton.transform.SetAsLastSibling();
+  }
+
+  실행 후 자식 순서:
+    0: LeftEndButton
+    1: panelSelectionPrefab (비활성 템플릿)
+    2: previousButton
+    3: [생성된 페이지 버튼 1]
+    4: [생성된 페이지 버튼 2]
+    5: nextButton          ← childCount-2 위치로 이동
+    6: RightEndButton      ← 마지막으로 이동
+
+  ※ panelSelectionPrefab은 비활성 상태이므로 UI 상 표시되지 않음
+     시각적으로는: LeftEnd → previous → [페이지버튼들] → next → RightEnd
+
+[변경 후 ConstructNavBar()]
+  private void ConstructNavBar()
+  {
+      int totalImages = galleryImages.Length;
+
+      maxPages = Mathf.CeilToInt((float)totalImages / previewsPerPage);
+      int pageLimit = PAGE_BUTTON_LIMIT < maxPages ? PAGE_BUTTON_LIMIT : maxPages;
+
+      for(int i = 1; i <= pageLimit; i++)
+      {
+          GameObject buttonOB = Instantiate(panelSelectionPrefab.gameObject, panelSelectionPrefab.transform.parent);
+          buttonOB.SetActive(true);
+
+          Button button = buttonOB.GetComponent<Button>();
+          TextMeshProUGUI buttonText = button.GetComponentInChildren<TextMeshProUGUI>();
+
+          buttonOB.name = i.ToString();
+          int page = i;
+          button.onClick.AddListener(() => LoadPage(page));
+          buttonText.text = i.ToString();
+      }
+
+      previousButton.gameObject.SetActive(pageLimit < maxPages);
+      nextButton.gameObject.SetActive(pageLimit < maxPages);
+      ArrangeNavBarOrder();   // ← 기존 SetAsLastSibling() 대체
+  }
+
+
+================================================================
+e. 다른 방법들과 비교 / d 방식 선택 이유
+================================================================
+
+[방법 1] Unity 씬에서 직접 계층 순서 변경 (panelSelectionPrefab 위치 이동)
+  → 씬 에디터에서 panelSelectionPrefab을 previousButton과 nextButton 사이로 이동
+  → Instantiate 후 오브젝트가 panelSelectionPrefab 바로 다음에 생성되므로,
+     nextButton/RightEndButton을 뒤로 밀어야 하는 건 동일
+  → 코드 변경도 결국 필요하므로 단독으로는 해결되지 않음
+  → 채택 불가 (코드 없이 씬 변경만으로는 해결 안 됨)
+
+[방법 2] 루프 내에서 버튼 생성 직후 SetSiblingIndex로 삽입 위치 지정
+  → 버튼을 생성할 때마다 nextButton의 인덱스를 매번 참조하여 삽입 위치 계산
+  → 생성이 반복될수록 인덱스가 변하므로 매 반복마다 재계산 필요
+  → 루프 안에서 생성 + 위치 지정이 섞여 가독성 저하
+  → 채택 불가 (복잡도 증가, 유지보수 어려움)
+
+[방법 3] 루프 종료 후 인라인으로 SetSiblingIndex 두 줄 추가
+  (이전 계획 변경계획_26.04.10_16.18의 d 방식)
+  → 루프 끝에 nextButton / RightEndButton 이동 두 줄을 직접 삽입
+  → 코드 변경이 최소화되고 동작은 정확함
+  → 단, 순서 정렬 의도가 ConstructNavBar() 안에 암묵적으로 묻혀 있음
+  → 향후 ConstructNavBar()가 길어질 경우 순서 보정 코드가 눈에 띄지 않을 수 있음
+  → 채택 보류 (기능은 동일하나 역할 분리 측면에서 d보다 열위)
+
+[방법 4 - 선택: d] 루프 종료 후 전용 함수 ArrangeNavBarOrder() 호출
+  → 버튼 생성(루프)과 배치 정렬(ArrangeNavBarOrder)을 명확히 분리
+  → ConstructNavBar()는 버튼 생성에만 집중, 정렬 책임은 별도 함수로 위임
+  → 이후 정렬 규칙이 바뀌어도 ArrangeNavBarOrder()만 수정하면 됨
+  → 함수 이름으로 의도가 명확히 드러남
+
+  → 따라서 d 방식(전용 함수 분리) 채택
+
+
+================================================================
+f. 진행 순서
+================================================================
+
+  1. GalleryMenu.cs 파일 열기
+     경로: Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs
+
+  2. ConstructNavBar() 끝의 RightEndButton.transform.SetAsLastSibling() 제거 후
+     ArrangeNavBarOrder() 호출로 교체
+
+  3. GalleryMenu 클래스 내에 ArrangeNavBarOrder() 메서드 신규 작성
+
+  4. Unity 에디터에서 씬 실행 후 NavBar 계층 순서 확인
+     (Hierarchy 창에서 NavBar 자식 오브젝트 순서 검증)
+
+  5. 정상 동작 확인 후 저장 및 커밋
+
+
+================================================================
+g. 변경 위치 및 내용 상세
+================================================================
+
+[파일]
+  Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs
+
+------------------------------------------------------------------
+[변경 1] ConstructNavBar() - 기존 SetAsLastSibling() → ArrangeNavBarOrder() 호출로 교체
+------------------------------------------------------------------
+
+  변경 위치: ConstructNavBar() 메서드 끝 (약 95번째 줄 부근)
+
+  [변경 전]
+      previousButton.gameObject.SetActive(pageLimit < maxPages);
+      nextButton.gameObject.SetActive(pageLimit < maxPages);
+      RightEndButton.transform.SetAsLastSibling();
+
+  [변경 후]
+      previousButton.gameObject.SetActive(pageLimit < maxPages);
+      nextButton.gameObject.SetActive(pageLimit < maxPages);
+      ArrangeNavBarOrder();
+
+------------------------------------------------------------------
+[변경 2] ArrangeNavBarOrder() 메서드 신규 추가
+------------------------------------------------------------------
+
+  변경 위치: ConstructNavBar() 메서드 바로 아래에 신규 삽입
+
+  [추가 코드]
+      private void ArrangeNavBarOrder()
+      {
+          nextButton.transform.SetSiblingIndex(nextButton.transform.parent.childCount - 2);
+          RightEndButton.transform.SetAsLastSibling();
+      }
+
+  [코드 설명]
+    nextButton.transform.SetSiblingIndex(... childCount - 2)
+    → 전체 자식 수 - 2 위치로 nextButton 이동 (RightEndButton 바로 앞)
+    → 생성된 페이지 버튼들은 자동으로 nextButton 앞(previousButton 뒤)에 위치
+
+    RightEndButton.transform.SetAsLastSibling()
+    → RightEndButton을 마지막으로 고정
+
+================================================================
+  END
+================================================================

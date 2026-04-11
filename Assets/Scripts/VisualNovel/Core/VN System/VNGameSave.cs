@@ -13,9 +13,9 @@ namespace VISUALNOVEL
     {
         public static VNGameSave activeFile = null;
 
+        public const bool ENCRYPT = false;
         public const string FILE_TYPE = ".vns";
         public const string SCREENSHOT_FILE_TYPE = ".jpg";
-        public const bool ENCRYPT = true;
         public const float SCREENSHOT_DOWNSCALE_AMOUNT = 0.25f;
 
         public string filePath => $"{FilePaths.gameSaves}{slotNumber}{FILE_TYPE}";
@@ -25,6 +25,7 @@ namespace VISUALNOVEL
         public string playerName;
         public int slotNumber = 1;
 
+        public bool newGame = true;
         public string[] activeConversations;
         public HistoryState activeState;
         public HistoryState[] historyLog;
@@ -48,6 +49,8 @@ namespace VISUALNOVEL
 
         public void Save()
         {
+            newGame = false;
+            
             activeState = HistoryState.Capture();
             historyLog = HistoryManager.instance.history.ToArray();
             activeConversations = GetConversationData();

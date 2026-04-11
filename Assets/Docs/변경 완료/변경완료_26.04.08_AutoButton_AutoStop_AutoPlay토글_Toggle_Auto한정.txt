@@ -1,0 +1,225 @@
+====================================================
+  Auto 버튼 - Auto-Stop/Auto-Play 토글 및 애니메이션 (Toggle_Auto 한정) 변경완료
+  작성일: 2026-04-08
+====================================================
+
+
+----------------------------------------------------
+※ 실행 시 발견된 차이점 (계획서 c와 실제 코드 비교)
+----------------------------------------------------
+
+  계획서 c에는 기재되지 않았으나 실제 AutoReader.cs에 아래 필드가 존재하였음:
+
+      [SerializeField] private GameObject mainAutoButtonObject;
+
+  → 이 필드는 역할 불명이므로 그대로 유지하고 변경하지 않음.
+
+
+----------------------------------------------------
+1. 변경 전 코드
+----------------------------------------------------
+
+  [ AutoReader.cs - 필드 ]
+
+    [SerializeField] private GameObject mainAutoButtonObject;
+    [SerializeField] private GameObject autoAnimObject;           // ← 단일 참조
+
+  [ AutoReader.cs - Disable() ]
+
+    public void Disable()
+    {
+        if (!isOn)
+            return;
+
+        StopCoroutine(co_running);
+        skip = false;
+        co_running = null;
+
+        if (autoAnimObject != null)
+            autoAnimObject.SetActive(false);   // ← 문제: Skip → Disable 경로에서도 실행됨
+    }
+
+  [ AutoReader.cs - Toggle_Auto() ]
+
+    public void Toggle_Auto()
+    {
+        if (!allowToggle)
+            return;
+
+        bool prevState = skip;
+        skip = false;
+
+        if (prevState)
+        {
+            if (autoAnimObject != null)
+            {
+                autoAnimObject.SetActive(true);
+                autoAnimObject.GetComponent<Animator>().Play("Enter");
+            }
+            Enable();
+        }
+        else
+        {
+            if (!isOn)
+            {
+                if (autoAnimObject != null)
+                {
+                    autoAnimObject.SetActive(true);
+                    autoAnimObject.GetComponent<Animator>().Play("Enter");
+                }
+                Enable();
+            }
+            else
+                Disable();           // ← Auto 끌 때 Auto-Stop 켜는 코드 없음
+        }
+    }
+
+
+----------------------------------------------------
+2. 변경 후 코드
+----------------------------------------------------
+
+  [ AutoReader.cs - 필드 ]
+
+    [SerializeField] private GameObject mainAutoButtonObject;
+    [SerializeField] private GameObject autoPlayObject;           // ← Auto-Play 참조
+    [SerializeField] private GameObject autoStopObject;           // ← Auto-Stop 참조 (신규)
+
+  [ AutoReader.cs - Disable() ]
+
+    public void Disable()
+    {
+        if (!isOn)
+            return;
+
+        StopCoroutine(co_running);
+        skip = false;
+        co_running = null;
+        // ← 시각 처리 없음. Toggle_Auto() 에서만 처리.
+    }
+
+  [ AutoReader.cs - Toggle_Auto() ]
+
+    public void Toggle_Auto()
+    {
+        if (!allowToggle)
+            return;
+
+        bool prevState = skip;
+        skip = false;
+
+        if (prevState)
+        {
+            // Skip → Auto 전환: Auto를 켠다
+            if (autoStopObject != null) autoStopObject.SetActive(false);
+            if (autoPlayObject != null)
+            {
+                autoPlayObject.SetActive(true);
+                autoPlayObject.GetComponent<Animator>().Play("Enter");
+            }
+            Enable();
+        }
+        else
+        {
+            if (!isOn)
+            {
+                // Auto 꺼진 상태 → Auto 켠다
+                if (autoStopObject != null) autoStopObject.SetActive(false);
+                if (autoPlayObject != null)
+                {
+                    autoPlayObject.SetActive(true);
+                    autoPlayObject.GetComponent<Animator>().Play("Enter");
+                }
+                Enable();
+            }
+            else
+            {
+                // Auto 켜진 상태 → Auto 끈다
+                if (autoPlayObject != null) autoPlayObject.SetActive(false);
+                if (autoStopObject != null) autoStopObject.SetActive(true);
+                Disable();
+            }
+        }
+    }
+
+
+----------------------------------------------------
+3. 변경 후 작동 흐름
+----------------------------------------------------
+
+  [ 일반 상황: Auto 꺼진 상태에서 Auto 버튼 클릭 ]
+
+    Toggle_Auto() 호출
+      → prevState = false (skip 꺼진 상태)
+      → skip = false 유지
+      → isOn = false (Auto 코루틴 없음)
+      → Auto-Stop.SetActive(false)   ← Auto-Stop 아이콘 숨김
+      → Auto-Play.SetActive(true)    ← Auto-Play 아이콘 표시
+      → Auto-Play Animator.Play("Enter") ← 애니메이션 재생
+      → Enable() → AutoRead() 코루틴 시작
+
+  [ 일반 상황: Auto 켜진 상태에서 Auto 버튼 다시 클릭 ]
+
+    Toggle_Auto() 호출
+      → prevState = false (skip 꺼진 상태)
+      → skip = false 유지
+      → isOn = true (Auto 코루틴 실행 중)
+      → Auto-Play.SetActive(false)   ← Auto-Play 아이콘 숨김
+      → Auto-Stop.SetActive(true)    ← Auto-Stop 아이콘 표시
+      → Disable() → 코루틴 종료
+
+  [ Skip 중에 Auto 버튼 클릭 ]
+
+    Toggle_Auto() 호출
+      → prevState = true (skip 켜진 상태)
+      → skip = false 로 전환
+      → Auto-Stop.SetActive(false)   ← Auto-Stop 아이콘 숨김
+      → Auto-Play.SetActive(true)    ← Auto-Play 아이콘 표시
+      → Auto-Play Animator.Play("Enter") ← 애니메이션 재생
+      → Enable() → AutoRead() 코루틴 시작 (일반 속도 재생)
+
+  [ Skip 버튼 클릭 (Toggle_Skip 경로) ]
+
+    Toggle_Skip() 호출
+      → Enable() 또는 Disable() 호출
+      → Disable() 에 시각 처리 없음
+      → Auto-Stop / Auto-Play 상태 변화 없음  ← 의도한 격리 동작
+
+
+----------------------------------------------------
+4. Unity 에디터에서 추가로 해야 할 작업 (수동)
+----------------------------------------------------
+
+  Step 1. 씬에서 AutoReader 컴포넌트가 붙은 오브젝트 선택
+
+  Step 2. 인스펙터에서 새 필드에 오브젝트 연결
+    · Auto Play Object  → Auto-Play  오브젝트 드래그 연결
+    · Auto Stop Object  → Auto-Stop  오브젝트 드래그 연결
+    ※ 기존 Auto Anim Object 필드는 필드명이 바뀌어 참조가 해제됨
+       → 위 두 필드를 다시 연결해야 함
+
+  Step 3. 오브젝트 초기 활성 상태 확인
+    · Auto-Stop : SetActive(true)  (인스펙터 체크 ON)
+    · Auto-Play : SetActive(false) (인스펙터 체크 OFF)
+
+  Step 4. Auto-Play Animator Controller 확인
+    · Auto-Play.controller 에 "Enter" 상태가 존재하는지 확인
+
+
+----------------------------------------------------
+5. 변경된 파일 목록
+----------------------------------------------------
+
+  수정:
+    · Assets/Scripts/VisualNovel/Core/Dialogue/AutoReader.cs
+
+  변경 없음:
+    · Toggle_Skip() 로직
+    · Enable() 코루틴 시작 로직
+    · AutoRead() 코루틴 전체
+    · Auto-Play.controller
+    · Enter.anim
+    · DialogueSystem.cs
+    · VNMenuManager.cs
+
+====================================================

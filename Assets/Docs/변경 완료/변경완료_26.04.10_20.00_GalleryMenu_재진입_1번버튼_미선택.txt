@@ -1,0 +1,81 @@
+================================================================
+  변경완료 - GalleryMenu 재진입 시 1번 페이지 버튼 미선택 문제 해결
+  변경일: 2026-04-10 20:00
+================================================================
+
+================================================================
+변경 전 코드
+================================================================
+
+[ 파일: Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs ]
+
+  public void Open()
+  {
+      if(!initialized)
+      {
+          Initialize();
+      }
+
+      anim.Play("Enter");
+  }
+
+================================================================
+변경 후 코드
+================================================================
+
+[ 파일: Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs ]
+
+  public void Open()
+  {
+      if(!initialized)
+      {
+          Initialize();
+      }
+      else
+      {
+          StartCoroutine(SelectPageButtonNextFrame(selectedPage));
+      }
+
+      anim.Play("Enter");
+  }
+
+================================================================
+동작 흐름
+================================================================
+
+[ 최초 진입 ]
+  1. Open() 호출
+  2. initialized == false → Initialize() 실행
+       - initialized = true
+       - ConstructNavBar() → 페이지 버튼 생성
+       - LoadPage(1) → selectedPage = 1
+       - StartCoroutine(SelectPageButtonNextFrame(1)) 등록
+  3. anim.Play("Enter") → 갤러리 열기 애니메이션 재생
+  4. 다음 프레임: SelectPageButton(1) 호출 → 1번 버튼 하이라이트
+
+[ 재진입 (메인 메뉴 → 갤러리) ]
+  1. Open() 호출
+  2. initialized == true → else 분기 실행
+       - StartCoroutine(SelectPageButtonNextFrame(selectedPage)) 등록
+         (selectedPage는 마지막으로 본 페이지 번호)
+  3. anim.Play("Enter") → 갤러리 열기 애니메이션 재생
+  4. 다음 프레임: SelectPageButton(selectedPage) 호출 → 해당 버튼 하이라이트
+
+[ Update() null 복원 (기존 동작 유지) ]
+  - 갤러리 내부에서 빈 공간 클릭 등으로 선택이 사라지면
+    EventSystem.currentSelectedGameObject == null 조건 충족
+    → SelectPageButton(selectedPage) 호출하여 복원
+
+================================================================
+변경 요약
+================================================================
+
+  변경 파일: GalleryMenu.cs
+  변경 위치: Open() 메서드
+  변경 내용: initialized == true 일 때(재진입) else 분기 추가
+             StartCoroutine(SelectPageButtonNextFrame(selectedPage)) 호출
+  변경 없는 파일: 그 외 모든 파일
+
+================================================================
+  끝
+================================================================

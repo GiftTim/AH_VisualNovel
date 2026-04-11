@@ -20,17 +20,66 @@ namespace COMMANDS
 
         new public static void Extend(CommandDatabase database)
         {
-            database.AddCommand("playsfx", new Action<string[]>(PlaySFX));
-            database.AddCommand("stopsfx", new Action<string>(StopSFX));
+            database.AddCommand("playsong",      new Action<string[]>(PlaySong));
+            database.AddCommand("stopsong",      new Action<string>(StopSong));
 
-            database.AddCommand("playvoice", new Action<string[]>(PlayVoice));
-            database.AddCommand("stopvoice", new Action<string>(StopSFX));
+            database.AddCommand("playsfx",       new Action<string[]>(PlaySFX));
+            database.AddCommand("stopsfx",       new Action<string>(StopSFX));
 
-            database.AddCommand("playsong", new Action<string[]>(PlaySong));
-            database.AddCommand("stopsong", new Action<string>(StopSong));
+            database.AddCommand("playvoice",     new Action<string[]>(PlayVoice));
+            database.AddCommand("stopvoice",     new Action<string>(StopSFX));
 
-            database.AddCommand("playambience", new Action<string[]>(PlayAmbience));
-            database.AddCommand("stopambience", new Action<string>(StopAmbience));
+            database.AddCommand("playambience",  new Action<string[]>(PlayAmbience));
+            database.AddCommand("stopambience",  new Action<string>(StopAmbience));
+        }
+
+        #region PlayAudio
+        private static void PlayTrack(string filepath, int channel, CommandParameters parameters)
+        {
+            bool loop;
+            float volumeCap;
+            float startVolume;
+            float pitch;
+
+            //Try to get the max volume of the track
+            parameters.TryGetValue(PARAM_VOLUME, out volumeCap, defaultValue: 1f);
+
+            //Try to get the start volume of the track
+            parameters.TryGetValue(PARAM_START_VOLUME, out startVolume, defaultValue: 0f);
+
+            //Try to get the pitch of the track
+            parameters.TryGetValue(PARAM_PITCH, out pitch, defaultValue: 1f);
+
+            //Try to get if this track loops
+            parameters.TryGetValue(PARAM_LOOP, out loop, defaultValue: true);
+
+            //Run the logic
+            AudioClip sound = Resources.Load<AudioClip>(filepath);
+
+            if (sound == null)
+            {
+                Debug.Log($"Was not able to load voice '{filepath}'");
+                return;
+            }
+
+            AudioManager.instance.PlayTrack(sound, channel, loop, startVolume, volumeCap, pitch, filepath);
+        }
+
+        private static void PlaySong(string[] data)
+        {
+            string filepath;
+            int channel;
+
+            var parameters = ConvertDataToParameters(data);
+
+            //Try to get the name or path to the track
+            parameters.TryGetValue(PARAM_SONG, out filepath);
+            filepath = FilePaths.GetPathToResource(FilePaths.resources_music, filepath);
+
+            //Try to get the channel for this track
+            parameters.TryGetValue(PARAM_CHANNEL, out channel, defaultValue: 1);
+
+            PlayTrack(filepath, channel, parameters);
         }
 
         private static void PlaySFX(string[] data)
@@ -54,8 +103,8 @@ namespace COMMANDS
             parameters.TryGetValue(PARAM_LOOP, out loop, defaultValue: false);
 
             //Run the logic
-            AudioClip sound = Resources.Load<AudioClip>(
-                FilePaths.GetPathToResource(FilePaths.resources_sfx, filepath));
+            string resourcesPath = FilePaths.GetPathToResource(FilePaths.resources_sfx, filepath);
+            AudioClip sound = Resources.Load<AudioClip>(resourcesPath);
 
             if (sound == null)
             {
@@ -63,12 +112,7 @@ namespace COMMANDS
                 return;
             }
 
-            AudioManager.instance.PlaySoundEffect(sound, volume: volume, pitch: pitch, loop: loop);
-        }
-
-        private static void StopSFX(string data)
-        {
-            AudioManager.instance.StopSoundEffect(data);
+            AudioManager.instance.PlaySoundEffect(sound, volume: volume, pitch: pitch, loop: loop, filePath: resourcesPath);
         }
 
         private static void PlayVoice(string[] data)
@@ -105,23 +149,6 @@ namespace COMMANDS
             AudioManager.instance.PlayVoice(sound, volume: volume, pitch: pitch, loop: loop);
         }
 
-        private static void PlaySong(string[] data)
-        {
-            string filepath;
-            int channel;
-
-            var parameters = ConvertDataToParameters(data);
-
-            //Try to get the name or path to the track
-            parameters.TryGetValue(PARAM_SONG, out filepath);
-            filepath = FilePaths.GetPathToResource(FilePaths.resources_music, filepath);
-
-            //Try to get the channel for this track
-            parameters.TryGetValue(PARAM_CHANNEL, out channel, defaultValue: 1);
-
-            PlayTrack(filepath, channel, parameters);
-        }
-
         private static void PlayAmbience(string[] data)
         {
             string filepath;
@@ -138,38 +165,9 @@ namespace COMMANDS
 
             PlayTrack(filepath, channel, parameters);
         }
-
-        private static void PlayTrack(string filepath, int channel, CommandParameters parameters)
-        {
-            bool loop;
-            float volumeCap;
-            float startVolume;
-            float pitch;
-
-            //Try to get the max volume of the track
-            parameters.TryGetValue(PARAM_VOLUME, out volumeCap, defaultValue: 1f);
-
-            //Try to get the start volume of the track
-            parameters.TryGetValue(PARAM_START_VOLUME, out startVolume, defaultValue: 0f);
-
-            //Try to get the pitch of the track
-            parameters.TryGetValue(PARAM_PITCH, out pitch, defaultValue: 1f);
-
-            //Try to get if this track loops
-            parameters.TryGetValue(PARAM_LOOP, out loop, defaultValue: true);
-
-            //Run the logic
-            AudioClip sound = Resources.Load<AudioClip>(filepath);
-
-            if (sound == null)
-            {
-                Debug.Log($"Was not able to load voice '{filepath}'");
-                return;
-            }
-
-            AudioManager.instance.PlayTrack(sound, channel, loop, startVolume, volumeCap, pitch, filepath);
-        }
-
+        #endregion 
+        
+        #region StopAudio
         private static void StopTrack(string data)
         {
             if (int.TryParse(data, out int channel))
@@ -190,6 +188,11 @@ namespace COMMANDS
             }
         }
 
+        private static void StopSFX(string data)
+        {
+            AudioManager.instance.StopSoundEffect(data);
+        }
+
         private static void StopAmbience(string data)
         {
             if (data == string.Empty)
@@ -201,6 +204,6 @@ namespace COMMANDS
                 StopTrack(data);
             }
         }
-
+        #endregion
     }
 }

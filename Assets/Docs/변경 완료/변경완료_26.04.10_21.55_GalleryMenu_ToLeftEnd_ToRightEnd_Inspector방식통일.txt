@@ -1,0 +1,133 @@
+================================================================
+  변경완료 - GalleryMenu ToLeftEnd / ToRightEnd Inspector 방식 통일
+  작성일: 2026-04-10  21:55
+  대상 파일: Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs
+================================================================
+
+================================================================
+1. 변경 전 코드
+================================================================
+
+  ─────────────────────────────────────────────────
+  [ ConstructNavBar() ]
+  ─────────────────────────────────────────────────
+
+    private void ConstructNavBar()
+    {
+        ...
+        LeftEndButton.onClick.AddListener(ToLeftEnd);    // ← 코드로 등록
+        RightEndButton.onClick.AddListener(ToRightEnd);  // ← 코드로 등록
+        ArrangeNavBarOrder();
+        UpdateNavBarWindow();
+    }
+
+  ─────────────────────────────────────────────────
+  [ ToLeftEnd / ToRightEnd ]
+  ─────────────────────────────────────────────────
+
+    private void ToLeftEnd()    // ← private
+    {
+        windowStart = 1;
+        UpdateNavBarWindow();
+        LoadPage(1);
+        StartCoroutine(SelectPageButtonNextFrame(1));
+    }
+
+    private void ToRightEnd()   // ← private
+    {
+        int lastWindowStart = ((maxPages - 1) / PAGE_BUTTON_LIMIT) * PAGE_BUTTON_LIMIT + 1;
+        windowStart = lastWindowStart;
+        UpdateNavBarWindow();
+        LoadPage(maxPages);
+        StartCoroutine(SelectPageButtonNextFrame(maxPages));
+    }
+
+================================================================
+2. 변경 후 코드
+================================================================
+
+  ─────────────────────────────────────────────────
+  [ ConstructNavBar() ] — AddListener 2줄 제거
+  ─────────────────────────────────────────────────
+
+    private void ConstructNavBar()
+    {
+        ...
+        ArrangeNavBarOrder();    // ← AddListener 줄 제거됨
+        UpdateNavBarWindow();
+    }
+
+  ─────────────────────────────────────────────────
+  [ ToLeftEnd / ToRightEnd ] — public으로 변경
+  ─────────────────────────────────────────────────
+
+    public void ToLeftEnd()     // ← public
+    {
+        windowStart = 1;
+        UpdateNavBarWindow();
+        LoadPage(1);
+        StartCoroutine(SelectPageButtonNextFrame(1));
+    }
+
+    public void ToRightEnd()    // ← public
+    {
+        int lastWindowStart = ((maxPages - 1) / PAGE_BUTTON_LIMIT) * PAGE_BUTTON_LIMIT + 1;
+        windowStart = lastWindowStart;
+        UpdateNavBarWindow();
+        LoadPage(maxPages);
+        StartCoroutine(SelectPageButtonNextFrame(maxPages));
+    }
+
+================================================================
+3. 변경 후 작동 흐름
+================================================================
+
+  [ onClick 등록 방식 ]
+
+    변경 전: ConstructNavBar()에서 코드로 AddListener 등록
+    변경 후: Unity Inspector의 LeftEndButton / RightEndButton OnClick()에서
+             GalleryMenu.ToLeftEnd / GalleryMenu.ToRightEnd 직접 연결
+
+  [ 호출 흐름 (Inspector 방식) ]
+
+    사용자가 LeftEndButton 클릭
+      → Unity EventSystem이 Inspector에 등록된 OnClick() 실행
+      → GalleryMenu.ToLeftEnd() 호출
+      → windowStart = 1 → UpdateNavBarWindow() → LoadPage(1)
+         → SelectPageButtonNextFrame(1)
+
+    사용자가 RightEndButton 클릭
+      → Unity EventSystem이 Inspector에 등록된 OnClick() 실행
+      → GalleryMenu.ToRightEnd() 호출
+      → lastWindowStart 계산 → UpdateNavBarWindow() → LoadPage(maxPages)
+         → SelectPageButtonNextFrame(maxPages)
+
+  [ 기존 ToNextPage / ToPreviousPage와 동일한 패턴 ]
+
+    public void ToNextPage()     → Inspector OnClick 연결
+    public void ToPreviousPage() → Inspector OnClick 연결
+    public void ToLeftEnd()      → Inspector OnClick 연결  ← 이번 변경
+    public void ToRightEnd()     → Inspector OnClick 연결  ← 이번 변경
+
+  ※ Inspector에서 연결 작업 필요:
+      LeftEndButton  의 OnClick() → GalleryMenu.ToLeftEnd
+      RightEndButton 의 OnClick() → GalleryMenu.ToRightEnd
+
+================================================================
+4. 변경 요약
+================================================================
+
+  ┌──────────────────────────────────┬─────────────────────────────────────────────┐
+  │ 위치                             │ 변경 내용                                   │
+  ├──────────────────────────────────┼─────────────────────────────────────────────┤
+  │ ConstructNavBar()                │ AddListener 2줄 제거                        │
+  │ ToLeftEnd()                      │ private → public                            │
+  │ ToRightEnd()                     │ private → public                            │
+  └──────────────────────────────────┴─────────────────────────────────────────────┘
+
+  변경 파일: Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs
+  변경 없는 파일: 그 외 모든 파일
+
+================================================================
+  끝
+================================================================

@@ -1,0 +1,170 @@
+================================================================
+  변경완료 - GalleryMenu 페이지 버튼 선택 상태 유지
+  작성일: 2026-04-10
+================================================================
+
+[사전 확인 결과]
+  ✓ 현재 코드가 계획(c)과 완전히 일치 - 차이 없음
+  ✓ CanvasGroupController.isVisible 프로퍼티 존재 확인
+    (CanvasGroupController.cs:21 - co_showing != null || rootCG.alpha > 0f)
+
+================================================================
+변경 전 코드
+================================================================
+
+[ GalleryMenu.cs - using 선언부 ]
+  using System.Collections.Generic;
+  using UnityEngine;
+
+[ GalleryMenu.cs - Initialize() ]
+  private void Initialize()
+  {
+      initialized = true;
+      ConstructNavBar();
+      LoadPage(1);
+      SelectPageButton(1);      ← 동일 프레임 호출
+  }
+
+[ GalleryMenu.cs - ToNextPage() ]
+  public void ToNextPage()
+  {
+      windowStart += PAGE_BUTTON_LIMIT;
+      UpdateNavBarWindow();
+      LoadPage(windowStart);
+      SelectPageButton(windowStart);    ← 동일 프레임 호출
+  }
+
+[ GalleryMenu.cs - ToPreviousPage() ]
+  public void ToPreviousPage()
+  {
+      windowStart -= PAGE_BUTTON_LIMIT;
+      if (windowStart < 1) windowStart = 1;
+      UpdateNavBarWindow();
+      LoadPage(windowStart);
+      SelectPageButton(windowStart);    ← 동일 프레임 호출
+  }
+
+  ※ Update() 없음
+  ※ SelectPageButtonNextFrame() 없음
+
+================================================================
+변경 후 코드
+================================================================
+
+[ GalleryMenu.cs - using 선언부 ]
+  using System.Collections;          ← 추가 (IEnumerator 네임스페이스)
+  using System.Collections.Generic;
+  using UnityEngine;
+
+[ GalleryMenu.cs - Initialize() ]
+  private void Initialize()
+  {
+      initialized = true;
+      ConstructNavBar();
+      LoadPage(1);
+      StartCoroutine(SelectPageButtonNextFrame(1));    ← 다음 프레임으로 지연
+  }
+
+[ GalleryMenu.cs - ToNextPage() ]
+  public void ToNextPage()
+  {
+      windowStart += PAGE_BUTTON_LIMIT;
+      UpdateNavBarWindow();
+      LoadPage(windowStart);
+      StartCoroutine(SelectPageButtonNextFrame(windowStart));    ← 다음 프레임으로 지연
+  }
+
+[ GalleryMenu.cs - ToPreviousPage() ]
+  public void ToPreviousPage()
+  {
+      windowStart -= PAGE_BUTTON_LIMIT;
+      if (windowStart < 1) windowStart = 1;
+      UpdateNavBarWindow();
+      LoadPage(windowStart);
+      StartCoroutine(SelectPageButtonNextFrame(windowStart));    ← 다음 프레임으로 지연
+  }
+
+[ GalleryMenu.cs - Update() 신규 추가 ]
+  void Update()
+  {
+      if (!initialized) return;
+      if (previewPanelCG != null && previewPanelCG.isVisible) return;
+
+      if (EventSystem.current != null &&
+          EventSystem.current.currentSelectedGameObject == null)
+      {
+          SelectPageButton(selectedPage);
+      }
+  }
+
+[ GalleryMenu.cs - SelectPageButtonNextFrame() 신규 추가 ]
+  private IEnumerator SelectPageButtonNextFrame(int pageNumber)
+  {
+      yield return null;
+      SelectPageButton(pageNumber);
+  }
+
+================================================================
+작동 흐름
+================================================================
+
+[ 갤러리 진입 시 ]
+  Open() 호출
+  → Initialize() (최초 1회)
+      → ConstructNavBar() : 페이지 버튼 생성
+      → LoadPage(1) : selectedPage = 1
+      → StartCoroutine(SelectPageButtonNextFrame(1))
+          → 현재 프레임: 버튼 클릭 이벤트 처리 완료 대기
+          → 다음 프레임: SelectPageButton(1) 호출
+              → EventSystem.SetSelectedGameObject(pageButtons[0])
+              → 1번 버튼 하이라이트 확정
+
+[ nextButton 클릭 시 ]
+  OnPointerDown : EventSystem → nextButton 선택
+  OnPointerClick : ToNextPage() 실행
+      → windowStart += 3
+      → UpdateNavBarWindow() : 버튼 텍스트/이벤트 갱신
+      → LoadPage(windowStart) : selectedPage = windowStart
+      → StartCoroutine(SelectPageButtonNextFrame(windowStart))
+          → 현재 프레임: Unity 이벤트 처리 완료 (nextButton 기준 정리됨)
+          → 다음 프레임: SelectPageButton(windowStart) 호출
+              → 새 윈도우의 첫 번째 페이지 버튼 하이라이트 확정
+
+[ 빈 공간 클릭 시 ]
+  Unity EventSystem → currentSelectedGameObject = null
+  → 다음 Update() 프레임에서 감지
+      → initialized == true, previewPanel 닫혀있음
+      → EventSystem.currentSelectedGameObject == null 조건 충족
+      → SelectPageButton(selectedPage) 호출
+      → 현재 페이지 버튼 하이라이트 복원
+
+[ previewPanel 열려있는 동안 ]
+  Update() 실행
+  → previewPanelCG.isVisible == true (alpha > 0 또는 페이드인 중)
+  → return 으로 조기 종료 → 페이지 버튼에 간섭 없음
+
+[ previewPanel 닫기 (HidePreviewImage) ]
+  Hide() 호출 → 페이드 아웃 시작
+  SelectPageButton(selectedPage) 즉시 호출 → 복원
+  (페이드 중에는 Update() return으로 간섭 없음, 완전히 닫히면 Update()가 유지)
+
+================================================================
+변경 요약
+================================================================
+  ┌─────────────────────────────────────┬────────────────────────────────────────────┐
+  │ 위치                                │ 변경 내용                                  │
+  ├─────────────────────────────────────┼────────────────────────────────────────────┤
+  │ using 선언부                        │ using System.Collections; 추가             │
+  │ Update() (신규)                     │ null 감지 → selectedPage 기준 복원         │
+  │ SelectPageButtonNextFrame() (신규)  │ 한 프레임 지연 후 SelectPageButton 호출    │
+  │ Initialize()                        │ SelectPageButton → StartCoroutine 지연     │
+  │ ToNextPage()                        │ SelectPageButton → StartCoroutine 지연     │
+  │ ToPreviousPage()                    │ SelectPageButton → StartCoroutine 지연     │
+  └─────────────────────────────────────┴────────────────────────────────────────────┘
+
+[ 변경 없는 파일 ]
+  - 그 외 모든 파일
+
+================================================================
+  끝
+================================================================

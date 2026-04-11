@@ -1,0 +1,369 @@
+================================================================
+  버그 분석 문서
+  작성일: 2026-04-06
+  대상 프로젝트: AH_VisualNovel
+  주제: Delete 버튼 클릭 시 UIConfirmationMenu.choiceLayoutGroup
+        (HorizontalLayoutGroup)이 이미 파괴된 상태로 MissingReferenceException 재발
+        ※ 이전 수정(DestroyImmediate → SetActive+Destroy) 이후에도 동일 예외 발생
+================================================================
+
+
+================================================================
+  a. 목차
+================================================================
+
+  a. 목차
+  b. 문제점
+  c. 현재 상황 및 코드
+  d. 문제 해결 방법
+  e. 다른 방법들 중 d를 선택한 이유
+  f. 진행 순서
+  g. 변경 위치 및 변경 내용
+
+
+================================================================
+  b. 문제점
+================================================================
+
+  [ 에러 메시지 ]
+
+    MissingReferenceException: The object of type 'UnityEngine.UI.HorizontalLayoutGroup'
+    has been destroyed but you are still trying to access it.
+    Your script should either check if it is null or you should not destroy the object.
+    UnityEngine.Object+MarshalledUnityObject.TryThrowEditorNullExceptionObject (...)
+    UnityEngine.Bindings.ThrowHelper.ThrowNullReferenceException (...)
+    UnityEngine.Component.get_transform ()
+    UIConfirmationMenu.CreateOptionButton (UIConfirmationMenu+ConfirmationButton[] options)
+                                                          (UIConfirmationMenu.cs:57)
+    UIConfirmationMenu.Show (System.String title, ...)    (UIConfirmationMenu.cs:32)
+    SaveLoadSlot.Delete ()                                (SaveLoadSlot.cs:113)
+
+  ---------------------------------------------------------------
+
+  [ 이전 버그와의 차이 ]
+
+    이전 버그:
+      SaveLoadSlot.Delete()
+        → 첫 번째 Show() [정상]
+          → 유저가 "예" 클릭 → onClick 이벤트 내부에서 두 번째 Show() 호출
+            → CreateOptionButton() 내 DestroyImmediate() 가
+              HorizontalLayoutGroup을 동기적으로 무효화
+              → choiceLayoutGroup.transform 접근 시 예외 발생
+
+    새 버그 (이번):
+      SaveLoadSlot.Delete()
+        → 첫 번째 Show() 진입 직후 CreateOptionButton() 에서
+          바로 choiceLayoutGroup.transform 접근 시 예외 발생
+          (아직 activeOptions에 아무 버튼도 없는 상태 — 두 번째 Show 진입 전)
+
+    핵심 차이:
+      이전 버그  → 이벤트 핸들러 실행 도중, 같은 프레임 내에서 파괴
+      새 버그    → Show()가 처음 호출되기 전, 이미 choiceLayoutGroup이 파괴된 상태
+
+  ---------------------------------------------------------------
+
+  [ 원인 요약 ]
+
+    이전 수정(DestroyImmediate → Destroy())은 이벤트 핸들러 내부의
+    동기 파괴 문제는 해결했다.
+
+    그러나 choiceLayoutGroup(HorizontalLayoutGroup 컴포넌트가 붙은
+    자식 GameObject)이 '다음 번 Delete 클릭 시점'까지의 사이 어딘가에서
+    파괴되는 별개의 원인이 남아 있다.
+
+    C# 래퍼 객체는 살아 있어(null이 아니어서 NullReferenceException은
+    아니고) MissingReferenceException이 발생한다는 점이 핵심이다.
+    즉, Unity C++ 레이어의 실제 오브젝트가 Destroy()된 상태다.
+
+
+================================================================
+  c. 현재 상황 및 코드
+================================================================
+
+  ---------------------------------------------------------------
+  파일: UIConfirmationMenu.cs
+  ---------------------------------------------------------------
+
+    [SerializeField] private LayoutGroup choiceLayoutGroup;   // ← 이 필드가 대상
+    private GameObject[] activeOptions = new GameObject[0];
+
+    public void Show(string title, params ConfirmationButton[] options)
+    {
+        if(options.Length == 0) { ... return; }
+
+        this.title.text = title;       // ← 정상 (title은 유효)
+        CreateOptionButton(options);   // ← 내부에서 예외 발생
+        anim.Play("Enter");
+    }
+
+    private void CreateOptionButton(ConfirmationButton[] options)
+    {
+        foreach (GameObject g in activeOptions)   // ← activeOptions가 비어 있으면 루프 스킵
+        {
+            if (g != null)
+            {
+                g.SetActive(false);
+                Destroy(g);
+            }
+        }
+        activeOptions = new GameObject[options.Length];
+
+        for (int i = 0; i < options.Length; i++)
+        {
+            ConfirmationButton option = options[i];
+            GameObject ob = Instantiate(buttonPrefab, choiceLayoutGroup.transform);
+            //                                        ↑
+            //           ★ 여기서 MissingReferenceException
+            //             choiceLayoutGroup 자체(또는 그 GameObject)가
+            //             이미 파괴된 상태
+            ...
+        }
+    }
+
+  ---------------------------------------------------------------
+
+  [ 파괴 경로 분석 ]
+
+    this.title.text = title; 가 정상 동작한다.
+    즉, UIConfirmationMenu MonoBehaviour 자체와 title TMP는 살아 있다.
+    오직 choiceLayoutGroup(LayoutGroup 컴포넌트가 붙은 자식 GameObject)만 파괴되어 있다.
+
+    LayoutGroup 컴포넌트 자체가 코드에서 명시적으로 Destroy()되지 않으므로
+    파괴 원인은 아래 3가지 경로 중 하나일 가능성이 높다.
+
+    경로 A — 애니메이터 Exit 애니메이션 이벤트
+      Hide() → anim.Play("Exit")
+      Exit 애니메이션 클립에 AnimationEvent가 존재하고,
+      해당 이벤트가 choiceLayoutGroup의 GameObject를 Destroy()하거나
+      부모 패널을 Destroy()하는 메서드를 호출할 경우.
+
+    경로 B — VNMenuManager 또는 다른 메뉴 스크립트에서의 Destroy
+      메뉴를 닫을 때(SaveLoadMenu.Close() 등) UIConfirmationMenu의
+      자식 오브젝트를 정리하는 코드가 있을 경우.
+      특히 "패널" 단위로 Destroy하는 로직이 있다면
+      choiceLayoutGroup의 부모가 파괴될 수 있다.
+
+    경로 C — 씬 재로드 또는 DontDestroyOnLoad 불일치
+      씬 전환 시 UIConfirmationMenu는 살아남지만
+      choiceLayoutGroup 자식 오브젝트가 씬과 함께 언로드되는 경우.
+      (UIConfirmationMenu만 DontDestroyOnLoad이고 자식은 아닌 경우)
+
+    현재 코드 분석만으로는 경로를 특정하기 어려우므로
+    d항의 수정으로 즉시 크래시를 차단하고, 원인을 로그로 추적한다.
+
+
+================================================================
+  d. 문제 해결 방법
+================================================================
+
+  [ 채택 방법: Show() 진입 시 choiceLayoutGroup 유효성 검사 + 자동 재탐색 ]
+
+  1단계 — 즉시 크래시 차단 및 원인 로그 출력
+    Show() 또는 CreateOptionButton() 진입 시 choiceLayoutGroup이
+    유효한지 검사한다.
+    유효하지 않으면 Debug.LogError로 원인 추적용 메시지를 남기고
+    GetComponentInChildren<LayoutGroup>()으로 재탐색을 시도한다.
+
+  2단계 — 재탐색 성공 시 정상 진행, 실패 시 조기 반환
+    재탐색에 성공하면 참조를 갱신해 Instantiate를 정상 수행한다.
+    재탐색도 실패하면 LogError 후 return하여 크래시를 방지한다.
+
+  3단계 — 로그 메시지를 바탕으로 근본 원인 추적
+    Play Mode 콘솔에서 "choiceLayoutGroup is missing" 로그가 발생한 시점과
+    직전 호출 스택을 확인해 경로 A/B/C 중 어느 것인지 특정한다.
+
+  ---------------------------------------------------------------
+
+  [ 변경 대상 ]
+
+    파일: Assets/Scripts/VisualNovel/Core/Menus/UIConfirmationMenu.cs
+    위치: Show() 메서드 — CreateOptionButton 호출 직전
+          또는 CreateOptionButton() 메서드 — for 루프 진입 직전
+
+
+================================================================
+  e. 다른 방법들 중 d를 선택한 이유
+================================================================
+
+  방법 1 (채택): Show()에서 유효성 검사 + GetComponentInChildren 재탐색
+  -----------------------------------------------
+  장점:
+    - 크래시를 즉시 차단하면서 Debug.LogError로 원인 추적 정보를 남긴다
+    - 재탐색 성공 시 기능이 정상 동작하여 유저 경험 단절을 최소화한다
+    - 변경 범위가 Show() 또는 CreateOptionButton() 내부 5줄 이내로 최소
+    - 경로 A/B/C 어느 것이 원인이든 동일하게 대응된다
+  단점:
+    - 근본 원인(무엇이 파괴하는가)을 직접 제거하지 않는다
+    - 재탐색에 GetComponent 비용이 발생하나, 확인 메뉴 열림 빈도상 무시 가능
+
+  방법 2: choiceLayoutGroup에 대한 null/파괴 체크만 추가하고 조기 return
+  -----------------------------------------------
+  장점:
+    - 크래시 차단
+  단점:
+    - 재탐색 없이 return하면 확인 메뉴가 아예 열리지 않아 유저가 기능을 사용 불가
+    - 원인을 해결하지 않고 증상만 숨김
+
+  방법 3: choiceLayoutGroup을 Awake에서 GetComponentInChildren으로 할당
+  -----------------------------------------------
+  장점:
+    - Inspector 직렬화 참조에 의존하지 않아 참조 오염에 강함
+  단점:
+    - Awake 시점에만 할당하므로 이후 파괴가 반복되면 동일 문제 재발
+    - 직렬화 참조를 완전히 제거하면 구조 변경 시 연결이 끊기기 쉬움
+
+  방법 4: UIConfirmationMenu와 choiceLayoutGroup을 DontDestroyOnLoad 보호
+  -----------------------------------------------
+  장점:
+    - 씬 전환으로 인한 파괴(경로 C)를 근본적으로 차단
+  단점:
+    - 경로 A 또는 B가 원인이라면 아무 효과 없음
+    - UIConfirmationMenu가 DontDestroyOnLoad인지 현재 확인 불가
+    - 섣불리 적용 시 씬 전환 후 중복 인스턴스 문제 발생 위험
+
+  방법 5: 애니메이터 Exit 클립 Animation Event 제거/수정 (경로 A 대응)
+  -----------------------------------------------
+  장점:
+    - 경로 A가 원인이면 근본 해결
+  단점:
+    - 원인이 경로 A인지 먼저 확인해야 적용 가능
+    - 확인 전에 적용하면 의도한 애니메이션 동작이 깨질 수 있음
+
+  → 방법 1이 원인 특정 전에도 크래시를 차단하고 기능을 유지하며
+    로그로 원인 추적까지 지원하므로 1단계 대응으로 채택.
+    로그 확인 후 실제 원인(경로 A/B/C)이 특정되면 방법 4 또는 5를 추가 적용.
+
+
+================================================================
+  f. 진행 순서
+================================================================
+
+  STEP 1: UIConfirmationMenu.cs 수정
+    Show() 메서드 내, CreateOptionButton 호출 직전에
+    choiceLayoutGroup 유효성 검사 코드를 삽입한다.
+    (상세 변경 내용은 g항 참조)
+
+  STEP 2: Play Mode에서 Delete 버튼 클릭 테스트
+    - 크래시 없이 확인 메뉴가 열리는지 확인
+    - 콘솔에 "choiceLayoutGroup is missing" 로그가 찍히는지 확인
+      ┌ 찍히지 않음 → 재탐색 없이 정상 동작 → 수정 완료
+      └ 찍힘       → STEP 3으로 이동
+
+  STEP 3: 근본 원인 추적 (로그가 찍힌 경우)
+    확인 사항 A: 애니메이터 Exit 클립 Animation Events 목록 확인
+      → UIConfirmationMenu 오브젝트의 Animator → Exit 클립 선택
+        → Animation 창에서 Events 탭 확인
+        → Destroy / DestroyImmediate 또는 자식 정리 메서드가 등록되어 있으면 제거
+    확인 사항 B: VNMenuManager / SaveAndLoadMenu.Close() 코드에서
+                choiceLayoutGroup 부모를 Destroy()하는 코드 여부 확인
+    확인 사항 C: UIConfirmationMenu가 DontDestroyOnLoad인지 확인
+                자식 포함 여부 확인
+
+  STEP 4: 원인 특정 후 근본 수정
+    경로 A → 해당 Animation Event 제거
+    경로 B → Destroy 대상에서 choiceLayoutGroup 부모 제외 또는 재생성 로직 수정
+    경로 C → UIConfirmationMenu 전체를 DontDestroyOnLoad로 이동
+             또는 씬 내 배치 구조 변경
+
+  STEP 5: 재탐색 코드(d항) 유지 or 제거 결정
+    근본 원인이 완전히 제거되었다면 재탐색 코드는 제거해도 무방하나,
+    방어 코드로 유지해도 성능 영향이 없으므로 유지를 권장한다.
+
+
+================================================================
+  g. 어디가 어떤 식으로 변경되는지
+================================================================
+
+  ---------------------------------------------------------------
+  파일: Assets/Scripts/VisualNovel/Core/Menus/UIConfirmationMenu.cs
+  위치: Show() 메서드
+  ---------------------------------------------------------------
+
+  변경 전:
+  ---------
+    public void Show(string title, params ConfirmationButton[] options)
+    {
+        if(options.Length == 0)
+        {
+            Debug.LogError("COnfirmation menu must have at least 1 option provided...");
+            return;
+        }
+
+        this.title.text = title;
+
+        CreateOptionButton(options);   // ← choiceLayoutGroup 유효성 검사 없이 진입
+
+        anim.Play("Enter");
+    }
+
+  변경 후:
+  ---------
+    public void Show(string title, params ConfirmationButton[] options)
+    {
+        if(options.Length == 0)
+        {
+            Debug.LogError("COnfirmation menu must have at least 1 option provided...");
+            return;
+        }
+
+        // ★ 추가: choiceLayoutGroup 유효성 검사 및 자동 재탐색
+        if (choiceLayoutGroup == null)
+        {
+            Debug.LogError("[UIConfirmationMenu] choiceLayoutGroup 참조가 파괴되었습니다. " +
+                           "GetComponentInChildren으로 재탐색을 시도합니다.");
+            choiceLayoutGroup = GetComponentInChildren<LayoutGroup>(includeInactive: true);
+
+            if (choiceLayoutGroup == null)
+            {
+                Debug.LogError("[UIConfirmationMenu] 재탐색 실패. 확인 메뉴를 열 수 없습니다.");
+                return;
+            }
+        }
+
+        this.title.text = title;
+
+        CreateOptionButton(options);
+
+        anim.Play("Enter");
+    }
+
+  ---------------------------------------------------------------
+
+  [ 변경 요약 ]
+
+    위치   : Show() — this.title.text 할당 전
+    추가줄 : choiceLayoutGroup == null 체크 블록 (약 10줄)
+    제거줄 : 없음 (기존 코드 유지)
+
+  ---------------------------------------------------------------
+
+  [ 변경 후 동작 흐름 ]
+
+    1) 유저가 Delete 버튼 클릭
+    2) SaveLoadSlot.Delete() → uichoiceMenu.Show("저장된 파일을 삭제...", ...)
+
+         [ 케이스 A: choiceLayoutGroup 정상 ]
+           → null 체크 통과
+           → CreateOptionButton() 정상 진행
+           → 확인 메뉴 표시
+
+         [ 케이스 B: choiceLayoutGroup 파괴됨 ]
+           → null 체크 실패
+           → Debug.LogError 출력 (원인 추적용)
+           → GetComponentInChildren<LayoutGroup>으로 재탐색
+             ┌ 재탐색 성공 → 참조 갱신 → CreateOptionButton() 정상 진행
+             └ 재탐색 실패 → Debug.LogError 출력 → return (크래시 방지)
+
+    3) 콘솔 로그 확인 → 근본 원인 경로(A/B/C) 특정 → f항 STEP 3~5 진행
+
+
+================================================================
+  관련 파일 요약
+================================================================
+
+  No.  파일                                           변경 내용
+  ---  -----------------------------------------------  --------------------------------
+  1    UIConfirmationMenu.cs (Show 메서드)               choiceLayoutGroup 유효성 검사 +
+                                                          GetComponentInChildren 재탐색 블록 추가
+
+================================================================

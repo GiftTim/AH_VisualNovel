@@ -19,6 +19,8 @@ public class SaveLoadSlot : MonoBehaviour
     [HideInInspector] public int fileNumber = 0;
     [HideInInspector] public string filePath = "";
 
+    private UIConfirmationMenu uichoiceMenu => UIConfirmationMenu.instance;
+
     public void PopulateDetails(SaveAndLoadMenu.MenuFunction function)
     {
         if(File.Exists(filePath))
@@ -124,8 +126,18 @@ public class SaveLoadSlot : MonoBehaviour
 
     public void Load()
     {
-        VNGameSave file = VNGameSave.Load(filePath, true);
-
+        VNGameSave file = VNGameSave.Load(filePath, false);
         SaveAndLoadMenu.Instance.Close(closeAllMenus: true);
+
+        if(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == MainMenu.MAIN_MENU_SCENE)
+        {
+            MainMenu.instance.LoadGame(file);
+        }
+        else
+        {
+            file.Activate();
+        }
+
+
     }
 }

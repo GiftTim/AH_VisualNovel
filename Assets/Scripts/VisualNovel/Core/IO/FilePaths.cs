@@ -8,14 +8,16 @@ public class FilePaths
     public static readonly string gameSaves = $"{runtimePath}/Save Files/";
     public static readonly string gameDatas = $"{runtimePath}/gameData/";
 
-    // Resources Paths
+    // Resources Paths - Graphics
     public static readonly string resources_font = "Fonts/";
 
     public static readonly string resources_graphics = "Graphics/";
     public static readonly string resources_backgroundImages = $"{resources_graphics}BG Images/";
     public static readonly string resources_backgroundVideos = $"{resources_graphics}BG Videos/";
     public static readonly string resources_blendTextures = $"{resources_graphics}Transition Effects/";
+    public static readonly string resources_gallery = $"{resources_graphics}Gallery/";
 
+    // Resources Paths - Audio
     public static readonly string resources_audio    = "Audio/";
     public static readonly string resources_sfx      = $"{resources_audio}SFX/";
     public static readonly string resources_voices   = $"{resources_audio}Voices/";

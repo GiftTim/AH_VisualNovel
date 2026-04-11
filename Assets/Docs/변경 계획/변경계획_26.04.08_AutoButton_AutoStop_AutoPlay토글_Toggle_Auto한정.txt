@@ -1,0 +1,350 @@
+====================================================
+  Auto 버튼 - Auto-Stop/Auto-Play 오브젝트 토글 및 애니메이션 (Toggle_Auto 한정)
+  작성일: 2026-04-08
+====================================================
+
+----------------------------------------------------
+a. 목차
+----------------------------------------------------
+
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 요구한 기능을 만들기 위해서 어떤 식으로 추가/변경할 것인지
+  e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+  f. 어떤 순서로 진행할 것인지
+  g. 어디가 어떤 식으로 변경되는지
+
+
+----------------------------------------------------
+b. 요구한 기능
+----------------------------------------------------
+
+  1. Auto 버튼을 누르면 Auto 버튼의 애니메이션만 동작한다
+     (Skip 버튼 등 다른 경로로 Enable/Disable이 호출될 때는 애니메이션 미동작)
+
+  2. Auto 버튼을 눌러 Auto를 켤 때:
+     · Auto-Stop  오브젝트 → SetActive(false)
+     · Auto-Play  오브젝트 → SetActive(true) + Animator.Play("Enter") 재생
+
+  3. Auto가 켜진 상태에서 Auto 버튼을 다시 눌러 끌 때:
+     · Auto-Stop  오브젝트 → SetActive(true)
+     · Auto-Play  오브젝트 → SetActive(false)
+
+  4. Enable() / Disable() 에는 위 시각 처리 코드를 넣지 않는다
+     → Skip이 Enable/Disable을 호출해도 Auto-Stop / Auto-Play 상태가 바뀌지 않아야 함
+
+  [ 오브젝트 구조 (씬) ]
+    Auto  (버튼, 부모)
+    ├── Auto-Stop   ← 기본 SetActive(true),  이미지/아이콘
+    └── Auto-Play   ← 기본 SetActive(false), Animator 보유 ("Enter" Clip)
+
+
+----------------------------------------------------
+c. 현재 상황 및 코드
+----------------------------------------------------
+
+  [ AutoReader.cs - 현재 필드 ]
+
+    [SerializeField] private GameObject autoAnimObject;
+    // → 단일 참조. Auto-Play 오브젝트만 가리킴.
+    //   Auto-Stop 오브젝트에 대한 참조 없음.
+
+  [ AutoReader.cs - 현재 Disable() ]
+
+    public void Disable()
+    {
+        if (!isOn) return;
+
+        StopCoroutine(co_running);
+        skip = false;
+        co_running = null;
+
+        if (autoAnimObject != null)
+            autoAnimObject.SetActive(false);   // ← 문제: Skip → Disable 경로에서도 꺼짐
+    }
+
+  [ AutoReader.cs - 현재 Toggle_Auto() ]
+
+    public void Toggle_Auto()
+    {
+        if (!allowToggle) return;
+
+        bool prevState = skip;
+        skip = false;
+
+        if (prevState)
+        {
+            if (autoAnimObject != null)
+            {
+                autoAnimObject.SetActive(true);
+                autoAnimObject.GetComponent<Animator>().Play("Enter");
+            }
+            Enable();
+        }
+        else
+        {
+            if (!isOn)
+            {
+                if (autoAnimObject != null)
+                {
+                    autoAnimObject.SetActive(true);
+                    autoAnimObject.GetComponent<Animator>().Play("Enter");
+                }
+                Enable();
+            }
+            else
+                Disable();
+        }
+    }
+
+  ※ [실행 시 발견된 차이점 - 2026-04-08]
+  -------------------------------------------------------
+  계획서 c에는 기재되지 않았으나 실제 AutoReader.cs에 아래 필드가 존재함:
+
+      [SerializeField] private GameObject mainAutoButtonObject;
+
+  이 필드는 Auto-Play / Auto-Stop 참조와 별개이며,
+  Auto 버튼 오브젝트 자체(부모)를 가리키는 것으로 추정됨.
+  변경 계획(d)에서는 이 필드를 그대로 유지하고 건드리지 않는다.
+  (추가 역할이 확인되지 않은 상태에서 제거 시 다른 기능 영향 가능)
+  -------------------------------------------------------
+
+  [ 현재 문제점 ]
+
+    문제 1. Auto-Stop 오브젝트에 대한 참조가 없어서 토글 처리가 불가능하다.
+
+    문제 2. Disable() 내부에 autoAnimObject.SetActive(false) 가 들어있어
+            Skip 버튼 → Enable() → 코루틴 종료 → Disable() 경로에서도
+            Auto-Play 오브젝트가 꺼져버린다.
+            (Skip 중에 Auto-Play가 켜져 있었다면 의도치 않게 꺼짐)
+
+    문제 3. Toggle_Auto()에서 Auto를 끌 때(else → Disable() 호출 분기)
+            Auto-Stop을 켜는 코드가 없다.
+
+  [ 씬 오브젝트 확인 ]
+    - "Auto"      : Button 컴포넌트, UI Layer 5
+    - "Auto-Stop" : Image 컴포넌트, UI Layer 5   (씬에서 확인됨)
+    - "Auto-Play" : Image + Animator 컴포넌트 보유 추정, UI Layer 5  (씬에서 확인됨)
+
+  [ 애니메이션 에셋 확인 ]
+    - Assets/Animations/UI/Buttons/Auto Button/Auto-Play.controller  (존재 확인)
+    - Assets/Animations/UI/Buttons/Auto Button/Enter.anim            (존재 확인)
+
+
+----------------------------------------------------
+d. 요구한 기능을 만들기 위해서 어떤 식으로 추가/변경할 것인지
+----------------------------------------------------
+
+  [ 핵심 방침 ]
+    - 시각 처리(SetActive, Animator.Play)를 Toggle_Auto() 안에만 둔다
+    - Enable() / Disable() 에서 시각 처리 코드를 모두 제거한다
+    - 참조 필드를 autoAnimObject(단일) → autoPlayObject + autoStopObject(두 개)로 교체한다
+
+  [ 변경 상세 ]
+
+  1. 필드 교체
+     Before:
+       [SerializeField] private GameObject autoAnimObject;
+
+     After:
+       [SerializeField] private GameObject autoPlayObject;   // Auto-Play 오브젝트
+       [SerializeField] private GameObject autoStopObject;   // Auto-Stop 오브젝트
+
+  2. Disable() 에서 시각 처리 제거
+     Before:
+       if (autoAnimObject != null)
+           autoAnimObject.SetActive(false);
+
+     After:
+       (해당 블록 삭제)
+
+  3. Toggle_Auto() 내부 — 켜는 분기에 Auto-Stop 끄기 추가
+     Before (켜는 분기):
+       if (autoAnimObject != null)
+       {
+           autoAnimObject.SetActive(true);
+           autoAnimObject.GetComponent<Animator>().Play("Enter");
+       }
+       Enable();
+
+     After (켜는 분기):
+       if (autoStopObject != null) autoStopObject.SetActive(false);
+       if (autoPlayObject != null)
+       {
+           autoPlayObject.SetActive(true);
+           autoPlayObject.GetComponent<Animator>().Play("Enter");
+       }
+       Enable();
+
+  4. Toggle_Auto() 내부 — 끄는 분기(else → Disable())에 시각 처리 추가
+     Before (끄는 분기):
+       else
+           Disable();
+
+     After (끄는 분기):
+       else
+       {
+           if (autoPlayObject != null) autoPlayObject.SetActive(false);
+           if (autoStopObject != null) autoStopObject.SetActive(true);
+           Disable();
+       }
+
+  [ 변경 후 Toggle_Auto() 전체 예시 ]
+  -------------------------------------------------------
+  public void Toggle_Auto()
+  {
+      if (!allowToggle) return;
+
+      bool prevState = skip;
+      skip = false;
+
+      if (prevState)
+      {
+          // Skip → Auto 전환: Auto를 켠다
+          if (autoStopObject != null) autoStopObject.SetActive(false);
+          if (autoPlayObject != null)
+          {
+              autoPlayObject.SetActive(true);
+              autoPlayObject.GetComponent<Animator>().Play("Enter");
+          }
+          Enable();
+      }
+      else
+      {
+          if (!isOn)
+          {
+              // Auto 꺼진 상태 → Auto 켠다
+              if (autoStopObject != null) autoStopObject.SetActive(false);
+              if (autoPlayObject != null)
+              {
+                  autoPlayObject.SetActive(true);
+                  autoPlayObject.GetComponent<Animator>().Play("Enter");
+              }
+              Enable();
+          }
+          else
+          {
+              // Auto 켜진 상태 → Auto 끈다
+              if (autoPlayObject != null) autoPlayObject.SetActive(false);
+              if (autoStopObject != null) autoStopObject.SetActive(true);
+              Disable();
+          }
+      }
+  }
+  -------------------------------------------------------
+
+  [ 변경 후 Disable() 전체 예시 ]
+  -------------------------------------------------------
+  public void Disable()
+  {
+      if (!isOn) return;
+
+      StopCoroutine(co_running);
+      skip = false;
+      co_running = null;
+      // ← 시각 처리 없음. Toggle_Auto() 에서만 처리.
+  }
+  -------------------------------------------------------
+
+
+----------------------------------------------------
+e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+----------------------------------------------------
+
+  방법 A (기각): Enable() / Disable() 에 시각 처리 추가
+    - 이전 계획(26.04.08_AutoButton_AutoPlay자식오브젝트토글...)에서 채택했던 방식
+    - 문제점:
+        · Toggle_Skip() → Enable() / Disable() 경로에서도 Auto-Play / Auto-Stop이
+          같이 토글되어버림
+        · Skip 모드 중에는 Auto-Play 오브젝트가 꺼져있어야 하는데
+          Enable()에서 켜버리는 충돌이 발생할 수 있음
+    - 이번 요구사항: "Enable이나 Disable에 넣어서 Skip도 영향 받도록 하지 않게 해줘"
+      → 명시적으로 기각
+
+  방법 B (기각): Auto 버튼 OnClick 이벤트에 별도 UI 스크립트 추가
+    - Auto의 실제 isOn 상태와 시각 상태를 별개 스크립트에서 따로 관리
+    - Auto가 꺼진 상태인지 켜진 상태인지를 바깥 스크립트에서 정확히 알기 어려움
+    - Toggle_Auto()의 복잡한 분기(prevState 등)를 외부에서 다시 구현해야 함 → 중복
+
+  방법 C (채택, d의 방식): Toggle_Auto() 내부에서만 시각 처리
+    - Toggle_Auto()는 "Auto 버튼을 눌렀을 때"만 호출되는 유일한 진입점
+    - 시각 처리를 여기에만 두면 Skip 경로와 완전히 격리됨
+    - Enable() / Disable() 은 순수하게 코루틴 제어만 담당 → 역할 분리 명확
+    - 두 오브젝트(Auto-Stop, Auto-Play)의 상태를 켜는 시점과 끄는 시점에
+      각각 직접 제어하므로 동기화 문제 없음
+
+  → 방법 C 채택.
+
+
+----------------------------------------------------
+f. 어떤 순서로 진행할 것인지
+----------------------------------------------------
+
+  Step 1. AutoReader.cs 코드 수정
+    1-1. 필드 교체: autoAnimObject → autoPlayObject + autoStopObject
+    1-2. Disable() 에서 시각 처리 블록 제거
+    1-3. Toggle_Auto() 켜는 분기: Auto-Stop 끄기 + Auto-Play 켜기 + Enter 재생
+    1-4. Toggle_Auto() 끄는 분기: Auto-Play 끄기 + Auto-Stop 켜기
+
+  Step 2. Unity 에디터 - 오브젝트 초기 상태 확인 및 설정
+    - Auto-Stop : SetActive(true)  (기본 표시 상태)
+    - Auto-Play : SetActive(false) (기본 비표시 상태)
+
+  Step 3. Unity 에디터 - 인스펙터 연결
+    - AutoReader 컴포넌트에 새로 생긴 두 필드에 각각 연결
+        · Auto Play Object  → Auto-Play GameObject
+        · Auto Stop Object  → Auto-Stop GameObject
+
+  Step 4. Auto-Play Animator Controller 확인
+    - Auto-Play.controller 에 "Enter" 상태가 정의되어 있는지 확인
+    - Any State → Enter 트랜지션 또는 Default State = Enter인지 확인
+
+  Step 5. 테스트
+    - Auto 버튼 클릭 → Auto-Stop 꺼짐, Auto-Play 켜짐 + Enter 재생 확인
+    - Auto 버튼 재클릭 → Auto-Play 꺼짐, Auto-Stop 켜짐 확인
+    - Skip 버튼 → Auto-Stop / Auto-Play 상태 변화 없음 확인
+    - Skip 중 Auto 버튼 클릭 → Auto로 전환되며 시각 처리 정상 작동 확인
+
+
+----------------------------------------------------
+g. 어디가 어떤 식으로 변경되는지
+----------------------------------------------------
+
+  [ 수정 파일: AutoReader.cs ]
+
+    필드 변경:
+      Before → [SerializeField] private GameObject autoAnimObject;
+      After  → [SerializeField] private GameObject autoPlayObject;
+               [SerializeField] private GameObject autoStopObject;
+
+    Disable() 변경:
+      제거 → if (autoAnimObject != null) autoAnimObject.SetActive(false); 블록 삭제
+
+    Toggle_Auto() 변경:
+      켜는 분기 (2곳: prevState가 true일 때 / !isOn일 때):
+        추가 → if (autoStopObject != null) autoStopObject.SetActive(false);
+        변경 → autoAnimObject → autoPlayObject 로 교체
+
+      끄는 분기 (else → Disable() 호출 부분):
+        추가 → if (autoPlayObject != null) autoPlayObject.SetActive(false);
+               if (autoStopObject != null) autoStopObject.SetActive(true);
+
+  [ Unity 에디터 변경 (인스펙터) ]
+    - AutoReader 컴포넌트:
+        · 기존 Auto Anim Object 필드 → 없어짐 (필드명 변경)
+        · Auto Play Object 필드 → Auto-Play GameObject 연결
+        · Auto Stop Object 필드 → Auto-Stop GameObject 연결
+    - Auto-Stop 오브젝트: 초기 SetActive(true)
+    - Auto-Play 오브젝트: 초기 SetActive(false)
+
+  [ 변경 없는 파일 ]
+    - Toggle_Skip() 로직     : 변경 없음
+    - Enable()  코루틴 시작   : 변경 없음 (시각 처리 없음 유지)
+    - AutoRead() 코루틴      : 변경 없음
+    - Auto-Play.controller  : 변경 없음
+    - Enter.anim            : 변경 없음
+    - DialogueSystem.cs     : 변경 없음
+    - VNMenuManager.cs      : 변경 없음
+
+====================================================

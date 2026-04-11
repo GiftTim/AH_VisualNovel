@@ -1,0 +1,109 @@
+====================================================
+  GraphicObject.Destroy() Null 체크 추가 - 버전 3(최적 조합) 적용
+  작성일: 2026-04-09
+====================================================
+
+----------------------------------------------------
+a. 비교 결과
+----------------------------------------------------
+
+  현재 코드와 변경계획 문서 c항 비교: 완전 일치
+  → 차이 없음. 버전 3 즉시 적용.
+
+----------------------------------------------------
+b. 변경 전/후 코드
+----------------------------------------------------
+
+  [ 파일 ]
+    Assets/Scripts/VisualNovel/Core/Graphic Panels/GraphicObject.cs
+
+  -------------------------------------------------------
+  [ Destroy() 변경 전 (203번 줄) ]
+  -------------------------------------------------------
+    public void Destroy()
+    {
+        if(layer.currentGraphic != null && layer.currentGraphic.renderer == renderer)
+        {
+            layer.currentGraphic = null;
+        }
+        if(layer.oldGraphics.Contains(this))
+        {
+            layer.oldGraphics.Remove(this);
+        }
+
+        Object.Destroy(renderer.gameObject);    // ← null 체크 없음
+    }
+
+  -------------------------------------------------------
+  [ Destroy() 변경 후 ]
+  -------------------------------------------------------
+    public void Destroy()
+    {
+        if (layer.currentGraphic != null && layer.currentGraphic.renderer == renderer)
+            layer.currentGraphic = null;
+
+        layer.oldGraphics.Remove(this);         // ← Contains 제거, Remove 단일 호출
+
+        if (renderer != null)                   // ← inline null 가드
+            Object.Destroy(renderer.gameObject);
+    }
+
+  -------------------------------------------------------
+  [ Fading() 변경 전 - yield return null 이후 (184번 줄) ]
+  -------------------------------------------------------
+        yield return null;
+    }   // ← while 루프 종료, renderer 유효성 재확인 없음
+
+  -------------------------------------------------------
+  [ Fading() 변경 후 ]
+  -------------------------------------------------------
+        yield return null;
+
+        if (renderer == null)    // ← 추가
+            yield break;         // ← 추가
+    }
+
+
+----------------------------------------------------
+c. 변경 후 작동 흐름
+----------------------------------------------------
+
+  [ 정상 FadeOut 흐름 ]
+    Fading(target=0) 실행
+      → while 루프: 매 프레임 opacity를 0으로 감소
+        → yield return null (다음 프레임 대기)
+          → renderer null 체크 → 유효하면 루프 계속
+            → opacity == 0 도달 → 루프 종료
+              → Destroy() 호출
+                → currentGraphic 정리
+                → oldGraphics에서 this 제거 (Remove 1회 순회)
+                → renderer != null → Object.Destroy(renderer.gameObject)
+
+  [ 외부 파괴 시 FadeOut 흐름 ]
+    Fading(target=0) 실행
+      → yield return null (다음 프레임 대기)
+        → [외부] renderer.gameObject 파괴
+          → renderer null 체크 → null 확인 → yield break (코루틴 즉시 종료)
+            → Destroy() 미호출 → MissingReferenceException 발생 없음
+
+  [ Destroy() 직접 호출 시 renderer가 이미 파괴된 경우 ]
+    Destroy() 호출
+      → currentGraphic 정리
+      → oldGraphics.Remove(this)
+      → renderer == null 확인 → Object.Destroy 호출 생략
+        → 예외 없이 안전하게 종료
+
+----------------------------------------------------
+d. 변경된 파일
+----------------------------------------------------
+
+  - Assets/Scripts/VisualNovel/Core/Graphic Panels/GraphicObject.cs
+      · Destroy() : Contains+Remove → Remove 단일 호출 / null 가드 추가
+      · Fading()  : yield return null 직후 renderer null 체크 + yield break 추가
+
+  [ 변경 없는 파일 ]
+  - GraphicLayer.cs         : 변경 없음
+  - GraphicPanelManager.cs  : 변경 없음
+  - 기타 스크립트           : 변경 없음
+
+====================================================

@@ -1,0 +1,47 @@
+
+PlaySong("Happy2")
+SetLayerMedia(background "bg dungeon_entrance")
+
+CreateCharacter("Mina" -e true), Mina.setSprite(-s Body3 -l 0), Mina.setSprite(-s Smile -l 1)
+CreateCharacter("Man as Generic" -e true), Man.SetSprite("Man")
+
+Man.SetPosition(1.4), Man.Move(1), Mina.Move(0)
+Mina.FaceRight()
+
+Man "좋은 아침이네, 아가야. {n}이곳엔 무슨 일로 왔지?"
+
+ShowGalleryImage(1_VillageInn)
+
+Man  "그렇게 진행되는 이야기가 있습니다"
+Mina "치매설 아닐까요"
+Man "..."
+HideGalleryImage(-spd 1)
+Mina "아, 알겠어요 아니라는 거군요 그냥 지나갈게요..."
+
+choice "준비되셨나요?"
+{
+    -너를 꼬시기 위해서 왔어요
+        Man  "그게 이유인가요? {n}제가 몇 살로 보이시는데요?"
+        ShowGalleryImage(hmm)
+        Mina "몇 살인가요?"
+        Man "..."
+        HideGalleryImage()
+        Mina "아, 알겠어요 그냥 지나갈게요..."
+        Load(Coffee_Bean -folder "CHAPTER 2" -enqueue true)
+
+    -이 길을 통과하기 위해서 왔습니다.
+        Man "아쉽겠군, 오늘부터 이 문은 출입 퉁제가 된다!"
+        Load(Coffee_Bean -folder "CHAPTER 2" -e false)
+}
+
+
+Man.Move(2 -spd 2), Mina.Move(2 -spd 2)
+Man.Hide(), Mina.Hide()
+wait(5)
+ClearLayerMedia(background -blend leftRight -spd 0.5)
+wait(1)
+StopSong("Happy2")
+wait(1)
+
+
+

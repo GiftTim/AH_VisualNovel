@@ -1,0 +1,304 @@
+================================================================
+  변경계획 - GalleryMenu 재진입 시 1번 페이지 버튼 미선택 문제 해결
+  작성일: 2026-04-10
+================================================================
+
+[목차]
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 요구한 기능을 만들기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+  e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+  f. 어떤 순서로 진행할 것인지
+  g. 어디가 어떤 식으로 변경되는지
+
+================================================================
+b. 요구한 기능
+================================================================
+
+  [현재 증상]
+    ① 갤러리 최초 진입 시 → 1번 페이지 버튼이 선택(하이라이트)됨 (정상)
+    ② 갤러리에서 메인 메뉴로 나간 뒤 갤러리 재진입 시
+       → 1번 페이지 버튼이 선택(하이라이트)되어 있지 않음 (버그)
+
+  [원하는 동작]
+    - 갤러리를 처음 열든, 메인 메뉴 복귀 후 다시 열든
+      항상 현재 selectedPage에 해당하는 페이지 버튼이 하이라이트 상태여야 함
+
+================================================================
+c. 현재 상황 및 코드
+================================================================
+
+  ─────────────────────────────────────────────────
+  [ 관련 코드: GalleryMenu.cs ]
+  ─────────────────────────────────────────────────
+
+  private bool initialized = false;
+  private int selectedPage = 0;       ← LoadPage() 에서 마지막 페이지 번호 저장됨
+
+  public void Open()
+  {
+      if(!initialized)
+      {
+          Initialize();               ← 최초 1회만 실행
+      }
+      anim.Play("Enter");             ← 재진입 시 이것만 실행됨
+  }
+
+  private void Initialize()
+  {
+      initialized = true;
+      ConstructNavBar();
+      LoadPage(1);
+      StartCoroutine(SelectPageButtonNextFrame(1));   ← 최초 진입 시 1번 버튼 선택
+  }
+
+  void Update()
+  {
+      if (!initialized) return;
+      if (previewPanelCG != null && previewPanelCG.isVisible) return;
+
+      if (EventSystem.current != null &&
+          EventSystem.current.currentSelectedGameObject == null)
+      {
+          SelectPageButton(selectedPage);             ← null일 때만 복원
+      }
+  }
+
+  ─────────────────────────────────────────────────
+  [ 원인 분석 ]
+  ─────────────────────────────────────────────────
+
+  [ 원인 A: Open()의 조기 종료 ]
+
+    재진입 시 initialized == true 이므로 Initialize()가 호출되지 않음
+    → SelectPageButtonNextFrame() 가 실행되지 않음
+    → 갤러리 애니메이션만 재생되고 페이지 버튼은 아무것도 선택되지 않음
+
+  [ 원인 B: Update() null 체크가 동작하지 않음 ]
+
+    메인 메뉴에서 갤러리 열기 버튼을 클릭하면
+    Unity EventSystem은 그 버튼을 currentSelectedGameObject로 유지함
+
+    → 갤러리 재진입 시점에서 EventSystem.currentSelectedGameObject != null
+    → Update()의 null 조건이 충족되지 않음
+    → SelectPageButton()이 호출되지 않음
+
+  [ 결론 ]
+
+    이전 수정(변경완료_26.04.10_19.30)에서 Update() + Coroutine 방식으로
+    빈 공간 클릭 / 내비게이션 버튼 타이밍 문제를 해결했으나,
+    "외부 씬(메인 메뉴)에서 돌아올 때" 라는 시나리오는 커버되지 않았음
+
+    Update()의 null 복원은 갤러리 내부에서 선택이 사라지는 경우를 대비한 것이며,
+    갤러리 밖(메인 메뉴)에서 다른 버튼이 선택된 상태로 갤러리를 여는 경우는
+    null이 아니기 때문에 복원되지 않음
+
+================================================================
+d. 요구한 기능을 만들기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+================================================================
+
+  [핵심 메커니즘]
+
+    Open()에서 이미 initialized된 경우(재진입)에도
+    StartCoroutine(SelectPageButtonNextFrame(selectedPage))를 호출하여
+    갤러리 열기 애니메이션 다음 프레임에 현재 페이지 버튼을 선택시킨다.
+
+  ─────────────────────────────────────────────────
+  [ 변경: Open() - else 분기 추가 ]
+  ─────────────────────────────────────────────────
+
+    변경 전:
+      public void Open()
+      {
+          if(!initialized)
+          {
+              Initialize();
+          }
+          anim.Play("Enter");
+      }
+
+    변경 후:
+      public void Open()
+      {
+          if(!initialized)
+          {
+              Initialize();
+          }
+          else
+          {
+              StartCoroutine(SelectPageButtonNextFrame(selectedPage));
+          }
+          anim.Play("Enter");
+      }
+
+    동작 설명:
+      - 최초 진입: Initialize() 내부에서 SelectPageButtonNextFrame(1) 호출
+        (selectedPage = 1로 설정 후)
+      - 재진입:    else 분기에서 SelectPageButtonNextFrame(selectedPage) 호출
+        (마지막으로 선택된 페이지 번호 기준으로 복원)
+
+    ※ selectedPage는 LoadPage()에서 항상 최신 페이지 번호로 갱신되므로
+       갤러리를 나가기 전 3번 페이지를 보고 있었다면 재진입 시 3번 버튼이 선택됨
+
+================================================================
+e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+================================================================
+
+[ 방법 A (채택): Open() else 분기에 SelectPageButtonNextFrame 추가 ]
+
+  장점
+  ✓ 변경 범위 최소 (Open() 메서드 3줄 추가만)
+  ✓ 기존 selectedPage 필드 그대로 활용
+  ✓ 재진입 시 마지막 페이지 기억 유지 (자연스러운 UX)
+  ✓ 기존 Update() null 복원 로직과 충돌 없음
+  ✓ Coroutine 지연으로 anim.Play("Enter")와 타이밍 안전
+
+  단점
+  △ 없음
+
+[ 방법 B: Open()에서 SelectPageButtonNextFrame 무조건 호출 ]
+
+  public void Open()
+  {
+      if(!initialized)
+          Initialize();
+      StartCoroutine(SelectPageButtonNextFrame(selectedPage));  ← 항상 호출
+      anim.Play("Enter");
+  }
+
+  ✗ 최초 진입 시 Initialize() 내부 + Open() 두 번 SelectPageButtonNextFrame 호출
+    → 동일 버튼을 두 번 선택하는 중복 Coroutine 실행 (기능상 무해하지만 불필요한 중복)
+  △ 방법 A보다 코드 의도가 불명확함
+
+[ 방법 C: Update() 조건 확장 - 갤러리 활성화 직후 강제 복원 플래그 사용 ]
+
+  bool justOpened = false;
+  → Open() 에서 justOpened = true
+  → Update() 에서 justOpened 체크 후 SelectPageButton 호출 + false 로 초기화
+
+  ✗ 추가 필드 필요
+  ✗ 로직 분산 (Open/Update 양쪽에 걸침)
+  ✗ 방법 A보다 구현이 복잡함
+
+[ 방법 D: initialized 플래그 리셋 (Close() 에서 initialized = false) ]
+
+  Close() 에서 initialized = false로 리셋
+  → Open() 재진입 시 항상 Initialize() 재실행
+
+  ✗ ConstructNavBar()가 매번 재실행 → 버튼 중복 생성 위험
+  ✗ 기존 pageButtons 리스트 초기화 처리 추가 필요
+  ✗ 변경 범위가 불필요하게 넓어짐
+
+  → 방법 A가 최소 변경, 명확한 의도, 기존 구조 보존으로 최적
+
+================================================================
+f. 어떤 순서로 진행할 것인지
+================================================================
+
+  [코드 변경]
+  1. GalleryMenu.cs - Open() 수정
+       initialized == true 일 때(재진입) else 분기 추가
+       StartCoroutine(SelectPageButtonNextFrame(selectedPage)) 호출
+
+  [테스트]
+  2. 갤러리 최초 진입 → 1번 버튼 하이라이트 확인 (기존 동작 유지)
+  3. 갤러리 → 메인 메뉴 → 갤러리 재진입 → 1번 버튼 하이라이트 확인
+  4. 갤러리에서 3번 페이지 이동 → 메인 메뉴 → 재진입 → 3번 버튼 하이라이트 확인
+  5. 빈 공간 클릭 → 선택 복원 확인 (기존 Update() 동작 유지)
+  6. nextButton / previousButton 클릭 후 선택 유지 확인 (기존 동작 유지)
+  7. previewPanel 열기/닫기 → 선택 간섭 없음 확인 (기존 동작 유지)
+
+================================================================
+g. 어디가 어떤 식으로 변경되는지
+================================================================
+
+[ 파일: Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs ]
+
+  ① Open() 수정
+
+    변경 전:
+      public void Open()
+      {
+          if(!initialized)
+          {
+              Initialize();
+          }
+          anim.Play("Enter");
+      }
+
+    변경 후:
+      public void Open()
+      {
+          if(!initialized)
+          {
+              Initialize();
+          }
+          else
+          {
+              StartCoroutine(SelectPageButtonNextFrame(selectedPage));
+          }
+          anim.Play("Enter");
+      }
+
+[ 변경 없는 파일 ]
+  - 그 외 모든 파일
+  - Update(), SelectPageButtonNextFrame(), SelectPageButton() 등 기존 메서드 변경 없음
+
+[ 변경 요약표 ]
+  ┌──────────────────────────────────┬───────────────────────────────────────────────────────────────┐
+  │ 위치                             │ 변경 내용                                                     │
+  ├──────────────────────────────────┼───────────────────────────────────────────────────────────────┤
+  │ GalleryMenu.cs - Open()          │ else 분기 추가: 재진입 시 SelectPageButtonNextFrame(selectedPage) 호출 │
+  └──────────────────────────────────┴───────────────────────────────────────────────────────────────┘
+
+[ 참고: 선행 수정 이력 ]
+  - 변경완료_26.04.10_19.30_GalleryMenu_PageButton_SelectionPersist.txt
+    → 초기 진입 / 빈 공간 클릭 / 내비게이션 버튼 타이밍 문제 해결 (Update + Coroutine 방식)
+    → 이번 수정은 그 연장선으로, "외부 씬 복귀 후 재진입" 시나리오만 추가 처리
+
+================================================================
+h. [변경 중지] 현재 코드와 문서 c의 차이점 (2026-04-10 추가)
+================================================================
+
+  [비교 결과]
+    문서 c에서 기술한 Open() 코드와 실제 현재 코드를 비교한 결과,
+    실제 코드가 이미 문서 d(변경 후)의 상태와 일치함이 확인되었음.
+
+  [문서 c에서 기술한 코드 (변경 전으로 기술됨)]
+    public void Open()
+    {
+        if(!initialized)
+        {
+            Initialize();
+        }
+        anim.Play("Enter");
+    }
+
+  [실제 현재 코드 (GalleryMenu.cs 48~60줄)]
+    public void Open()
+    {
+        if(!initialized)
+        {
+            Initialize();
+        }
+        else
+        {
+            StartCoroutine(SelectPageButtonNextFrame(selectedPage));
+        }
+
+        anim.Play("Enter");
+    }
+
+  [결론]
+    → 문서 d에서 요구한 else 분기 추가가 이미 적용되어 있음
+    → 코드 변경 불필요
+    → 변경 중지
+
+  [추정 원인]
+    → 이전 대화 세션에서 이미 해당 변경이 적용된 것으로 추정됨
+    → 또는 개발자가 직접 편집기에서 수정했을 가능성 있음
+
+================================================================
+  끝
+================================================================

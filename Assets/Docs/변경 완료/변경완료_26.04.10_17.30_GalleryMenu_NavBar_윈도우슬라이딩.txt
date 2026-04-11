@@ -1,0 +1,181 @@
+================================================================
+  변경완료 - GalleryMenu NavBar 윈도우 슬라이딩
+  작성일: 2026-04-10
+================================================================
+
+[파일]
+  Assets/Scripts/VisualNovel/Core/VN System/Gallery/GalleryMenu.cs
+
+================================================================
+1. 현재 코드와 변경계획 c 섹션 비교 결과
+================================================================
+
+  → 불일치 없음. 변경 진행.
+
+================================================================
+2. 변경 전 / 변경 후 코드
+================================================================
+
+[ ① 필드 추가 ]
+
+  변경 전:
+    private List<Button> pageButtons = new List<Button>();
+
+  변경 후:
+    private List<Button> pageButtons = new List<Button>();
+    private int windowStart = 1;
+
+----------------------------------------------------------------
+
+[ ② ConstructNavBar() 수정 ]
+
+  변경 전:
+    buttonOB.name = i.ToString();
+    int page = i;
+    button.onClick.AddListener(() => LoadPage(page));
+    buttonText.text = i.ToString();
+    pageButtons.Add(button);
+    ...
+    previousButton.gameObject.SetActive(pageLimit < maxPages);
+    nextButton.gameObject.SetActive(pageLimit < maxPages);
+    ArrangeNavBarOrder();
+
+  변경 후:
+    buttonOB.name = i.ToString();
+    pageButtons.Add(button);         ← onClick, buttonText 설정 제거
+    ...
+    // previousButton.SetActive / nextButton.SetActive 제거
+    ArrangeNavBarOrder();
+    UpdateNavBarWindow();            ← 추가
+
+----------------------------------------------------------------
+
+[ ③ UpdateNavBarWindow() 신규 추가 ]
+
+  변경 전:
+    (존재하지 않음)
+
+  변경 후:
+    private void UpdateNavBarWindow()
+    {
+        for (int i = 0; i < pageButtons.Count; i++)
+        {
+            int page = windowStart + i;
+            pageButtons[i].onClick.RemoveAllListeners();
+            pageButtons[i].onClick.AddListener(() => LoadPage(page));
+            pageButtons[i].GetComponentInChildren<TextMeshProUGUI>().text = page.ToString();
+            pageButtons[i].gameObject.SetActive(page <= maxPages);
+        }
+        previousButton.gameObject.SetActive(windowStart > 1);
+        nextButton.gameObject.SetActive(windowStart + pageButtons.Count <= maxPages);
+    }
+
+----------------------------------------------------------------
+
+[ ④ SelectPageButton() 수정 ]
+
+  변경 전:
+    int index = pageNumber - 1;
+
+  변경 후:
+    int index = pageNumber - windowStart;
+
+----------------------------------------------------------------
+
+[ ⑤ ToNextPage() 수정 ]
+
+  변경 전:
+    public void ToNextPage()
+    {
+        if(selectedPage < maxPages)
+        {
+            LoadPage(selectedPage + 1);
+        }
+    }
+
+  변경 후:
+    public void ToNextPage()
+    {
+        windowStart += PAGE_BUTTON_LIMIT;
+        UpdateNavBarWindow();
+        LoadPage(windowStart);
+        SelectPageButton(windowStart);
+    }
+
+----------------------------------------------------------------
+
+[ ⑥ ToPreviousPage() 수정 ]
+
+  변경 전:
+    public void ToPreviousPage()
+    {
+        if(selectedPage > 1)
+        {
+            LoadPage(selectedPage - 1);
+        }
+    }
+
+  변경 후:
+    public void ToPreviousPage()
+    {
+        windowStart -= PAGE_BUTTON_LIMIT;
+        if (windowStart < 1) windowStart = 1;
+        UpdateNavBarWindow();
+        LoadPage(windowStart);
+        SelectPageButton(windowStart);
+    }
+
+================================================================
+3. 변경 후 작동 흐름
+================================================================
+
+[ 갤러리 진입 시 ]
+  Initialize()
+    → ConstructNavBar()
+        버튼 3개 Instantiate → pageButtons에 추가
+        ArrangeNavBarOrder() → nextButton/RightEndButton 순서 정렬
+        UpdateNavBarWindow()
+            windowStart = 1 기준
+            버튼 레이블: [1, 2, 3]
+            onClick: LoadPage(1), LoadPage(2), LoadPage(3)
+            maxPages > 3이면 nextButton 활성 / previousButton 비활성
+    → LoadPage(1): 1페이지 이미지 표시
+    → SelectPageButton(1): index = 1 - 1(windowStart) = 0 → pageButtons[0] Selected
+
+[ nextButton 클릭 시 ]
+  ToNextPage()
+    windowStart = 1 + 3 = 4
+    UpdateNavBarWindow()
+        버튼 레이블: [4, 5, 6]
+        onClick: LoadPage(4), LoadPage(5), LoadPage(6)
+        previousButton 활성 (windowStart=4 > 1)
+        nextButton: windowStart(4) + 3 <= maxPages 이면 활성
+    LoadPage(4): 4페이지 이미지 표시
+    SelectPageButton(4): index = 4 - 4(windowStart) = 0 → pageButtons[0] Selected
+
+[ previousButton 클릭 시 ]
+  ToPreviousPage()
+    windowStart = 4 - 3 = 1 (최소값 보장)
+    UpdateNavBarWindow()
+        버튼 레이블: [1, 2, 3]
+        previousButton 비활성 (windowStart=1 이하)
+        nextButton 활성 (maxPages > 3인 경우)
+    LoadPage(1): 1페이지 이미지 표시
+    SelectPageButton(1): index = 1 - 1(windowStart) = 0 → pageButtons[0] Selected
+
+[ 미리보기 닫기 시 ]
+  HidePreviewImage()
+    → SelectPageButton(selectedPage)
+        selectedPage가 속한 윈도우 기준 상대 인덱스 계산
+        올바른 버튼에 Selected Color 복원
+
+[ 마지막 윈도우 예시 (maxPages=10, windowStart=10) ]
+  UpdateNavBarWindow()
+    page=10 → SetActive(true)
+    page=11 → SetActive(false) (11 > maxPages=10)
+    page=12 → SetActive(false)
+    nextButton: 10 + 3 = 13 > 10 → SetActive(false)
+
+================================================================
+  끝
+================================================================

@@ -1,0 +1,99 @@
+================================================================
+  변경 완료 문서
+  작성일: 2026-04-06
+  대상 프로젝트: AH_VisualNovel
+  주제: Delete 버튼 클릭 시 UIConfirmationMenu에서
+        MissingReferenceException (HorizontalLayoutGroup) 수정
+================================================================
+
+
+================================================================
+  1. 변경 전 코드
+================================================================
+
+  파일: Assets/Scripts/VisualNovel/Core/Menus/UIConfirmationMenu.cs
+  메서드: CreateOptionButton()
+
+    private void CreateOptionButton(ConfirmationButton[] options)
+    {
+        foreach (GameObject g in activeOptions)
+        {
+            DestroyImmediate(g);          // Play Mode에서 즉시 파괴 → 버그 원인
+        }
+        activeOptions = new GameObject[options.Length];
+        ...
+    }
+
+
+================================================================
+  2. 변경 후 코드
+================================================================
+
+  파일: Assets/Scripts/VisualNovel/Core/Menus/UIConfirmationMenu.cs
+  메서드: CreateOptionButton()
+
+    private void CreateOptionButton(ConfirmationButton[] options)
+    {
+        foreach (GameObject g in activeOptions)
+        {
+            if (g != null)
+            {
+                g.SetActive(false);       // 즉시 숨김 (시각적 이중 표시 방지)
+                Destroy(g);               // end-of-frame에 파괴 예약 (안전)
+            }
+        }
+        activeOptions = new GameObject[options.Length];
+        ...
+    }
+
+
+================================================================
+  3. 변경 후 동작 흐름
+================================================================
+
+  1) 유저가 SaveLoadSlot의 Delete 버튼 클릭
+  2) SaveLoadSlot.Delete()
+       → uichoiceMenu.Show("저장된 파일을 삭제하시겠습니까?", 예, 아니오)
+           → CreateOptionButton():
+               activeOptions 비어 있음 → foreach 루프 스킵
+               Button_예, Button_아니오 Instantiate → choiceLayoutGroup 아래 배치
+               activeOptions = [Button_예, Button_아니오]
+           → anim.Play("Enter") → 첫 번째 확인 메뉴 표시
+
+  3) 유저가 "예" 클릭 → Button.onClick 발화
+
+       [리스너 1] option.action.Invoke()
+         → uichoiceMenu.Show("정말로 삭제하시겠습니까?", 예2, 아니오2)
+             → CreateOptionButton() 진입
+                 → foreach:
+                     Button_예 != null → SetActive(false)  ← 즉시 화면에서 숨김
+                                       → Destroy(Button_예) ← 파괴 예약만, 즉시 파괴 X
+                     Button_아니오 != null → SetActive(false)
+                                           → Destroy(Button_아니오)
+                 → choiceLayoutGroup (HorizontalLayoutGroup) 여전히 유효
+                   (자식 파괴가 아직 실행되지 않아 내부 콜백 미발생)
+                 → 새 Button_예2, Button_아니오2 Instantiate 성공
+                 → activeOptions = [Button_예2, Button_아니오2]
+             → anim.Play("Enter") → 두 번째 확인 메뉴 정상 표시
+
+       [리스너 2] Hide()
+         → anim.Play("Exit") (Enter로 덮어씌워져 시각적으로 무시됨)
+
+  4) 프레임 종료 시점
+       → Destroy 예약된 Button_예, Button_아니오 실제 파괴
+       → HorizontalLayoutGroup OnTransformChildrenChanged 실행
+       → 이미 새 버튼 표시 완료 상태 → 문제 없음
+
+  5) 유저가 "예2" 클릭 → 파일 삭제 실행
+
+
+================================================================
+  변경 파일 요약
+================================================================
+
+  No.  파일                                           변경 내용
+  ---  -----------------------------------------------  --------------------------------
+  1    UIConfirmationMenu.cs (CreateOptionButton 루프)   DestroyImmediate(g)
+                                                          → if(g!=null){ g.SetActive(false); Destroy(g); }
+
+================================================================
