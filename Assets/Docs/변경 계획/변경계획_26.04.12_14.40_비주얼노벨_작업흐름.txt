@@ -1,0 +1,559 @@
+================================================================================
+  비주얼 노벨 시스템 - 작업 흐름 분석 문서
+  작성일: 2026-04-12 14:40 (KST)
+================================================================================
+
+
+================================================================================
+a. 목차
+================================================================================
+
+  1. 요구한 기능
+  2. 현재 상황 및 코드
+     2-1. 폴더 구조
+     2-2. 핵심 클래스 목록
+     2-3. 시스템 의존 관계도
+  3. 시스템의 전체 작업 흐름 (워크플로우)
+     3-1. 초기화 흐름
+     3-2. 대화(다이얼로그) 처리 흐름
+     3-3. 명령어(Command) 실행 흐름
+     3-4. 논리 라인(Logical Line) 처리 흐름
+     3-5. 세이브/로드 흐름
+     3-6. 히스토리(되감기) 흐름
+  4. 설계 방식의 선택 이유
+  5. 실행 순서 요약
+  6. 시스템 간 상호작용 흐름
+  7. 주의할 점
+
+
+================================================================================
+b. 요구한 기능
+================================================================================
+
+  - 현재 완성된 비주얼 노벨 시스템의 전체 작업 흐름(워크플로우)을 파악하고 문서화
+  - 추후 기능 추가 / 수정 전 현재 코드 상태 점검
+  - 각 시스템이 어떻게 연결되어 동작하는지 명확히 정리
+
+
+================================================================================
+c. 현재 상황 및 코드
+================================================================================
+
+  [ 2-1. 폴더 구조 ]
+
+  Assets/Scripts/VisualNovel/
+  ├── Core/
+  │   ├── Audio/
+  │   │   └── AudioManager.cs           - 음악/SFX/음성 재생 관리
+  │   │   └── AudioChannel.cs           - 채널 단위 오디오 제어
+  │   │   └── AudioTrack.cs             - 트랙 정보 컨테이너
+  │   │
+  │   ├── Characters/
+  │   │   ├── Character.cs              - 캐릭터 추상 기반 클래스
+  │   │   ├── CharacterManager.cs       - 캐릭터 생성/관리 싱글톤
+  │   │   ├── CharacterConfigData.cs    - 캐릭터 설정 데이터
+  │   │   └── CharacterType/
+  │   │       ├── Character_Sprite.cs   - 스프라이트 타입
+  │   │       ├── Character_Live2D.cs   - Live2D 타입
+  │   │       ├── Character_Model3D.cs  - 3D 모델 타입
+  │   │       └── Character_Text.cs     - 텍스트 전용 타입
+  │   │
+  │   ├── Commands/
+  │   │   ├── CommandManager.cs         - 명령어 디스패처 싱글톤
+  │   │   ├── CommandProcess.cs         - 실행 중인 명령어 프로세스
+  │   │   ├── CommandParameters.cs      - 명령어 파라미터 파서
+  │   │   └── Database/
+  │   │       ├── CommandDatabase.cs    - 명령어 이름 → 델리게이트 맵
+  │   │       └── Extensions/
+  │   │           ├── CMD_DatabaseExtension_General.cs
+  │   │           ├── CMD_DatabaseExtension_Audio.cs
+  │   │           ├── CMD_DatabaseExtension_Characters.cs
+  │   │           ├── CMD_DatabaseExtension_GraphicPanels.cs
+  │   │           └── CMD_DatabaseExtension_Gallery.cs
+  │   │
+  │   ├── Dialogue/
+  │   │   ├── DialogueSystem.cs         - 대화 표시/흐름 총괄 싱글톤
+  │   │   ├── DialogueParser.cs         - 원본 텍스트 파싱
+  │   │   ├── DialogueContainer.cs      - UI 컨테이너 (텍스트박스 등)
+  │   │   ├── AutoReader.cs             - 자동 읽기 / 스킵 기능
+  │   │   ├── Conversation/
+  │   │   │   ├── Conversation.cs       - 대화 라인 시퀀스
+  │   │   │   ├── ConversationManager.cs- 대화 루프 실행
+  │   │   │   └── ConversationQueue.cs  - 대화 큐 관리
+  │   │   └── DataContainer/
+  │   │       ├── DIALOGUE_LINE.cs      - 파싱된 한 줄 데이터
+  │   │       ├── DL_SPEAKER_DATA.cs    - 화자 데이터
+  │   │       ├── DL_DIALOGUE_DATA.cs   - 대사 텍스트 데이터
+  │   │       └── DL_COMMAND_DATA.cs    - 명령어 데이터
+  │   │
+  │   ├── Effect/Button/                - 버튼 애니메이션 효과
+  │   │
+  │   ├── Feature Panels/
+  │   │   ├── ChoicePanel.cs            - 선택지 UI
+  │   │   └── InputPanel.cs             - 텍스트 입력 UI
+  │   │
+  │   ├── Graphic Panels/
+  │   │   ├── GraphicPanelManager.cs    - 그래픽 패널 전체 관리
+  │   │   ├── GraphicPanel.cs           - 개별 패널 (배경 등)
+  │   │   ├── GraphicLayer.cs           - 레이어 관리
+  │   │   └── GraphicObject.cs          - 표시 오브젝트
+  │   │
+  │   ├── Histroy/
+  │   │   ├── HistroyManager.cs         - 히스토리 총괄 싱글톤
+  │   │   ├── HistoryState.cs           - 상태 스냅샷
+  │   │   ├── HistoryCache.cs           - 캐시 (최대 15개)
+  │   │   ├── HistoryLog.cs             - 로그 항목
+  │   │   ├── HistoryLogManager.cs      - 로그 UI 관리
+  │   │   └── HistoryNavigation.cs      - 앞/뒤 이동 제어
+  │   │
+  │   ├── IO/
+  │   │   ├── FileManager.cs            - 텍스트 파일 읽기/쓰기 (XOR 암호화)
+  │   │   └── FilePaths.cs              - 경로 상수 모음
+  │   │
+  │   ├── Logical Lines/
+  │   │   ├── LogicalLineManager.cs     - 논리 라인 디스패처 (리플렉션)
+  │   │   ├── VariableStore.cs          - 전역 변수 저장소
+  │   │   └── Types/
+  │   │       ├── LL_Choice.cs          - 선택지 분기
+  │   │       ├── LL_Condition.cs       - 조건 분기 (if/else)
+  │   │       └── LL_Input.cs           - 플레이어 텍스트 입력
+  │   │
+  │   ├── Menus/
+  │   │   ├── VNMenuManager.cs          - 메뉴 전환 관리
+  │   │   ├── MainMenu.cs
+  │   │   ├── SaveAndLoadMenu.cs
+  │   │   └── ConfigMenu.cs
+  │   │
+  │   ├── ScriptableObjects/
+  │   │   ├── CharacterConfigSO.cs      - 캐릭터 설정 DB
+  │   │   └── DialogueSystemConfigurationSO.cs
+  │   │
+  │   ├── TextArchitect/
+  │   │   ├── TextArchitect.cs          - 텍스트 렌더링 총괄
+  │   │   └── String Builders/
+  │   │       ├── TABuilder.cs          - 기반 클래스
+  │   │       ├── TABuilder_Typewriter.cs- 타자기 효과
+  │   │       ├── TABuilder_Fade.cs     - 페이드인 효과
+  │   │       └── TABuilder_Instant.cs  - 즉시 표시
+  │   │
+  │   ├── UserControls/
+  │   │   └── PlayerInputManager.cs    - New Input System 연동
+  │   │
+  │   └── VN System/
+  │       ├── VNManager.cs             - 전체 시스템 진입점 (싱글톤)
+  │       ├── VNGameSave.cs            - 세이브 데이터 컨테이너
+  │       ├── VNDatabaseLinkSetup.cs   - DB 링크 초기화
+  │       └── DataContainers/
+  │           ├── VisualNovelSO.cs
+  │           ├── VN_Configuration.cs
+  │           ├── VN_ConversationData.cs
+  │           └── VN_VariableData.cs
+  │
+  ├── Extension/
+  │   ├── ColorExtensions.cs
+  │   └── CoroutineWrapper.cs
+  │
+  └── Features/
+      └── CensorManager.cs
+
+
+  [ 2-2. 핵심 클래스 목록 ]
+
+  ┌─────────────────────────────┬──────────────────────────────────────────────┐
+  │ 클래스                       │ 역할                                         │
+  ├─────────────────────────────┼──────────────────────────────────────────────┤
+  │ VNManager                   │ 게임 시작 진입점, 저장/로드 분기               │
+  │ DialogueSystem              │ 대화 표시 총괄, 이벤트 발행                    │
+  │ ConversationManager         │ 대화 루프 코루틴, 라인별 처리                  │
+  │ DialogueParser              │ 텍스트 한 줄 → DIALOGUE_LINE 파싱             │
+  │ DIALOGUE_LINE               │ 파싱된 라인 데이터 (화자/대사/명령어)          │
+  │ TextArchitect               │ 텍스트 애니메이션 렌더링                       │
+  │ CommandManager              │ 명령어 이름 → 실행 델리게이트 디스패치         │
+  │ CharacterManager            │ 캐릭터 생성/참조/정렬                          │
+  │ Character (abstract)        │ 캐릭터 표시/숨김/이동/애니메이션 기반          │
+  │ LogicalLineManager          │ choice/if/input 감지 및 실행                  │
+  │ VariableStore               │ 전역 변수 DB (다중 네임스페이스)               │
+  │ AudioManager                │ 음악/SFX/음성/앰비언스 채널 관리              │
+  │ GraphicPanelManager         │ 배경/그래픽 패널 레이어 관리                   │
+  │ HistoryManager              │ 되감기용 상태 스냅샷 관리 (최대 15개)          │
+  │ VNGameSave                  │ 세이브 파일 직렬화/역직렬화                    │
+  │ FileManager                 │ 파일 읽기/쓰기 (XOR 암호화 지원)              │
+  │ PlayerInputManager          │ 입력(Next/Back/Forward) → 시스템 연동         │
+  │ AutoReader                  │ 자동 진행 / 스킵 모드                          │
+  └─────────────────────────────┴──────────────────────────────────────────────┘
+
+
+  [ 2-3. 시스템 의존 관계도 ]
+
+                          VNManager
+                              │
+            ┌─────────────────┼──────────────────┐
+            │                 │                  │
+     DialogueSystem     VNGameSave         VNDatabaseLinkSetup
+            │
+     ┌──────┼──────────────┐
+     │      │              │
+  ConversationManager  AutoReader  HistoryManager ←─ (onClear 이벤트)
+     │
+  ┌──┼──────────────────────────────────┐
+  │  │                                  │
+  │  DialogueParser          LogicalLineManager
+  │  (DIALOGUE_LINE)         ├─ LL_Choice   → ChoicePanel
+  │                          ├─ LL_Condition → VariableStore
+  │                          └─ LL_Input    → InputPanel
+  │
+  ├─ CharacterManager
+  │   └─ Character (Sprite / Live2D / Model3D / Text)
+  │
+  ├─ TextArchitect
+  │   └─ TABuilder (Typewriter / Fade / Instant)
+  │
+  └─ CommandManager
+      └─ CMD_DatabaseExtension_*
+          ├─ AudioManager
+          ├─ CharacterManager
+          └─ GraphicPanelManager
+
+  PlayerInputManager ──→ DialogueSystem.onUserPrompt_Next
+                    ──→ HistoryManager (앞/뒤 이동)
+
+  FileManager ←── VNGameSave
+
+
+================================================================================
+d. 시스템의 전체 작업 흐름 (워크플로우)
+================================================================================
+
+  [ 3-1. 초기화 흐름 ]
+
+  게임 시작
+    └─> VNManager.Start()
+         ├─> VNDatabaseLinkSetup: 명령어 DB / 캐릭터 DB 등록
+         └─> VNGameSave.Load() or NewGame()
+              ├─ 새 게임: startingFile (TextAsset) 읽기
+              │           Conversation 생성
+              │           DialogueSystem.Say(conversation)
+              └─ 로드:    VNGameSave.Activate() 호출
+                          → 저장된 대화큐 / 변수 / 히스토리 복원
+
+
+  [ 3-2. 대화(다이얼로그) 처리 흐름 ]
+
+  DialogueSystem.Say(Conversation)
+    └─> ConversationManager.StartConversation()
+         └─> [코루틴] RunningConversation() ─── 메인 루프 시작
+
+              WHILE 대화가 남아있는 동안:
+
+              ① 현재 라인 텍스트 가져오기
+                 conversation.lines[progress]
+
+              ② 파싱
+                 DialogueParser.Parse(rawLine)
+                 ├─ TagManager.Inject() : $변수 치환, <태그> 처리
+                 └─ Regex로 화자/대사/명령어 분리
+                    → DIALOGUE_LINE 생성
+                       ├─ speakerData  (이름, 캐스팅명, 포지션 등)
+                       ├─ dialogueData (텍스트 세그먼트 리스트)
+                       └─ commandData  (명령어 리스트)
+
+              ③ 논리 라인 체크
+                 LogicalLineManager.TryGetLogic(DIALOGUE_LINE)
+                 └─ 매칭되면 해당 논리 라인 코루틴 실행 (3-4 참조)
+
+              ④ 화자 처리 (hasSpeaker == true 일 때)
+                 CharacterManager.GetOrCreateCharacter(name)
+                 ├─ 캐릭터 설정(색상/폰트) → DialogueContainer에 반영
+                 ├─ 캐스팅 표정/레이어 적용
+                 └─ 화자 이름 UI 표시
+
+              ⑤ 대사 표시 (hasDialogue == true 일 때)
+                 DialogueSystem.dialogueContainer 업데이트
+                 TextArchitect.Build(segment) 또는 .Append(segment)
+                 └─ 빌더 타입별 코루틴 실행:
+                    ├─ Typewriter: 글자 단위로 순차 출력
+                    ├─ Fade:       글자 투명도 페이드인
+                    └─ Instant:    전체 텍스트 즉시 표시
+
+                 사용자 상호작용:
+                 ├─ 첫 클릭: hurryUp = true  (출력 가속)
+                 └─ 두 번째 클릭: 텍스트 즉시 완성
+
+              ⑥ 명령어 실행 (hasCommands == true 일 때)
+                 CommandManager.Execute(각 명령어) (3-3 참조)
+                 └─ waitForCompletion 여부에 따라:
+                    ├─ true:  코루틴 완료까지 대기
+                    └─ false: 비동기 실행 (fire and forget)
+
+              ⑦ 사용자 입력 대기
+                 DialogueSystem.onUserPrompt_Next 이벤트 발생까지 대기
+                 또는 AutoReader가 자동으로 진행
+
+              ⑧ 히스토리 기록
+                 HistoryManager: 현재 상태 스냅샷 저장
+
+              ⑨ 진행도 증가
+                 conversation.progress++
+                 → 다음 라인으로
+
+              대화 종료:
+              └─> ConversationQueue에 다음 대화가 있으면 이어서 실행
+
+
+  [ 3-3. 명령어(Command) 실행 흐름 ]
+
+  CommandManager.Execute("명령어이름", args[])
+    │
+    ├─ 일반 명령어: "playsong", "wait", "showui" 등
+    │   └─> CommandDatabase에서 이름으로 델리게이트 탐색
+    │        └─> CommandProcess 생성 (GUID 부여)
+    │             └─> [코루틴] RunningProcess()
+    │                  ├─ Action              → 인자 없이 호출
+    │                  ├─ Action<string>      → 첫 인자로 호출
+    │                  ├─ Action<string[]>    → 전체 인자 배열로 호출
+    │                  ├─ Func<IEnumerator>   → 코루틴 yield 대기
+    │                  ├─ Func<string, IEnumerator>   → 코루틴 with 인자
+    │                  └─ Func<string[], IEnumerator> → 코루틴 with 배열
+    │                  완료 시 → activeProcesses에서 제거
+    │
+    └─ 서브 명령어: "캐릭터이름.명령어" 형식
+        └─> '.' 기준으로 DB명 / 명령어명 분리
+             └─> CharacterManager에서 캐릭터 타입 확인
+                  └─> 타입별 서브 DB 탐색:
+                       ├─ Sprite  → DATABASE_CHARACTERS_SPRITE
+                       ├─ Live2D  → DATABASE_CHARACTERS_LIVE2D
+                       └─ Model3D → DATABASE_CHARACTERS_Model3D
+
+  주요 명령어 목록:
+    일반:       wait, showui, hideui, showdb, hidedb, load
+    오디오:     playsong, stopsong, playsfx, stopsfx, playvoice, playambience
+    캐릭터:     (캐릭터명).show, .hide, .move, .expression, .flip
+    그래픽:     setbg, setlayer, clearlayer
+    갤러리:     unlockcg
+
+
+  [ 3-4. 논리 라인(Logical Line) 처리 흐름 ]
+
+  LogicalLineManager.TryGetLogic(DIALOGUE_LINE)
+    └─ 리플렉션으로 ILogicalLine 구현체 목록 보유
+         └─ 순서대로 ILogicalLine.Matches(line) 체크
+
+  - choice 감지 시 (LL_Choice):
+    └─> 이후 '{' ... '}' 블록 파싱
+         └─> '-' 로 시작하는 줄들을 선택지로 추출
+              └─> ChoicePanel 표시 → 플레이어 선택 대기
+                   └─> 선택된 브랜치의 대화 → ConversationQueue에 Enqueue
+
+  - if 감지 시 (LL_Condition):
+    └─> VariableStore에서 조건 변수 평가
+         ├─ 참: if 블록 → ConversationQueue에 Enqueue
+         └─ 거짓: else 블록 → ConversationQueue에 Enqueue (존재 시)
+
+  - input 감지 시 (LL_Input):
+    └─> InputPanel 표시 → 플레이어 텍스트 입력 대기
+         └─> 입력값 → InputPanel.lastInput 저장
+              └─> VariableStore에 자동 등록 (선택적)
+
+  변수 시스템 (VariableStore):
+    - 형식: $변수명  또는  database.변수명
+    - 타입: bool, int, float, string
+    - 대화 텍스트 내 $변수명 → TagManager가 실제 값으로 치환
+    - 기본 DB 이름: "Default"
+
+
+  [ 3-5. 세이브/로드 흐름 ]
+
+  [저장]
+  VNGameSave.Save(슬롯번호)
+    ├─ HistoryState.Capture(): 현재 캐릭터/그래픽/오디오 상태 스냅샷
+    ├─ HistoryManager.history: 히스토리 로그 복사
+    ├─ ConversationQueue 직렬화:
+    │   ├─ 파일 기반 대화: 파일명+진행도로 압축 저장
+    │   └─ 인라인 대화:    전체 라인 저장
+    ├─ VariableStore 전체 DB → VN_VariableData[] 직렬화
+    ├─ ScreenShotFunction으로 스크린샷 캡처
+    ├─ JSON 직렬화
+    ├─ XOR 암호화 (선택적)
+    └─ FileManager.Save(경로, 데이터) → 파일 쓰기
+
+  [불러오기]
+  VNGameSave.Load(filePath)
+    ├─ FileManager.ReadTextFile() → XOR 복호화
+    ├─ JsonUtility.FromJson<VNGameSave>()
+    └─ VNGameSave.Activate():
+        ├─ activeState.Load(): 캐릭터/그래픽/오디오 상태 복원
+        ├─ HistoryManager.history 복원
+        ├─ ConversationQueue 재구성:
+        │   ├─ 압축 저장분: 파일 재로드 + 진행도 구간 추출
+        │   └─ 인라인 저장분: 라인 목록 직접 복원
+        │   → StartConversation 또는 Enqueue
+        ├─ VN_VariableData[] → VariableStore 복원
+        └─ 프롬프트 숨김 (사용자 입력 대기 상태)
+
+
+  [ 3-6. 히스토리(되감기) 흐름 ]
+
+  DialogueSystem.onClear 이벤트 발생 (매 대사 표시 전)
+    └─> HistoryManager.OnDialogueClear()
+         └─> HistoryState.Capture() → 현재 상태 스냅샷 생성
+              ├─ 활성 캐릭터 목록
+              ├─ 화자/대사 텍스트
+              ├─ 오디오 상태
+              └─ 그래픽 상태
+
+  [뒤로 이동] PlayerInputManager.HistoryBack 입력
+    └─> HistoryNavigation: 이전 스냅샷 복원
+         └─> HistoryState.Load(): 해당 시점 상태 적용
+
+  [앞으로 이동] PlayerInputManager.HistoryForward 입력
+    └─> 다음 스냅샷으로 이동 (있는 경우)
+
+  [히스토리 로그 보기] PlayerInputManager.HistoryLogs 입력
+    └─> HistoryLogManager: 과거 대사 목록 UI 표시
+
+
+================================================================================
+e. 설계 방식의 선택 이유
+================================================================================
+
+  1. 싱글톤 패턴 (VNManager, DialogueSystem, CommandManager 등)
+     → 비주얼 노벨은 단일 흐름으로 진행되므로 전역 접근이 자연스러움
+     → 씬 전환 없이도 모든 시스템에 접근 가능
+
+  2. 리플렉션 기반 확장 (CommandDatabase Extension, LogicalLineManager, TextArchitect)
+     → 새 명령어/논리 라인/텍스트 빌더 추가 시 기존 코드 수정 불필요
+     → ILogicalLine, TABuilder, CMD_DatabaseExtension 등의 인터페이스/기반 클래스만 구현하면 자동 등록
+
+  3. 코루틴 기반 비동기 처리 (텍스트 빌딩, 명령어 실행, 이동 애니메이션 등)
+     → Unity의 Update 루프와 자연스럽게 통합
+     → 프레임 단위로 세밀한 제어 가능 (글자 하나씩 출력 등)
+
+  4. 파일 기반 대화 스크립트
+     → 디자이너/기획자가 코드 없이 대사 편집 가능
+     → 구조: 화자명 "대사" [명령어]
+
+  5. 이벤트 기반 연동 (onUserPrompt_Next, onClear)
+     → 시스템 간 결합도를 낮춤
+     → 히스토리 시스템이 대화 시스템 내부를 직접 참조하지 않고 이벤트로 감지
+
+  6. XOR 암호화 세이브
+     → 간단한 치트 방지 (완전한 보안 아님)
+     → FileManager에서 암호화 ON/OFF 가능
+
+
+================================================================================
+f. 실행 순서 요약
+================================================================================
+
+  [씬 시작]
+  1. VNManager.Start()
+  2. VNDatabaseLinkSetup → 명령어 DB 초기화
+  3. VNGameSave → 새 게임 or 저장 파일 로드 분기
+
+  [대화 진행]
+  4. Conversation 생성 (TextAsset 또는 인라인)
+  5. ConversationManager.StartConversation()
+  6. [루프] 한 라인씩:
+     a. 텍스트 파싱 (DialogueParser)
+     b. 논리 라인 처리 (선택지/조건/입력)
+     c. 화자 설정 (CharacterManager)
+     d. 텍스트 출력 (TextArchitect)
+     e. 명령어 실행 (CommandManager)
+     f. 사용자 입력 대기
+     g. 히스토리 저장
+  7. 대화 종료 → 큐에서 다음 대화 꺼내기 or 대기
+
+  [세이브]
+  8. VNGameSave.Save() → JSON + 암호화 → 파일 쓰기
+
+  [로드]
+  9. VNGameSave.Load() → 역직렬화 → Activate() → 상태 복원
+
+
+================================================================================
+g. 시스템 간 상호작용 흐름 (연결 지점)
+================================================================================
+
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ 입력 이벤트 → 시스템                                                      │
+  ├──────────────────────────────────────────────────────────────────────────┤
+  │ 클릭/Space/Enter   → DialogueSystem.onUserPrompt_Next 이벤트 발행         │
+  │                      → ConversationManager 대기 해제                      │
+  │ HistoryBack 키     → HistoryNavigation.GoBack()                          │
+  │ HistoryForward 키  → HistoryNavigation.GoForward()                       │
+  │ HistoryLogs 키     → HistoryLogManager.Open()                            │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ 대화 시스템 → 다른 시스템                                                 │
+  ├──────────────────────────────────────────────────────────────────────────┤
+  │ 화자 등장     → CharacterManager.GetOrCreateCharacter()                  │
+  │ 명령어 실행   → CommandManager.Execute()                                 │
+  │               → AudioManager, GraphicPanelManager, CharacterManager 등   │
+  │ 선택지 감지   → ChoicePanel.Show(choices)                                │
+  │ 조건 분기     → VariableStore.Evaluate(expression)                       │
+  │ 텍스트 출력   → TextArchitect.Build/Append()                             │
+  │ 대사 완료     → HistoryManager.OnDialogueClear() (onClear 이벤트)        │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ 세이브/로드 → 다른 시스템                                                 │
+  ├──────────────────────────────────────────────────────────────────────────┤
+  │ Save  → HistoryState.Capture() + ConversationQueue + VariableStore       │
+  │ Load  → HistoryState.Load() + ConversationManager + VariableStore 복원   │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+h. 주의할 점
+================================================================================
+
+  1. 싱글톤 초기화 순서
+     - VNManager가 가장 먼저 실행되어야 함
+     - CommandManager, CharacterManager 등이 Awake에서 초기화되는 순서를
+       Unity의 Script Execution Order에서 명시적으로 관리할 것
+
+  2. 코루틴 중단 처리
+     - ConversationManager는 씬 전환 시 코루틴이 강제 중단됨
+     - 씬 전환 전 반드시 StopAllCoroutines() 또는 명시적 정리 필요
+
+  3. 명령어 waitForCompletion 플래그
+     - waitForCompletion=false인 명령어는 대화 진행과 병렬 실행됨
+     - 캐릭터 이동 중 대화가 진행될 수 있음 → 의도적인지 확인 필요
+
+  4. 변수 시스템 네임스페이스
+     - VariableStore의 기본 DB는 "Default"
+     - 여러 DB를 혼용할 경우 "database.변수명" 형식을 반드시 지킬 것
+     - 저장 시 전체 DB가 직렬화되므로 불필요한 변수가 누적될 수 있음
+
+  5. 히스토리 캐시 한계
+     - HistoryCache 최대 15개로 제한됨 (HISTORY_CACHE_LIMIT)
+     - 15개 초과 시 가장 오래된 항목이 제거됨
+     - 세이브/로드로 되감기 가능 범위 외 복원은 불가
+
+  6. 파일 기반 대화 스크립트 경로
+     - FilePaths.cs에 정의된 경로 상수를 사용할 것
+     - 직접 문자열 경로를 하드코딩하면 플랫폼 변경 시 문제 발생
+
+  7. XOR 암호화의 한계
+     - 현재 세이브 파일 암호화 키는 코드에 하드코딩되어 있음 ("SECRETKEY")
+     - 완전한 보안이 필요하다면 별도 암호화 방식 검토 필요
+
+  8. 리플렉션 성능
+     - CommandManager, LogicalLineManager는 시작 시 리플렉션으로 DB 구성
+     - 런타임 중 반복 호출이 아니므로 성능 문제 없음
+     - 단, 새 Extension 클래스 추가 시 올바른 네임스페이스에 위치해야 자동 감지됨
+
+  9. Live2D / Model3D 캐릭터
+     - 해당 타입은 추가 패키지(Live2D SDK, 3D 어셋) 의존성 있음
+     - 미설치 환경에서 컴파일 오류 발생 가능 → 조건부 컴파일 확인 필요
+
+  10. AutoReader (자동 진행)
+      - 읽기 속도는 기본 18자/초 기준으로 계산
+      - 짧은 대사가 연속될 경우 너무 빠르게 넘어갈 수 있음
+      - ConfigMenu에서 속도 조절 가능 여부 확인 권장
+
+
+================================================================================
+  END OF DOCUMENT
+================================================================================

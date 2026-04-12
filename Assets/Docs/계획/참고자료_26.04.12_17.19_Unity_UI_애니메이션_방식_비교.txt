@@ -1,0 +1,174 @@
+================================================================================
+참고자료_26.04.12_17.19 — Unity UI 애니메이션 방식 비교
+작성일: 2026-04-12 (KST)
+대상 프로젝트: AH_VisualNovel
+================================================================================
+
+[주제]
+Unity에서 UI 애니메이션을 넣는 방법의 종류와 권장 방식,
+그리고 현재 프로젝트(AH_VisualNovel)의 사용 현황.
+
+--------------------------------------------------------------------------------
+1. Unity UI 애니메이션 방식 3가지
+--------------------------------------------------------------------------------
+
+┌──────────────┬───────────────────────┬─────────────────────────────────┐
+│   방식        │   컴포넌트             │   상태                           │
+├──────────────┼───────────────────────┼─────────────────────────────────┤
+│ Legacy       │ Animation 컴포넌트     │ ❌ 구형, deprecated              │
+│ Mecanim      │ Animator 컴포넌트      │ ⚠️ 캐릭터엔 OK, UI엔 권장 안 함  │
+│ 스크립트 기반 │ Coroutine + Lerp 등   │ ✅ UI 애니메이션 권장 방식        │
+└──────────────┴───────────────────────┴─────────────────────────────────┘
+
+
+--------------------------------------------------------------------------------
+2. Legacy Animation을 쓰면 안 되는 이유
+--------------------------------------------------------------------------------
+
+- Mecanim(Animator) 시스템 이전의 구형 방식
+- 애니메이션 간 블렌딩 불가
+- 상태 머신(State Machine) 없음
+- 레이어 개념 없음
+- Unity 공식에서 더 이상 기능 개선을 하지 않음 (유지보수 없음)
+- UI Canvas + RectTransform 과의 연동이 불안정
+
+
+--------------------------------------------------------------------------------
+3. Animator(Mecanim)도 UI에서 권장하지 않는 이유 ← 핵심
+--------------------------------------------------------------------------------
+
+Animator는 매 프레임 자신이 제어하는 속성 값을 "덮어씌움".
+
+예시:
+    anim.Play("Enter");           // Animator가 CanvasGroup.alpha 0→1 제어
+    canvasGroup.alpha = 0.5f;     // 스크립트에서 설정
+    // → 다음 프레임에 Animator가 자기 값으로 되돌려 버림 (충돌)
+
+문제가 되는 상황:
+  - 스크립트에서 alpha, position, scale 등을 런타임에 조작해야 할 때
+  - 애니메이션 중간에 외부에서 값을 변경해야 할 때
+  - CanvasGroup.alpha와 Animator가 동시에 같은 오브젝트를 제어할 때
+
+결론:
+  Animator는 "정해진 클립을 그대로 재생"하는 것에는 적합하지만,
+  런타임 데이터(변수값, 상태)에 따라 동적으로 제어해야 하는
+  UI 애니메이션에는 스크립트 기반이 훨씬 안전하고 유연하다.
+
+
+--------------------------------------------------------------------------------
+4. 권장 방식: 스크립트 기반 애니메이션
+--------------------------------------------------------------------------------
+
+핵심 함수:
+  Mathf.MoveTowards(current, target, maxDelta)
+    → 매 프레임 일정 속도로 값에 근접 (선형 이동, 오버슈트 없음)
+
+  Mathf.Lerp(a, b, t)
+    → t(0~1) 비율로 보간. 끝에 가까울수록 느려지는 감속 효과
+
+  Vector2.Lerp / Vector2.MoveTowards
+    → 위치, 앵커 등 2D 벡터 보간
+
+패턴 예시 (코루틴 기반 페이드):
+    IEnumerator Fading(float targetAlpha, float speed)
+    {
+        while (!Mathf.Approximately(cg.alpha, targetAlpha))
+        {
+            cg.alpha = Mathf.MoveTowards(cg.alpha, targetAlpha, Time.deltaTime * speed);
+            yield return null;
+        }
+        cg.alpha = targetAlpha;
+    }
+
+장점:
+  - 스크립트가 값을 완전히 제어 (Animator 충돌 없음)
+  - 런타임 데이터(속도, 타겟 값 등)를 파라미터로 받을 수 있음
+  - 코루틴 취소/재시작이 자유로움
+  - 중간에 다른 로직 삽입 가능 (yield return, 조건 체크 등)
+
+
+--------------------------------------------------------------------------------
+5. 현재 프로젝트(AH_VisualNovel) 사용 현황
+--------------------------------------------------------------------------------
+
+[A] Animator를 사용하는 UI 파일 (7개)
+────────────────────────────────────────
+  Scripts/Core/Menus/Pages/MenuPage.cs
+    → anim.SetTrigger("Open"), anim.SetTrigger("Close")
+
+  Scripts/Core/Menus/UIConfirmationMenu.cs
+    → anim.Play("Enter"), anim.Play("Exit")
+
+  Scripts/Core/VN System/Gallery/GalleryMenu.cs
+    → anim.Play("Enter"), anim.Play("Exit")
+
+  Scripts/Core/Histroy/HistoryLogManager.cs
+    → anim.Play("LogOpen"), anim.Play("LogClose")
+
+  Scripts/Core/Dialogue/DialogueContinuePrompt.cs
+    → Animator anim (계속 아이콘 깜빡임)
+
+  Scripts/Core/Effect/Button/ButtonBehaviours_Animator.cs
+    → anim.Play("Enter/Exit") — 버튼 마우스 호버 효과
+
+  Scripts/Core/Dialogue/AutoReader.cs
+    → GetComponent<Animator>().Play("Enter") — 자동재생 표시 아이콘
+
+
+[B] 스크립트 기반 애니메이션을 사용하는 파일 (핵심 시스템)
+────────────────────────────────────────────────────────
+  Scripts/Core/CanvasGroupController.cs
+    → Mathf.MoveTowards()로 alpha 페이드 (Show/Hide 코루틴)
+    → 프로젝트 전체에서 UI 페이드의 기반 컴포넌트로 사용
+
+  Scripts/Core/Characters/Character_Sprite.cs
+    → MoveTowards()로 캐릭터 Show/Hide 알파 전환
+    → Color.Lerp()로 색상 전환
+
+  Scripts/Core/Characters/Character.cs
+    → Vector2.Lerp() / MoveTowards()로 위치 이동
+    → Color.Lerp()로 색상 전환
+
+  Scripts/Core/Characters/CharacterSpriteLayer.cs
+    → MoveTowards()로 레이어 간 알파 레벨링
+
+  Scripts/Core/Graphic Panels/GraphicObject.cs
+    → MoveTowards()로 그래픽 패널 페이드, 블렌드 전환
+
+  Scripts/Core/TextArchitect/String Builders/TABuilder_Typewriter.cs
+    → WaitForSeconds()로 타자기 효과 (글자 단위 출력)
+
+  Scripts/Core/TextArchitect/String Builders/TABuilder_Fade.cs
+    → MoveTowards()로 텍스트 알파 페이드 (글자 단위)
+
+  Scripts/Core/Audio/AudioChannel.cs
+    → MoveTowards()로 오디오 볼륨 페이드
+
+
+--------------------------------------------------------------------------------
+6. 평가 및 주의사항
+--------------------------------------------------------------------------------
+
+[✅ 잘 된 점]
+캐릭터·대화·그래픽·오디오 등 런타임 데이터와 연동되는 핵심 시스템은
+전부 스크립트 기반으로 구현되어 있음. 권장 방식을 잘 따르고 있음.
+
+[⚠️ 주의할 점]
+메뉴 UI(MenuPage, UIConfirmationMenu, GalleryMenu, HistoryLogManager 등)에서
+Animator를 사용 중.
+
+현재는 해당 Animator 클립이 "열기/닫기"처럼 단독으로 동작하고
+스크립트가 동시에 같은 속성을 건드리지 않으므로 충돌은 없음.
+
+단, 아래 상황이 생기면 충돌 발생 위험:
+  - 메뉴가 열려 있는 도중 스크립트에서 alpha나 position을 변경해야 할 때
+  - Animator 클립과 CanvasGroupController가 같은 CanvasGroup을 동시에 제어할 때
+
+[권장 대응]
+현재 당장 문제가 없다면 유지해도 무방.
+추후 해당 메뉴 UI를 스크립트로 제어해야 할 필요가 생기면
+CanvasGroupController 방식으로 교체하는 것이 안전함.
+
+================================================================================
+끝
+================================================================================

@@ -710,9 +710,20 @@ namespace ES3Internal
                 return true;
 
             foreach (var flag in invalidHideFlags)
-                if ((obj.hideFlags & flag) != 0 && /*obj.hideFlags != HideFlags.HideInHierarchy &&*/ obj.hideFlags != HideFlags.HideInInspector && obj.hideFlags != HideFlags.NotEditable)
+            {
+                if (obj.hideFlags.HasFlag(flag))
+                {
+                    if (obj.hideFlags.HasFlag(HideFlags.HideInInspector) ||
+                        obj.hideFlags.HasFlag(HideFlags.NotEditable) ||
+                        obj.hideFlags.HasFlag(HideFlags.DontUnloadUnusedAsset))
+                    {
+                        continue;
+                    }
+
                     if (!(obj is Mesh || obj is Material))
                         return false;
+                }
+            }
 
             if (obj is UnityEngine.U2D.SpriteAtlas)
                 return false;

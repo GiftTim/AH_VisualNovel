@@ -25,6 +25,9 @@ public class ES3ReferenceMgr : ES3ReferenceMgrBase
 
         ES3ReferenceMgrBase.isEnteringPlayMode = isEnteringPlayMode;
 
+
+
+
         // This will get the dependencies for all GameObjects and Components from the active scene.
         AddDependencies(this.gameObject.scene.GetRootGameObjects());
         AddDependenciesFromFolders();
@@ -32,6 +35,17 @@ public class ES3ReferenceMgr : ES3ReferenceMgrBase
         RemoveNullOrInvalidValues();
 
         ES3ReferenceMgrBase.isEnteringPlayMode = false;
+    }
+
+    private List<GameObject> GetDependencyGameObjects()
+    {
+        var gameObjects = new List<GameObject>(this.gameObject.scene.GetRootGameObjects());
+
+        if (ES3Settings.defaultSettingsScriptableObject.onlyAddReferencesFromObjectsWithES3Referenceable)
+            gameObjects.RemoveAll(go => go.GetComponent<ES3Referenceable>() == null);
+
+        gameObjects.Remove(this.gameObject);
+        return gameObjects;
     }
 
     [MenuItem("Tools/Easy Save 3/Refresh References for All Scenes", false, 150)]

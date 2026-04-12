@@ -1,0 +1,359 @@
+================================================================================
+  DialogueSystem 폴더 전체 주석 추가 계획
+  작성일: 2026-04-12 15:53 (KST)
+================================================================================
+
+
+================================================================================
+a. 목차
+================================================================================
+
+  1. 요구한 기능
+  2. 현재 상황 및 코드
+     2-1. 대상 파일 목록
+     2-2. 파일별 현재 주석 현황
+     2-3. 시스템 의존 관계도
+  3. 변경 방식
+  4. 다른 방법과 비교 / 이 방식을 선택한 이유
+  5. 진행 순서
+  6. 변경 상세 내역 (파일별)
+  7. 주의할 점
+
+
+================================================================================
+b. 요구한 기능
+================================================================================
+
+  - Dialogue 폴더 내 모든 클래스에 처음 보는 사람도 이해할 수 있는 수준의 주석 추가
+  - 이전 작업(VNManager 주석 추가, 26.04.12_15.00)과 동일한 수준/형식 유지
+
+  대상 파일 (총 14개):
+  Core/Dialogue/
+    ├── DialogueSystem.cs
+    ├── DialogueParser.cs
+    ├── AutoReader.cs
+    ├── DialogueContainer.cs
+    ├── DialogueContinuePrompt.cs
+    ├── NameContainer.cs
+    ├── TagManager.cs
+    ├── Conversation/
+    │   ├── Conversation.cs
+    │   ├── ConversationManager.cs
+    │   └── ConversationQueue.cs
+    └── DataContainer/
+        ├── DIALOGUE_LINE.cs
+        ├── DL_SPEAKER_DATA.cs
+        ├── DL_Dialogue_Data.cs
+        └── DL_COMMAND_DATA.cs
+
+
+================================================================================
+c. 현재 상황 및 코드
+================================================================================
+
+  [ 2-1. 파일별 현재 주석 현황 ]
+
+  ┌────────────────────────────────┬──────┬─────────────────────────────────┐
+  │ 파일                            │ 줄수 │ 주석 현황                        │
+  ├────────────────────────────────┼──────┼─────────────────────────────────┤
+  │ DialogueSystem.cs              │  165 │ Set Dialogue/name details 등 일부│
+  │ DialogueParser.cs              │   90 │ 한/영 혼용 블록 주석 일부         │
+  │ AutoReader.cs                  │  159 │ 한국어 인라인 주석 일부           │
+  │ DialogueContainer.cs           │   44 │ 한국어 인라인 주석 일부           │
+  │ DialogueContinuePrompt.cs      │   61 │ Start 기본 주석 외 없음           │
+  │ NameContainer.cs               │   29 │ 기본 Start 주석 외 없음           │
+  │ TagManager.cs                  │  100 │ 한국어 인라인 주석 일부           │
+  │ Conversation.cs                │   42 │ 주석 없음                         │
+  │ ConversationManager.cs         │  336 │ 영어 인라인 주석 일부             │
+  │ ConversationQueue.cs           │   35 │ 주석 없음                         │
+  │ DIALOGUE_LINE.cs               │   22 │ 주석 없음                         │
+  │ DL_SPEAKER_DATA.cs             │  117 │ XML summary 1개, 인라인 일부      │
+  │ DL_Dialogue_Data.cs            │   81 │ 영어 인라인 주석 일부, 한국어 일부 │
+  │ DL_COMMAND_DATA.cs             │   84 │ 주석 없음                         │
+  └────────────────────────────────┴──────┴─────────────────────────────────┘
+
+  [ 2-2. 시스템 의존 관계도 ]
+
+  DialogueSystem (싱글톤, MonoBehaviour)
+    ├── ConversationManager  ← TextArchitect 주입
+    │     ├── Conversation  ← 대화 라인 시퀀스
+    │     ├── ConversationQueue  ← 대화 대기열
+    │     ├── LogicalLineManager  ← choice/if/input 처리
+    │     └── [코루틴] RunningConversation()
+    │           ├── DialogueParser.Parse()  →  DIALOGUE_LINE
+    │           │     ├── DL_SPEAKER_DATA
+    │           │     ├── DL_DIALOGUE_DATA  ←  DIALOGUE_SEGMENT 목록
+    │           │     └── DL_COMMAND_DATA   ←  Command 목록
+    │           ├── Line_RunDialogue()
+    │           │     ├── HandleSpeakerLogic()  →  CharacterManager
+    │           │     └── BuildLineSegments()   →  TextArchitect
+    │           ├── LINE_RunCommands()  →  CommandManager
+    │           └── WaitForUserInput()
+    │
+    ├── AutoReader  ← 자동 읽기 / 스킵 모드
+    ├── DialogueContainer  ← 대화창 UI
+    │     └── NameContainer  ← 이름 표시 UI
+    ├── DialogueContinuePrompt  ← ▶ 계속 표시 아이콘
+    └── TagManager  ← <태그> 및 $변수 치환
+
+
+================================================================================
+d. 변경 방식
+================================================================================
+
+  - 기존 코드 로직 변경 없음. 주석만 추가.
+  - 주석 위치:
+      1) 클래스 선언 바로 위 → 블록 주석 (/* ... */)으로 전체 역할 설명
+      2) 필드/프로퍼티 위 또는 옆 → 인라인 주석 (//)
+      3) 메서드 선언 바로 위 → 블록 주석으로 역할/매개변수/반환값 설명
+      4) 복잡한 로직 라인 옆 → 인라인 주석으로 의도 설명
+  - 언어: 한국어 (기존 관례 유지)
+  - 기존 영어/한국어 인라인 주석은 보존하거나 보강
+
+
+================================================================================
+e. 다른 방법과 비교 / 이 방식을 선택한 이유
+================================================================================
+
+  이전 VNManager 주석 작업(26.04.12_15.00)에서 결정한 방식과 동일:
+
+  [방법 A] XML 문서 주석 (/// <summary>) → 오버엔지니어링, 채택 X
+  [방법 B] 코드 리팩토링 병행           → 요구 범위 초과, 채택 X
+  [방법 C] 별도 Wiki 문서로만 정리       → 코드 내 맥락 부재, 채택 X
+  ★ [방법 D] 인라인 한국어 블록/라인 주석 → 채택
+
+  DialogueSystem은 VNManager보다 복잡도가 높으므로
+  특히 ConversationManager의 메인 루프(RunningConversation)와
+  파싱 흐름(DialogueParser → DIALOGUE_LINE → DL_*)에
+  더 많은 흐름 설명 주석을 추가한다.
+
+
+================================================================================
+f. 진행 순서
+================================================================================
+
+  1.  DIALOGUE_LINE.cs          - 파싱 결과의 기본 단위이므로 가장 먼저
+  2.  DL_SPEAKER_DATA.cs        - DIALOGUE_LINE의 화자 데이터
+  3.  DL_Dialogue_Data.cs       - DIALOGUE_LINE의 대사 데이터 (세그먼트 포함)
+  4.  DL_COMMAND_DATA.cs        - DIALOGUE_LINE의 명령어 데이터
+  5.  DialogueParser.cs         - 위 4개를 생성하는 파서
+  6.  TagManager.cs             - 파서에서 호출되는 태그/변수 치환
+  7.  Conversation.cs           - 대화 라인 시퀀스 컨테이너
+  8.  ConversationQueue.cs      - 대화 대기열
+  9.  ConversationManager.cs    - 대화 루프 핵심 (가장 복잡)
+  10. DialogueContainer.cs      - 대화창 UI 컨테이너
+  11. NameContainer.cs          - 이름 표시 UI
+  12. DialogueContinuePrompt.cs - ▶ 계속 아이콘 UI
+  13. AutoReader.cs             - 자동 읽기 / 스킵 모드
+  14. DialogueSystem.cs         - 전체 총괄 싱글톤 (마지막에 전체 그림 포함)
+
+
+================================================================================
+g. 변경 상세 내역 (파일별)
+================================================================================
+
+  [DIALOGUE_LINE.cs]
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ + 클래스 상단: 파싱된 한 줄의 완성 데이터, 세 파트(화자/대사/명령어) 설명  │
+  │ + rawData: 원본 텍스트 보존 이유                                          │
+  │ + speakerData/dialogueData/commandData: null 허용 이유                   │
+  │ + hasSpeaker/hasDialogue/hasCommands: null 체크 편의 프로퍼티 설명        │
+  │ + 생성자: 빈 문자열이면 null 처리하는 이유                                 │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  [DL_SPEAKER_DATA.cs]
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ + 클래스 상단: 화자 정보 파서 설명, 지원하는 문법 예시                      │
+  │ + name/castName/displayname: 실제 이름 vs 표시 이름 차이 설명             │
+  │ + castPosition/CastExpressions: 포지션 캐스팅, 표정 캐스팅 설명           │
+  │ + 각 ID 상수: " as ", " at ", " [" 문법 설명                             │
+  │ + ENTER_KEYWORD: enter 키워드 동작 설명                                   │
+  │ + ProcessKeywords: enter 처리 로직 설명                                   │
+  │ + 생성자: Regex 매칭 기반 파싱 흐름 설명                                  │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  [DL_Dialogue_Data.cs]
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ + 클래스 상단: 대사 텍스트를 세그먼트로 분리하는 이유와 구조 설명           │
+  │ + segmentIdentifierPattern: 정규식 패턴 의미 설명                         │
+  │ + DIALOGUE_SEGMENT 구조체: 각 필드(dialogue/startSignal/signalDelay)     │
+  │ + StartSignal 열거형: NONE/C/A/WA/WC/N 각각의 의미와 동작 설명           │
+  │ + appendText: Append vs Build 분기 설명                                  │
+  │ + RipSegments: 첫 세그먼트(NONE) + 이후 세그먼트 분리 흐름 설명           │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  [DL_COMMAND_DATA.cs]
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ + 클래스 상단: 명령어 문자열 파싱, 여러 명령어 동시 지원 설명              │
+  │ + COMMAND_PATTERN: 정규식 패턴 의미 설명                                  │
+  │ + WAITCOMMAND_ID: [wait] 접두사의 동작 설명                               │
+  │ + Command 구조체: name/arguments/waitForCompletion 각 필드 설명           │
+  │ + RipCommands: 정규식 매칭 → Command 목록 생성 흐름                       │
+  │ + GetArgs: 따옴표 안의 공백을 분리하지 않는 인수 파서 설명                 │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  [DialogueParser.cs]
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ + 클래스 상단: 원본 텍스트 한 줄 → DIALOGUE_LINE 생성 과정 설명           │
+  │ + commandRegexPattern: 명령어 감지 정규식 의미                             │
+  │ + Parse(): TagManager.Inject 이중 호출 이유(commands 먼저, 나머지 나중)   │
+  │ + RipContent(): 파싱 4가지 경우 분기 설명                                 │
+  │   - 대화 없고 명령어만 있는 경우                                          │
+  │   - 대화가 있고 명령어가 대화 뒤에 있는 경우                               │
+  │   - 명령어가 대화 앞에 있는 경우                                           │
+  │   - 기타 (순수 대사)                                                      │
+  │ + isEscaped: 이스케이프 따옴표(\\") 처리 설명                              │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  [TagManager.cs]
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ + 클래스 상단: 두 종류의 치환 - 태그(<...>)와 변수($...) 설명             │
+  │ + tags 딕셔너리: 태그 이름 → Func<string> 설계 이유 (지연 평가)           │
+  │ + Inject(): injectTags/injectVariable 분리 매개변수 이유                  │
+  │ + InjectTags(): Regex → Match → Replace 흐름                             │
+  │ + InjectVariables(): 역방향 순회 이유 (인덱스 오프셋 방지)                │
+  │ + negate(! 접두사): 불리언 부정 치환 설명                                 │
+  │ + endsInIllegalCharacter: '.' 문자로 끝나는 경우 처리 설명                │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  [Conversation.cs]
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ + 클래스 상단: 대화 라인 시퀀스 컨테이너, 진행도(progress) 관리 설명      │
+  │ + file/fileStartIndex/fileEndIndex: 세이브 압축을 위한 파일 정보 설명     │
+  │ + 생성자: fileStartIndex/fileEndIndex 기본값(-1) 처리 이유                │
+  │ + 각 메서드: GetProgress, SetProgress, IncrementProgress, CurrentLine 등 │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  [ConversationQueue.cs]
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ + 클래스 상단: Queue<Conversation> 래퍼, 우선순위 삽입 기능 설명          │
+  │ + top: Peek() 사용 이유 (제거 없이 첫 항목 조회)                          │
+  │ + EnqueuePriority: 새 Queue를 만들어 맨 앞에 삽입하는 이유               │
+  │ + GetReadOnly: 배열 복사본 반환 이유 (외부 수정 방지)                     │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  [ConversationManager.cs]
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ + 클래스 상단: 대화 루프 전체 총괄, 이벤트 연결 설명                       │
+  │ + process/isRunning: 코루틴 null 체크로 실행 여부 판단하는 패턴 설명       │
+  │ + userPrompt 플래그: 이벤트 → 코루틴 간 신호 전달 방식 설명               │
+  │ + allowUserPrompts: 히스토리 보기 중 입력 차단 용도 설명                  │
+  │ + StartConversation(): StopConversation + Clear 순서 이유                │
+  │ + RunningConversation(): 메인 루프 전체 흐름 단계별 설명                  │
+  │ + TryAdvanceConversation(): 큐 변경 경쟁 조건 체크 이유                  │
+  │ + Line_RunDialogue(): dialogueContainer 가시성 체크 이유                 │
+  │ + HandleSpeakerLogic(): characterMustBeCreated 조건 설명                 │
+  │ + LINE_RunCommands(): waitForCompletion vs fire-and-forget 설명          │
+  │ + BuildLineSegments(): 세그먼트별 순서 처리 설명                          │
+  │ + WaitForDialogueSegmentSignalToBeTriggered(): StartSignal별 동작 설명   │
+  │   - NONE: 즉시 시작                                                      │
+  │   - C: 클릭 후 Clear (텍스트 초기화)                                     │
+  │   - A: 클릭 후 이어붙이기 (Append)                                       │
+  │   - WC: n초 대기 후 Clear                                                │
+  │   - WA: n초 대기 후 Append                                               │
+  │   - N: 클릭 후 줄바꿈 Append                                             │
+  │ + BuildDialogue(): hurryUp → ForceComplete 2단계 클릭 설명               │
+  │ + WaitForUserInput(): prompt 표시/숨김 시점 설명                          │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  [DialogueContainer.cs]
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ + 클래스 상단: 대화창 UI 전체 컨테이너 역할 설명                           │
+  │ + root/nameContainer/dialogueBox/dialogueText: 각 UI 구성 요소 설명      │
+  │ + cgController: CanvasGroupController 사용 이유 (페이드 in/out)          │
+  │ + Initialize(): 싱글톤 생성 이후 호출해야 하는 이유 설명                  │
+  │ + SetDialogueColor/Font/FontSize: 화자별 스타일 변경 경로 설명            │
+  │ + Show/Hide: 대화창 전체를 숨기는 경우와 이유                             │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  [NameContainer.cs]
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ + 클래스 상단: 화자 이름 표시 UI 박스 설명                                │
+  │ + dialogueNameBox/nameText: GameObject vs TMP 분리 이유                  │
+  │ + Show(nameToShow): 빈 문자열이면 텍스트 변경 없이 활성화만 하는 이유      │
+  │ + Hide(): narrator 처리 시 호출되는 흐름 설명                             │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  [DialogueContinuePrompt.cs]
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ + 클래스 상단: ▶ 계속 아이콘의 위치 계산과 표시/숨김 설명                  │
+  │ + root/anim/tmpro/yOffset: 각 컴포넌트 역할                               │
+  │ + Show(): TMP 마지막 문자 위치 기반 좌표 계산 로직 상세 설명              │
+  │   - ForceMeshUpdate() 필요 이유                                           │
+  │   - 공백/줄바꿈을 역방향으로 건너뛰는 이유                                │
+  │   - bottomRight + characterWidth + yOffset 계산 설명                     │
+  │ + Hide(): SetActive(false)로 즉시 숨기는 방식                             │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  [AutoReader.cs]
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ + 클래스 상단: Auto(자동 읽기)와 Skip(즉시 넘기기) 두 모드 설명           │
+  │ + DEFAULT_CHARACTERS_READ_PER_SECOND: 읽기 시간 계산 기준 상수 설명      │
+  │ + READ_TIME_PADDING/MAX_READ_TIME/MIN_READ_TIME: 클램프 범위 이유        │
+  │ + co_running: null 여부로 실행 상태 판단 패턴 설명                        │
+  │ + autoStopObject/autoPlayObject: UI 토글 오브젝트 역할                    │
+  │ + allowToggle: 히스토리 보기 중 토글 잠금 용도 설명                       │
+  │ + Enable/Disable: 코루틴 시작/중지 및 상태 초기화 설명                    │
+  │ + AutoRead(): 메인 자동 읽기 루프 상세 설명                               │
+  │   - skip=false 경우: 텍스트 완성 후 읽기 시간 계산 → WaitForSeconds      │
+  │   - skip=true  경우: ForceComplete → 0.05초 후 다음 진행                 │
+  │   - timeStarted 보정: 텍스트 출력에 걸린 시간을 읽기 대기에서 차감         │
+  │ + Toggle_Auto(): Skip→Auto, 꺼짐→Auto, Auto→꺼짐 3가지 상태 전환 설명   │
+  │ + Toggle_Skip(): 꺼짐→Skip, Skip→꺼짐 전환 설명                          │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  [DialogueSystem.cs]
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ + 클래스 상단: 비주얼 노벨 대화 시스템 총괄 싱글톤, 다른 시스템과의 연결  │
+  │ + _config/config: DialogueSystemConfigurationSO 역할 설명                │
+  │ + dialogueContainer/conversationManager/architect/autoReader: 소유 설명 │
+  │ + mainCanvas/cgController: 전체 UI 표시/숨김 제어 설명                   │
+  │ + onUserPrompt_Next/onClear 이벤트: 구독자 목록 설명                     │
+  │ + isRunningConversation: 외부에서 대화 진행 여부 확인 용도                │
+  │ + Initialize(): _initialized 플래그 이유, 초기화 순서 설명               │
+  │ + OnUserPrompt_Next(): autoReader.Disable() 자동 호출 이유               │
+  │ + OnSystemPrompt_Next/Clear(): 시스템 내부 진행 신호 설명                │
+  │ + OnStartViewingHistory/OnStopViewingHistory(): 히스토리 보기 중          │
+  │   차단되는 요소들(allowToggle, allowUserPrompts) 설명                    │
+  │ + ApplySpeakerDataToDialogueContainer(): 캐릭터 설정 → UI 반영 흐름     │
+  │ + ShowSpeakerName(): narrator 예외 처리 설명                             │
+  │ + Say() 오버로드들: string/List/Conversation 3가지 진입점 설명           │
+  │ + Show/Hide: mainCanvas 전체 UI 표시/숨김 설명                           │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+h. 주의할 점
+================================================================================
+
+  1. 코드 로직 변경 없음
+     - 주석만 추가. 변수명, 메서드 시그니처, 실행 순서 모두 유지.
+
+  2. DL_Dialogue_Data.cs의 기존 한국어 주석 보존
+     - StartSignal.N 추가 관련 기존 한국어 주석은 보강만 하고 삭제하지 않음.
+
+  3. DialogueParser.cs의 TagManager.Inject 이중 호출 (주석 중요)
+     - Parse() 내에서 commands = TagManager.Inject(commands) 가 두 번 호출됨.
+     - 첫 번째 호출은 의도된 것 (코드 내 설명 주석 유지).
+     - 두 번째 호출이 실제 동작하는 호출.
+     - 주석에서 이 점을 명확히 표기할 것.
+
+  4. ConversationManager의 userPrompt 플래그 동시성 주의
+     - Unity 코루틴은 단일 스레드이므로 실제 동시성 문제는 없음.
+     - 그러나 코루틴이 yield return 하는 순간에만 다른 코루틴이 실행됨.
+     - userPrompt = true 가 설정되는 타이밍과 소비되는 타이밍을 주석에 명시.
+
+  5. AutoReader.AutoRead()의 timeStarted 보정 로직
+     - 텍스트 출력(isBuilding) 시간이 읽기 대기 시간에서 차감됨.
+     - 이 보정을 제거하면 빠른 대사에서도 최소 MIN_READ_TIME(1초) 대기.
+
+  6. DialogueContinuePrompt.Show()의 ForceMeshUpdate() 필요성
+     - TMP는 텍스트가 변경돼도 즉시 textInfo를 업데이트하지 않음.
+     - ForceMeshUpdate()를 호출해야 characterInfo가 최신 상태로 갱신됨.
+
+  7. DL_SPEAKER_DATA의 XML summary 주석 유지
+     - displayname 프로퍼티의 기존 XML summary는 삭제하지 않고 보강.
+
+================================================================================
+  END OF DOCUMENT
+================================================================================

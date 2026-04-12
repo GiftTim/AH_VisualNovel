@@ -1,0 +1,386 @@
+================================================================================
+  DialogueSystem 폴더 전체 주석 추가 - 변경 완료 보고서
+  완료일: 2026-04-12 17:30 (KST)
+================================================================================
+
+
+================================================================================
+a. 비교 결과 (계획서 c항과의 대조)
+================================================================================
+
+  계획서 c항(현재 상황)과 실제 코드를 대조한 결과:
+  줄 수 및 주석 현황이 계획서와 일치함 → 변경 진행
+
+  ┌────────────────────────────────┬──────────┬──────────┬────────────────┐
+  │ 파일                            │ 계획 줄수 │ 실제 줄수 │ 판정           │
+  ├────────────────────────────────┼──────────┼──────────┼────────────────┤
+  │ DIALOGUE_LINE.cs               │    22    │    22    │ 일치 ✓         │
+  │ DL_SPEAKER_DATA.cs             │   117    │   117    │ 일치 ✓         │
+  │ DL_Dialogue_Data.cs            │    81    │    81    │ 일치 ✓         │
+  │ DL_COMMAND_DATA.cs             │    84    │    84    │ 일치 ✓         │
+  │ DialogueParser.cs              │    90    │    90    │ 일치 ✓         │
+  │ TagManager.cs                  │   100    │   100    │ 일치 ✓         │
+  │ Conversation.cs                │    42    │    42    │ 일치 ✓         │
+  │ ConversationQueue.cs           │    35    │    35    │ 일치 ✓         │
+  │ ConversationManager.cs         │   336    │   336    │ 일치 ✓         │
+  │ DialogueContainer.cs           │    44    │    44    │ 일치 ✓         │
+  │ NameContainer.cs               │    29    │    29    │ 일치 ✓         │
+  │ DialogueContinuePrompt.cs      │    61    │    61    │ 일치 ✓         │
+  │ AutoReader.cs                  │   159    │   159    │ 일치 ✓         │
+  │ DialogueSystem.cs              │   165    │   165    │ 일치 ✓         │
+  └────────────────────────────────┴──────────┴──────────┴────────────────┘
+
+  → 모두 일치. 코드 로직 변경 없이 주석만 추가 진행.
+
+
+================================================================================
+b. 변경 전 / 변경 후 코드 요약
+================================================================================
+
+  [변경 원칙]
+  - 기존 코드 로직(변수명, 메서드 시그니처, 실행 순서) 변경 없음
+  - 기존 주석 보존 및 보강
+  - 추가 주석 형식: 클래스 상단 블록 주석 (/* ... */), 필드/메서드 인라인 주석 (//)
+
+  ──────────────────────────────────────────────────────────────────────────
+  [1] DIALOGUE_LINE.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    namespace DIALOGUE
+    {
+        public class DIALOGUE_LINE
+        {
+            public string rawData { get; private set; } = string.Empty;
+            public DL_SPEAKER_DATA speakerData;
+            ...
+            public bool hasSpeaker  => speakerData  != null;
+            ...
+        }
+    }
+
+  변경 후:
+    namespace DIALOGUE
+    {
+        /* DIALOGUE_LINE
+         * DialogueParser.Parse()가 원본 텍스트 한 줄을 파싱한 최종 결과물.
+         * 세 가지 파트(화자/대사/명령어)로 구성 ... */
+        public class DIALOGUE_LINE
+        {
+            // 파싱 전 원본 텍스트. 디버깅 및 세이브/로드 시 참조용으로 보존.
+            public string rawData { get; private set; } = string.Empty;
+            // 화자 정보. 화자가 없는 라인은 null.
+            public DL_SPEAKER_DATA speakerData;
+            ...
+            // null 체크를 간편하게 하기 위한 편의 프로퍼티들
+            public bool hasSpeaker  => speakerData  != null;
+            /* 생성자: 빈 문자열이면 null 처리하는 이유 ... */
+            ...
+        }
+    }
+
+  ──────────────────────────────────────────────────────────────────────────
+  [2] DL_SPEAKER_DATA.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - 기존 XML summary 1개 (displayname), 영어 인라인 주석 일부
+    - NAMECAST_ID / POSITIONCAST_ID 등 상수 설명 없음
+    - ProcessKeywords, 생성자 로직 설명 없음
+
+  변경 후:
+    - 클래스 상단: 지원 문법 예시 포함 전체 역할 블록 주석
+    - name/castName 차이 인라인 주석
+    - 각 ID 상수에 역할 주석 (" as ", " at ", " [" 문법 설명)
+    - ProcessKeywords: 역할 및 호출 타이밍 블록 주석
+    - 생성자: Regex 매칭 기반 파싱 흐름 블록 주석
+    - 각 분기 인라인 주석 (별칭/위치/표정 파싱 설명)
+    - 기존 XML summary 및 영어 인라인 주석 보존
+
+  ──────────────────────────────────────────────────────────────────────────
+  [3] DL_Dialogue_Data.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - 기존 한국어 주석 2개 (N 추가 관련) 보존
+    - segmentIdentifierPattern 정규식 의미 설명 없음
+    - DIALOGUE_SEGMENT 구조체 설명 없음
+
+  변경 후:
+    - 클래스 상단: 세그먼트 구조 예시 포함 블록 주석
+    - segmentIdentifierPattern: 각 구분자({c},{a},{n},{wa},{wc}) 의미 설명
+    - RipSegments: 흐름 설명 블록 주석 + 각 단계 인라인 주석
+    - DIALOGUE_SEGMENT 구조체: 각 필드 설명 블록 주석
+    - StartSignal 열거형: 각 값의 의미와 동작 상세 블록 주석
+    - appendText: A/WA/N 모두 true인 이유 인라인 주석
+    - 기존 한국어 주석 보존
+
+  ──────────────────────────────────────────────────────────────────────────
+  [4] DL_COMMAND_DATA.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - 주석 없음
+
+  변경 후:
+    - 클래스 상단: 명령어 문법 예시 포함 블록 주석
+    - COMMAND_PATTERN: 정규식 각 부분 의미 설명
+    - WAITCOMMAND_ID: [wait] 접두사 동작 설명
+    - Command 구조체: 각 필드(name/arguments/waitForCompletion) 설명
+    - RipCommands: 파싱 흐름 블록 주석 + parts 분리 인라인 주석
+    - GetArgs: 따옴표 안 공백 처리 설명 블록 주석 + inQuotes 토글 설명
+
+  ──────────────────────────────────────────────────────────────────────────
+  [5] DialogueParser.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - 한/영 혼용 블록 주석 일부 (TagManager.Inject 이중 호출 관련)
+
+  변경 후:
+    - 클래스 상단: 파싱 흐름 3단계 설명 블록 주석
+    - commandRegexPattern: 정규식 각 부분 의미 설명
+    - Parse(): TagManager.Inject 이중 호출 상황 명확화
+      → 첫 번째 호출: "[주의] 중복 호출" 주석 추가
+      → 두 번째 호출: "[실제 주입]" 주석 추가
+      → 기존 한/영 혼용 블록 주석 보존
+    - RipContent(): 4가지 분기 설명 블록 주석 + 각 분기 인라인 주석
+    - isEscaped: 이스케이프 처리 설명 인라인 주석
+
+  ──────────────────────────────────────────────────────────────────────────
+  [6] TagManager.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - 한국어 인라인 주석 일부 (InjectTags 내부 기존 주석)
+
+  변경 후:
+    - 클래스 상단: 두 종류 치환(태그/변수) 설명 블록 주석
+    - tags 딕셔너리: Func<string> 지연 평가 설계 이유 블록 주석 + 각 항목 인라인
+    - tagRegex: 역할 인라인 주석
+    - Inject(): injectTags/injectVariable 분리 매개변수 이유 블록 주석
+    - InjectTags(): 동작 설명 블록 주석 (기존 인라인 주석 보존)
+    - InjectVariables(): 역방향 순회 이유 블록 주석
+      + 각 처리 단계 인라인 주석 (variableName 추출, negate, endsInIllegalCharacter,
+        Remove/Insert 처리)
+
+  ──────────────────────────────────────────────────────────────────────────
+  [7] Conversation.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - 주석 없음
+
+  변경 후:
+    - 클래스 상단: 역할 및 file/fileStartIndex/fileEndIndex 세이브 압축 용도 설명
+    - 각 필드: 역할 인라인 주석
+    - 생성자: fileStartIndex/fileEndIndex -1 자동 설정 이유 블록 주석
+    - 각 메서드: 역할 인라인 주석
+
+  ──────────────────────────────────────────────────────────────────────────
+  [8] ConversationQueue.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - 주석 없음
+
+  변경 후:
+    - 클래스 상단: Queue 래퍼 역할, 우선 삽입 기능 설명
+    - top: Peek() 사용 이유 + 비어있을 때 예외 주의 인라인 주석
+    - Enqueue: 역할 인라인 주석
+    - EnqueuePriority: 새 Queue 생성 방식을 사용하는 이유 블록 주석
+    - Dequeue/IsEmpty/Clear: 각 역할 인라인 주석
+    - GetReadOnly: ToArray() 복사본 반환으로 외부 수정 방지 설명
+
+  ──────────────────────────────────────────────────────────────────────────
+  [9] ConversationManager.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - 영어 인라인 주석 일부 (Show dialogue, Run any commands 등)
+    - 한국어 인라인 주석 일부 (빈 줄 건너뛰기, WC/WA userPrompt 관련)
+
+  변경 후:
+    - 클래스 상단: 총괄 역할 + 이벤트 연결 설명 블록 주석
+    - process/isRunning: null 여부로 실행 상태 판단 패턴 설명
+    - userPrompt: 동시성 주의사항 포함 상세 블록 주석
+      (설정 타이밍 / 소비 타이밍 명시)
+    - logicalLineManager / conversationQueue: 각 역할 인라인
+    - allowUserPrompts: 히스토리 차단 용도 블록 주석
+    - 생성자: 이벤트 구독 설명
+    - GetConversationQueue / Enqueue / EnqueuePriority: 인라인 주석
+    - onUserPrompt_Next: 조건부 플래그 설정 블록 주석
+    - StartConversation: StopConversation → Clear 순서 이유 블록 주석
+    - StopConversation: 역할 블록 주석
+    - RunningConversation: 메인 루프 7단계 흐름 블록 주석 + 각 단계 인라인
+    - TryAdvanceConversation: 큐 변경 경쟁 조건 체크 이유 블록 주석
+    - Line_RunDialogue: 3단계 처리 설명 블록 주석 + 대화창 Show 조건 인라인
+    - HandleSpeakerLogic: characterMustBeCreated 조건 블록 주석
+    - LINE_RunCommands: waitForCompletion vs fire-and-forget 블록 주석
+    - BuildLineSegments: 세그먼트 순서 처리 설명 블록 주석 + N 신호 인라인
+    - WaitForDialogueSegmentSignalToBeTriggered: StartSignal별 동작 상세 블록 주석
+    - BuildDialogue: 2단계 클릭 처리 설명 블록 주석
+    - WaitForUserInput: prompt 표시/숨김 시점 블록 주석
+    - 기존 영어/한국어 인라인 주석 보존
+
+  ──────────────────────────────────────────────────────────────────────────
+  [10] DialogueContainer.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - 한국어 인라인 주석 일부 (대화 영역, 대화 상대, 대화 창, cgController)
+
+  변경 후:
+    - 클래스 상단: 역할 및 구성 요소 목록 블록 주석
+    - root: CanvasGroup 보유 설명 인라인 주석
+    - cgController: 페이드 in/out 방식 설명 인라인 주석
+    - 스타일 메서드: 호출 목적 인라인 주석
+    - Initialize: 싱글톤 생성 이후 호출 이유 + initialized 플래그 이유 블록 주석
+    - isVisible / Show / Hide: 각 역할 인라인 주석
+    - 기존 한국어 주석 보존 및 보강
+
+  ──────────────────────────────────────────────────────────────────────────
+  [11] NameContainer.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - "Start is called once before..." 기본 생성 주석 외 없음
+
+  변경 후:
+    - 클래스 상단: 화자 이름 UI 박스 역할 + 구성 요소 설명 블록 주석
+    - dialogueNameBox: SetActive 방식 설명 인라인
+    - Show(): 빈 문자열 처리 이유 블록 주석
+    - Hide(): 호출 시점(narrator/화자 없는 경우) 블록 주석
+    - 스타일 메서드: 역할 인라인 주석
+    - 기존 Start 주석 제거 (메서드 자체가 없으므로)
+
+  ──────────────────────────────────────────────────────────────────────────
+  [12] DialogueContinuePrompt.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - "Start is called before the first frame update" 기본 주석 외 없음
+
+  변경 후:
+    - 클래스 상단: ▶ 아이콘 위치 계산 및 표시/숨김 역할 블록 주석
+    - 각 필드: 역할 인라인 주석
+    - Show(): ForceMeshUpdate 필요 이유 + 역방향 탐색 이유 + 위치 계산 상세 블록 주석
+    - 빈 텍스트 처리 / ForceMeshUpdate / 역방향 while / 좌표 계산에 인라인 주석
+    - Hide(): SetActive(false) 즉시 숨김 방식 블록 주석
+    - 기존 Start 주석 보존
+
+  ──────────────────────────────────────────────────────────────────────────
+  [13] AutoReader.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - 한국어 인라인 주석 일부 (Skip → Auto 전환, Auto 꺼짐/켜짐 등)
+
+  변경 후:
+    - 클래스 상단: Auto(자동 읽기)와 Skip(즉시 넘기기) 두 모드 상세 설명 블록 주석
+    - 상수들: 각 역할 인라인 주석
+    - skip/speed: 각 역할 인라인 주석
+    - co_running: null 여부로 실행 상태 판단 패턴 설명
+    - autoStopObject/autoPlayObject: 각 UI 역할 인라인 주석
+    - allowToggle: 히스토리 보기 중 잠금 용도 블록 주석
+    - Initialize: 호출 시점 인라인 주석
+    - Enable/Disable: 역할 및 skip 리셋 이유 블록 주석
+    - AutoRead(): 전체 흐름 블록 주석 (skip=false/true 두 경우, timeStarted 보정 이유)
+      + 각 단계 인라인 주석
+    - Toggle_Auto(): 3가지 상태 전환 블록 주석 (기존 한국어 주석 보존)
+    - Toggle_Skip(): 2가지 상태 전환 블록 주석
+
+  ──────────────────────────────────────────────────────────────────────────
+  [14] DialogueSystem.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - Set Dialogue/name details 등 일부 영어 인라인 주석
+
+  변경 후:
+    - 클래스 상단: 싱글톤 역할 + 소유 시스템 목록 + 이벤트 설명 블록 주석
+    - _config/config: ScriptableObject 역할 인라인 주석
+    - 각 필드: 역할 인라인 주석
+    - instance: 싱글톤 인라인 주석
+    - onUserPrompt_Next/onClear 이벤트: 각 발생 시점 인라인 주석
+    - _initialized: 이중 초기화 방지 이유 블록 주석
+    - Initialize(): 초기화 순서 5단계 블록 주석 (순서 중요성 명시)
+    - OnUserPrompt_Next(): autoReader.Disable() 자동 호출 이유 블록 주석
+    - OnSystemPrompt_Next/Clear(): 내부 진행 신호 vs 사용자 신호 차이 블록 주석
+    - OnStartViewingHistory/OnStopViewingHistory(): 차단 항목 목록 블록 주석
+    - ApplySpeakerDataToDialogueContainer(): 두 오버로드 역할 블록 주석
+      + 폰트 크기 스케일 계산 설명 블록 주석
+    - ShowSpeakerName(): narrator 예외 처리 블록 주석
+    - Say() 세 오버로드: 각 진입점 설명 블록 주석
+    - Show/Hide: 사용 시점 인라인 주석
+    - 기존 영어 주석 보존
+
+
+================================================================================
+c. 변경 후 작동 흐름
+================================================================================
+
+  대화 한 줄이 처리되는 전체 흐름 (주석으로 각 단계를 설명함):
+
+  1. DialogueSystem.Say() / Say(Conversation)
+     └─ ConversationManager.StartConversation()
+           └─ RunningConversation() [코루틴 시작]
+
+  2. RunningConversation() 루프 (ConversationQueue가 빌 때까지)
+     ├─ currentConversation.CurrentLine() → rawLine 획득
+     ├─ DialogueParser.Parse(rawLine) → DIALOGUE_LINE 생성
+     │    ├─ RipContent() → speaker / dialogue / commands 분리
+     │    │    (4가지 분기: 명령어만 / 대화+명령어 / 명령어 앞 / 순수 대사)
+     │    └─ TagManager.Inject(commands) → 명령어 태그/변수 치환
+     │
+     ├─ logicalLineManager.TryGetLogic() → choice/if/input 처리
+     │
+     ├─ [대화가 있으면] Line_RunDialogue()
+     │    ├─ HandleSpeakerLogic() → 캐릭터 등장/위치/표정/이름/스타일 설정
+     │    └─ BuildLineSegments() → 세그먼트 순서대로 텍스트 출력
+     │         ├─ WaitForDialogueSegmentSignalToBeTriggered()
+     │         │    (NONE/C/A/WA/WC/N 각 신호에 따라 대기 방식 결정)
+     │         └─ BuildDialogue() → TextArchitect로 타이핑 출력
+     │              (클릭 1회: hurryUp, 클릭 2회: ForceComplete)
+     │
+     ├─ [명령어가 있으면] LINE_RunCommands()
+     │    (waitForCompletion=true: 완료 대기, false: fire-and-forget)
+     │
+     └─ [대화가 있었으면] WaitForUserInput()
+          → prompt.Show() → 사용자 클릭 대기 → prompt.Hide()
+          → OnSystemPrompt_Clear() (onClear 이벤트 발생)
+
+
+================================================================================
+d. 주의할 점
+================================================================================
+
+  1. DialogueParser.cs - TagManager.Inject 이중 호출
+     - Parse() 내에 TagManager.Inject(commands) 가 두 번 호출됨.
+     - 첫 번째: 의도되지 않은 중복 호출 → "[주의] 중복 호출" 주석으로 명시
+     - 두 번째: 실제 의도된 호출
+     - 기능상 문제는 없으나 코드 리뷰 시 혼란을 줄 수 있으므로 주석으로 명확화함.
+
+  2. ConversationManager.cs - userPrompt 플래그 타이밍
+     - Unity 코루틴은 단일 스레드. yield return 시점에만 다른 코드가 실행됨.
+     - userPrompt = true 설정: onUserPrompt_Next() 호출 시
+     - userPrompt = false 소비: WaitForUserInput, BuildDialogue, LINE_RunCommands,
+       WaitForDialogueSegmentSignalToBeTriggered(WC/WA) 각각에서 처리 후 초기화
+
+  3. AutoReader.cs - timeStarted 보정 로직
+     - 텍스트 출력(isBuilding) 시간이 읽기 대기 시간에서 차감됨.
+     - 보정을 제거하면 짧은 대사도 MIN_READ_TIME(1초) 이상 대기하게 됨.
+
+  4. DialogueContinuePrompt.cs - ForceMeshUpdate() 필요성
+     - TMP는 텍스트 변경 후 즉시 textInfo를 갱신하지 않음.
+     - Show() 호출 전 ForceMeshUpdate()로 강제 갱신해야 좌표가 정확함.
+
+  5. DL_Dialogue_Data.cs - 기존 한국어 주석 보존
+     - StartSignal.N 추가 관련 기존 주석 2개 보존 및 블록 주석으로 보강.
+
+  6. DL_SPEAKER_DATA.cs - 기존 XML summary 보존
+     - displayname 프로퍼티의 XML summary 보존 및 한국어 인라인 주석 보강.
+
+================================================================================
+  END OF DOCUMENT
+================================================================================

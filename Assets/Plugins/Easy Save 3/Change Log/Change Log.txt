@@ -1,3 +1,10 @@
+3.5.26
+- Updates for Unity 6.5
+- Performance and UX updates for referencing.
+- You can now specify that only GameObjects with ES3Referenceable Components will be added to the reference manager from within settings.
+- Reuse of WaitForSeconds to reduce GC.
+- Added RuntimeInitializeOnLoad attributes to ES3Type templates as required by latest version of Unity.
+
 3.5.25
 - Added ES3.LoadImageInto methods allowing you to load data into an existing Texture2D.
 

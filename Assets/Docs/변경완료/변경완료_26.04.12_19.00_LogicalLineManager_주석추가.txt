@@ -1,0 +1,310 @@
+================================================================================
+  LogicalLineManager 폴더 전체 주석 추가 - 변경 완료 보고서
+  완료일: 2026-04-12 19:00 (KST)
+================================================================================
+
+
+================================================================================
+a. 비교 결과 (계획서 c항과의 대조)
+================================================================================
+
+  계획서 c항(현재 상황)과 실제 코드를 대조한 결과:
+  줄 수 및 주석 현황이 계획서와 모두 일치함 → 변경 진행
+
+  ┌──────────────────────────────┬──────────┬──────────┬────────────────┐
+  │ 파일                          │ 계획 줄수 │ 실제 줄수 │ 판정           │
+  ├──────────────────────────────┼──────────┼──────────┼────────────────┤
+  │ ILogicalLine.cs              │    10    │    10    │ 일치 ✓         │
+  │ LogicalLineManager.cs        │    44    │    44    │ 일치 ✓         │
+  │ LogicalLineUtils.cs          │   326    │   326    │ 일치 ✓         │
+  │ VariableStore.cs             │   216    │   216    │ 일치 ✓         │
+  │ LL_Choice.cs                 │   145    │   145    │ 일치 ✓         │
+  │ LL_Condition.cs              │    65    │    65    │ 일치 ✓         │
+  │ LL_Input.cs                  │    23    │    23    │ 일치 ✓         │
+  │ LL_Operator.cs               │    99    │    99    │ 일치 ✓         │
+  └──────────────────────────────┴──────────┴──────────┴────────────────┘
+
+  → 모두 일치. 코드 로직 변경 없이 주석만 추가 진행.
+
+
+================================================================================
+b. 변경 전 / 변경 후 코드
+================================================================================
+
+  [변경 원칙]
+  - 기존 코드 로직(변수명, 메서드 시그니처, 실행 순서) 변경 없음
+  - 기존 주석 보존 및 보강
+  - 추가 주석 형식: 클래스 상단 블록 주석 (/* ... */), 필드/메서드 인라인 주석 (//)
+
+  ──────────────────────────────────────────────────────────────────────────
+  [1] ILogicalLine.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    public interface ILogicalLine
+    {
+        string keyword { get; }
+        bool Matches(DIALOGUE_LINE line);
+        IEnumerator Execute(DIALOGUE_LINE line);
+    }
+
+  변경 후:
+    /* ILogicalLine
+     * 모든 '논리 라인(Logical Line)' 처리기의 공통 계약(Contract)을 정의하는 인터페이스.
+     * 논리 라인이란? ...
+     * 사용 흐름: ConversationManager → LogicalLineManager → ILogicalLine
+     * 새 논리 라인 추가 방법 설명
+     */
+    public interface ILogicalLine
+    {
+        // 이 논리 라인을 식별하는 키워드 문자열. regex 기반 감지 시 미구현 가능.
+        string keyword { get; }
+        /* Matches: 처리 가능 여부 판단, 구현체에 위임하는 이유 설명 */
+        bool Matches(DIALOGUE_LINE line);
+        /* Execute: IEnumerator 반환 이유 (코루틴 → yield 지원) 설명 */
+        IEnumerator Execute(DIALOGUE_LINE line);
+    }
+
+  ──────────────────────────────────────────────────────────────────────────
+  [2] VariableStore.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - 한국어 경고/에러 Debug 메시지 인라인 주석 일부
+    - 클래스/메서드 설명 없음
+
+  변경 후:
+    - 클래스 상단: Database + Variable<T> 두 층 구조, 접근 문법($변수명/$db.변수명) 설명
+    - DATABASE_VARIABLE_RELATIONAL_ID / REGEX_VARIABLE_IDS / VARIABLE_ID: 각 상수 역할 설명
+    - Database 내부 클래스: 네임스페이스(그룹) 역할 블록 주석
+    - Variable 추상 클래스: Get/Set 추상화 이유 블록 주석
+    - Variable<T>: getter/setter 커스텀 설계 이유 블록 주석 + 내부 분기 인라인 주석
+    - databases: 초기화 시 Default DB 생성 이유 인라인 주석
+    - CreateDatabase: 중복 방지 로직 설명
+    - GetDatabase: 빈 문자열 → defaultDatabase, 없는 이름 → 자동 생성 이유 블록 주석
+    - CreateVariable<T>: ExtractInfo 분리 흐름 설명
+    - TryGetValue / TrySetValue: out/bool 패턴 이유 블록 주석
+    - ExtractInfo: '.' 분리 흐름 + 분리 규칙 예시 블록 주석
+    - HasVariable: ContainsKey만으로 존재 여부 확인하는 이유 설명
+    - RemoveVariable / RemoveAllVariables: 사용 시점 블록 주석
+    - PrintAllDatabases / PrintAllVariables / PrintAllDatabaseVariables: 디버깅 전용 블록 주석
+    - 기존 한국어 경고 메시지 보존
+
+  ──────────────────────────────────────────────────────────────────────────
+  [3] LogicalLineUtils.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - CalculateValue_DivisionAndMultiplication 내 한국어 주석 1개 (0 나누기 관련)
+    - 나머지 주석 없음
+
+  변경 후:
+    [클래스 상단]
+    - 세 유틸리티(Encapsulation/Expressions/Conditions)를 묶은 이유 블록 주석
+
+    [Encapsulation]
+    - EncapsulatedData 구조체: 각 필드(lines/startingIndex/endingIndex/isNull) 설명
+    - ENCAPSULATION_START/END: 블록 구분자 역할 인라인 주석
+    - RipEncapsulationData: 매개변수 4개 상세 블록 주석
+      + encapsulationDepth 카운터 설명 (중첩 블록 처리)
+      + 각 조건 분기 인라인 주석
+    - IsEncapsulationStart/End: Trim().StartsWith 이유 인라인 주석
+
+    [Expressions]
+    - OPERATORS / REGEX_ARITHMATIC / REGEX_OPERATOR_LINE: 각 역할 블록 주석
+    - CalculateValue: 5단계 계산 흐름 블록 주석
+      + 각 단계 인라인 주석 (연산자/피연산자 분리, ExtractValue 변환, 우선순위)
+    - CalculateValue_DivisionAndMultiplication:
+      [주의] if(rightOperand==0) 이중 중첩 버그 상세 블록 주석 추가
+      [주의] operands.Remove(i+1)의 잠재적 문제 주석 추가
+      in-place 교체 + i-- 이유 블록 주석
+      기존 한국어 주석 보존
+    - CalculateValue_AdditionAndSubtraction: 같은 패턴 블록 주석
+    - ExtractValue: 4+1 가지 타입 분기 블록 주석
+      + '!' 접두사(negate) 처리 흐름 설명
+      + 각 분기 인라인 주석
+
+    [Conditions]
+    - REGEX_CONDITION_LINE: Split 사용 방식 예시 블록 주석
+    - EvaluateCondition: 4단계 처리 흐름 블록 주석
+      + 각 단계 인라인 주석
+    - OperatorFunc<T> delegate: 타입별 함수 테이블 설계 이유 블록 주석
+    - boolOperators/floatOperators/intOperators: 각 타입 지원 연산자 블록 주석
+    - EvaluateExpression: bool→float→int→string 순서 이유 블록 주석
+      + 문자열 비교 제한(== / != 만) 이유 설명
+
+  ──────────────────────────────────────────────────────────────────────────
+  [4] LogicalLineManager.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - 주석 없음
+
+  변경 후:
+    - 클래스 상단: Reflection 자동 탐지 장점 + 사용 흐름 블록 주석
+    - logicalLines: 목록 역할 인라인 주석
+    - 생성자: LoadLogicalLines() 즉시 호출 이유 인라인 주석
+    - LoadLogicalLines: Reflection 3단계 흐름 블록 주석
+      + 각 단계 인라인 주석 (GetExecutingAssembly/Where/CreateInstance)
+    - TryGetLogic: 반환 값 2가지 케이스 블록 주석
+      + logic out 매개변수 역할 설명
+      + StartCoroutine을 DialogueSystem에 위임하는 이유 설명
+      + 각 분기 인라인 주석
+
+  ──────────────────────────────────────────────────────────────────────────
+  [5] LL_Input.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - 주석 없음
+
+  변경 후:
+    - 클래스 상단: 역할 + 문법 예시 + <input> 태그 참조 방법 블록 주석
+    - keyword: 화자 이름으로 감지하는 이유 인라인 주석
+    - Execute: 3단계 흐름 블록 주석
+      + title 추출, InputPanel.Show(), 대기 패턴 인라인 주석
+    - Matches: hasSpeaker + name 비교 이유 블록 주석
+
+  ──────────────────────────────────────────────────────────────────────────
+  [6] LL_Operator.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - 한국어/영어 혼용 에러 메시지 인라인 주석 일부
+
+  변경 후:
+    - 클래스 상단: 역할 + 지원 문법 예시 블록 주석
+    - keyword: NotImplementedException 이유 블록 주석
+      (Matches가 regex 기반이므로 keyword 불필요, 런타임 에러 없는 이유)
+    - Execute: 4단계 파싱 흐름 블록 주석
+      + parts 분리, 변수명/연산자/우변 추출, 각 단계 인라인 주석
+    - ProcessOperator: 3가지 분기 블록 주석
+      + 각 분기 인라인 주석
+    - ProcessOperatorOnVariable: 각 연산자 동작 블록 주석
+      + switch case 인라인 주석
+    - ConcatenateOrAdd: 문자열 vs 숫자 분기 이유 블록 주석
+    - Matches: regex 기반 감지 이유 블록 주석
+    - 기존 한국어/영어 혼용 에러 메시지 보존
+
+  ──────────────────────────────────────────────────────────────────────────
+  [7] LL_Condition.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - "//Remove the header and encapsulator lines..." 영어 인라인 주석 1개
+
+  변경 후:
+    - 클래스 상단: if/else 역할 + 문법 예시 블록 주석
+    - keyword / ELSE / CONTAINERS: 각 역할 인라인 주석
+    - Execute: 6단계 처리 흐름 블록 주석
+      + startingIndex += 2 / endingIndex -= 1 이유 설명
+      + 각 단계 인라인 주석
+    - Matches: rawData 기준 감지 이유 블록 주석
+    - ExtractCondition: IndexOf 기반 추출 흐름 블록 주석 + 예시
+    - 기존 영어 인라인 주석 보강
+
+  ──────────────────────────────────────────────────────────────────────────
+  [8] LL_Choice.cs
+  ──────────────────────────────────────────────────────────────────────────
+
+  변경 전:
+    - 주석 없음
+
+  변경 후:
+    - 클래스 상단: 역할 + 문법 예시 + '-' 구분자 설명 블록 주석
+    - keyword / CHOICE_IDENTIFIER: 각 역할 인라인 주석
+    - Execute: 7단계 처리 흐름 블록 주석
+      + 각 단계 인라인 주석 (블록 추출, 파싱, ChoicePanel, 대기, 결과 처리, 점프, 큐 삽입)
+      + autoReader 미사용 변수 인라인 주석
+    - Matches: 인라인 주석
+    - GetChoicesFromData: 파싱 흐름 상세 블록 주석
+      + i=1 시작 이유, encapsulationDepth==1 조건, isFirstChoice 플래그
+      + 마지막 선택지 처리 설명
+      + 각 단계 인라인 주석
+    - AddLineToResults: 중첩 블록 처리 규칙 블록 주석
+      + 각 분기 인라인 주석
+    - IsChoiceStart: 인라인 주석
+    - Choice 구조체: 각 필드(title/resultLines/startIndex/endIndex) 설명 블록 주석
+
+
+================================================================================
+c. 변경 후 작동 흐름
+================================================================================
+
+  논리 라인 처리 전체 흐름 (주석으로 각 단계를 설명함):
+
+  1. ConversationManager.RunningConversation()
+     └─ logicalLineManager.TryGetLogic(line, out logic)
+           └─ LogicalLineManager: logicalLines를 순회하며 Matches()가 true인 핸들러 탐색
+
+  2. 핸들러 별 Execute() 흐름
+
+     [LL_Input]
+       InputPanel.Show(title)
+       → isWaitingOnUserInput == false 될 때까지 yield return null
+       → 완료 후 대화 계속 진행
+
+     [LL_Operator]
+       rawLine을 REGEX_ARITHMATIC으로 Split
+       → 변수명 / 연산자 / 우변 수식 분리
+       → CalculateValue()로 우변 계산
+       → ProcessOperator()로 VariableStore에 적용
+
+     [LL_Condition]
+       if(조건) 에서 조건 문자열 추출
+       → EvaluateCondition()으로 true/false 판정
+       → RipEncapsulationData()로 if/else 블록 추출
+       → SetProgress()로 전체 블록 건너뛰기
+       → 조건에 맞는 블록을 EnqueuePriority로 우선 실행
+
+     [LL_Choice]
+       RipEncapsulationData()로 choice { } 블록 추출
+       → GetChoicesFromData()로 '-' 기준 Choice 목록 파싱
+       → ChoicePanel.Show() → 사용자 선택 대기
+       → 선택된 Choice.resultLines로 새 Conversation 생성
+       → SetProgress()로 choice 블록 건너뛰기
+       → EnqueuePriority로 결과 우선 실행
+
+  3. VariableStore (모든 LL에서 접근)
+     $변수명 또는 $db.변수명 형태로 접근
+     CreateVariable → TryGetValue / TrySetValue → HasVariable / RemoveVariable
+
+
+================================================================================
+d. 주의할 점
+================================================================================
+
+  1. 코드 로직 변경 없음
+     - 주석만 추가. 변수명, 메서드 시그니처, 실행 순서 모두 유지.
+
+  2. LogicalLineUtils.cs - 나눗셈 버그 (기존 코드 그대로 유지)
+     - CalculateValue_DivisionAndMultiplication()의 이중 중첩 if(rightOperand == 0)로
+       나눗셈 결과 저장 코드가 절대 실행되지 않음.
+     - "[주의] 이중 중첩 버그" 주석으로 명시했으나 코드는 변경하지 않음.
+     - 수정이 필요하면 별도 변경 계획 수립 필요.
+
+  3. LogicalLineUtils.cs - operands.Remove(i + 1) 잠재적 문제 (기존 코드 그대로 유지)
+     - List<object>.Remove(value)는 값 기준 제거이므로
+       RemoveAt(index)와 다르게 동작할 수 있음.
+     - "[주의] Remove(value)" 주석으로 명시했으나 코드는 변경하지 않음.
+
+  4. LL_Operator.cs - keyword NotImplementedException
+     - 런타임에서 keyword 프로퍼티에 직접 접근하지 않으므로 게임 중 에러 없음.
+     - 하지만 LogicalLineManager가 향후 keyword를 직접 참조하도록 변경되면 에러 발생.
+     - 주석으로 이 의도와 위험을 명시함.
+
+  5. LL_Choice.cs - autoReader 미사용 변수
+     - Execute() 내에서 선언만 되고 사용되지 않음.
+     - "향후 확장용" 인라인 주석 추가. 코드는 변경하지 않음.
+
+  6. LL_Condition.cs - 인덱스 오프셋 (startingIndex += 2, endingIndex -= 1)
+     - 헤더 줄과 { } 줄을 제외하기 위한 오프셋.
+     - 이 값을 임의로 변경하면 잘못된 줄이 실행될 수 있음.
+     - 주석에서 각 오프셋의 의미를 명확히 설명함.
+
+  7. 기존 한국어/영어 혼용 주석 보존
+     - LogicalLineUtils, LL_Operator 등에 있는 기존 주석은 삭제 없이 보강함.
+
+================================================================================
+  END OF DOCUMENT
+================================================================================
