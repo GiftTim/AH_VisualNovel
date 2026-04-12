@@ -7133,7 +7133,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.017729165, y: 0.23400001}
   m_AnchorMax: {x: 0.142, y: 0.75500005}
-  m_AnchoredPosition: {x: -0.15002441, y: 0}
+  m_AnchoredPosition: {x: -0.15014648, y: 0}
   m_SizeDelta: {x: 237.22998, y: 48.834}
   m_Pivot: {x: 1, y: 0.5}
 --- !u!114 &935988467
@@ -7570,7 +7570,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -0.000061035156, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 142.73}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &991107998
@@ -8007,7 +8007,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -22.099915, y: -20.099854}
+  m_AnchoredPosition: {x: -22.099854, y: -20.099854}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &1027003969
@@ -11669,7 +11669,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.05247917, y: 0}
   m_AnchorMax: {x: 0.37, y: 1}
-  m_AnchoredPosition: {x: -85.99988, y: 0}
+  m_AnchoredPosition: {x: -85.99987, y: 0}
   m_SizeDelta: {x: -171.44995, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1391088455
@@ -12353,11 +12353,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8003858369828414370, guid: 6e766d0645ec51d4ebb9959b9044baea, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 3.473816
+      value: 3.473877
       objectReference: {fileID: 0}
     - target: {fileID: 8003858369828414370, guid: 6e766d0645ec51d4ebb9959b9044baea, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 6.847351
+      value: 6.847412
       objectReference: {fileID: 0}
     - target: {fileID: 8003858369828414370, guid: 6e766d0645ec51d4ebb9959b9044baea, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -13395,7 +13395,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1634830608}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fc36348f7c4670f4ea694a4ff288af6e, type: 3}
   m_Name: 
@@ -13407,7 +13407,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1634830608}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1bd326eb46abbd8489559b53199dbc2c, type: 3}
   m_Name: 
@@ -18195,6 +18195,6 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 265844237}
+  - {fileID: 1634830609}
   - {fileID: 1161789388}
   - {fileID: 1994487649}
-  - {fileID: 1634830609}
