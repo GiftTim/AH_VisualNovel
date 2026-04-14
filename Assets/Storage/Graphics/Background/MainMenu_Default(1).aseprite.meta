@@ -179,7 +179,7 @@ ScriptedImporter:
     customData: 
     rect:
       serializedVersion: 2
-      x: 335
+      x: 1607
       y: 854
       width: 184
       height: 697
@@ -191,7 +191,7 @@ ScriptedImporter:
     indices: 
     edges: []
     tessellationDetail: 0
-    uvTransform: {x: 335, y: 854}
+    uvTransform: {x: 1607, y: 854}
   - name: Side_Char_Mina
     originalName: 
     pivot: {x: 1.9566563, y: 0.7640653}
@@ -200,7 +200,7 @@ ScriptedImporter:
     customData: 
     rect:
       serializedVersion: 2
-      x: 4
+      x: 1276
       y: 854
       width: 323
       height: 551
@@ -212,7 +212,7 @@ ScriptedImporter:
     indices: 
     edges: []
     tessellationDetail: 0
-    uvTransform: {x: 4, y: 854}
+    uvTransform: {x: 1276, y: 854}
   - name: Main_Char_Boy
     originalName: 
     pivot: {x: 2.051948, y: 0.65884197}
@@ -255,6 +255,27 @@ ScriptedImporter:
     edges: []
     tessellationDetail: 0
     uvTransform: {x: 1276, y: 4}
+  - name: Layer 1
+    originalName: 
+    pivot: {x: 0.5, y: 0.59212375}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    customData: 
+    rect:
+      serializedVersion: 2
+      x: 4
+      y: 854
+      width: 1264
+      height: 711
+    spriteID: 42d4ddadfb6afaf41a38287038fa8540
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 4, y: 854}
   asepriteLayers:
   - layerIndex: 0
     uuid:
@@ -377,6 +398,31 @@ ScriptedImporter:
         width: 308
         height: 639
       spriteId: 45dfa2df74d5efc4a96c5f40a9d86b1f
+    linkedCells: []
+    tileCells: []
+    tileSetIndex: 0
+    parentIndex: -1
+  - layerIndex: 5
+    uuid:
+      value0: 4287466680
+      value1: 0
+      value2: 0
+      value3: 0
+    guid: 0
+    name: Layer 1
+    layerFlags: 3
+    layerType: 0
+    blendMode: 0
+    cells:
+    - name: Layer 1
+      frameIndex: 0
+      additiveSortOrder: 0
+      cellRect:
+        x: 0
+        y: 131
+        width: 1264
+        height: 711
+      spriteId: 42d4ddadfb6afaf41a38287038fa8540
     linkedCells: []
     tileCells: []
     tileSetIndex: 0

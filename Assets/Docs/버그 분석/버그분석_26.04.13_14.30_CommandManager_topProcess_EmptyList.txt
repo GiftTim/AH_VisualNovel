@@ -1,0 +1,184 @@
+================================================================
+ 버그분석_26.04.13_05.23
+ CommandManager.topProcess — activeProcesses 빈 리스트에서 Last() 예외
+================================================================
+
+■ 목차
+  a. 목차
+  b. 문제점
+  c. 현재 상황 및 코드
+  d. 해결 방향
+  e. 다른 방법들과 d를 선택한 이유
+  f. 진행 순서
+  g. 변경 위치 및 내용
+  h. 주의할 점
+
+----------------------------------------------------------------
+b. 문제점
+----------------------------------------------------------------
+
+발생 예외:
+  InvalidOperationException: Sequence contains no elements
+  at System.Linq.Enumerable.Last[TSource](IEnumerable`1 source)
+  at COMMANDS.CommandManager.get_topProcess()          [CommandManager.cs:27]
+  at COMMANDS.CommandManager.StopCurrentProcess()      [CommandManager.cs:155]
+  at DIALOGUE.ConversationManager.LINE_RunCommands()   [ConversationManager.cs:313]
+
+원인 요약:
+  LINQ의 Last()는 컬렉션이 비어있을 때 예외를 던진다.
+  topProcess 프로퍼티가 Last()를 직접 사용하므로, activeProcesses 리스트가
+  비어있는 상태에서 StopCurrentProcess()가 호출되면 프로퍼티 게터 내부에서
+  예외가 발생하고, 호출부의 null 체크(if (topProcess != null))에 도달하지 못한다.
+
+발생 시나리오:
+  1) LINE_RunCommands()에서 waitForCompletion 명령어를 실행하는 중
+  2) 명령어 실행이 예상보다 빠르게 완료되어 activeProcesses에서 제거됨
+  3) 그 직후 사용자 클릭(userPrompt = true)이 들어와
+     CommandManager.instance.StopCurrentProcess() 를 호출
+  4) 이 시점에 activeProcesses가 비어있어 Last() 예외 발생
+
+----------------------------------------------------------------
+c. 현재 상황 및 코드
+----------------------------------------------------------------
+
+[CommandManager.cs:27]
+  private List<CommandProcess> activeProcesses = new List<CommandProcess>();
+  private CommandProcess topProcess => activeProcesses.Last();   // ← 문제
+
+[CommandManager.cs:153-157]
+  public void StopCurrentProcess()
+  {
+      if (topProcess != null)     // topProcess 게터에서 이미 예외 발생
+          KillProcess(topProcess);
+  }
+
+[CommandManager.cs:211-221]  (같은 문제를 공유하는 메서드)
+  public void AddTerminationActionToCurrentProcess(UnityAction action)
+  {
+      CommandProcess process = topProcess;   // 동일하게 예외 가능
+      if (process == null)
+          return;
+      ...
+  }
+
+[ConversationManager.cs:306-317]  (호출부)
+  if (command.waitForCompletion || command.name == "wait")
+  {
+      CoroutineWrapper cw = CommandManager.instance.Execute(command.name, command.arguments);
+      while (!cw.IsDone)
+      {
+          if (userPrompt)
+          {
+              CommandManager.instance.StopCurrentProcess();  // ← 예외 발생 지점
+              userPrompt = false;
+          }
+          yield return null;
+      }
+  }
+
+핵심:
+  • Last()    → 빈 컬렉션에서 InvalidOperationException 발생
+  • LastOrDefault() → 빈 컬렉션에서 null 반환 (예외 없음)
+
+----------------------------------------------------------------
+d. 요구한 문제점을 해결하기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+----------------------------------------------------------------
+
+CommandManager.cs 27번 줄의 topProcess 프로퍼티를
+  Last()  →  LastOrDefault()
+로 변경한다.
+
+변경 후:
+  private CommandProcess topProcess => activeProcesses.LastOrDefault();
+
+이렇게 하면:
+  • activeProcesses가 비어있을 때 null을 반환
+  • StopCurrentProcess()의 기존 null 체크(if (topProcess != null))가 정상 동작
+  • AddTerminationActionToCurrentProcess()의 null 체크도 정상 동작
+  • 로직 흐름 전체를 바꾸지 않으므로 영향 범위 최소화
+
+----------------------------------------------------------------
+e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+----------------------------------------------------------------
+
+[방법 A] topProcess 프로퍼티 자체에서 null 가드 추가
+  private CommandProcess topProcess =>
+      activeProcesses.Count > 0 ? activeProcesses.Last() : null;
+
+  → LastOrDefault()와 기능 동일하지만 코드가 더 장황하다.
+    LastOrDefault()가 의도를 더 명확하게 표현한다.
+
+[방법 B] StopCurrentProcess() 내부에서 Count 확인
+  public void StopCurrentProcess()
+  {
+      if (activeProcesses.Count == 0) return;
+      KillProcess(topProcess);
+  }
+
+  → 호출부마다 동일한 방어 코드를 작성해야 한다.
+    AddTerminationActionToCurrentProcess() 등 topProcess를 참조하는
+    모든 곳에 각각 가드를 추가해야 하므로 누락 위험이 높다.
+
+[방법 C] ConversationManager.LINE_RunCommands()에서 StopCurrentProcess() 호출 전 확인
+  → 근본 원인이 CommandManager에 있음에도 ConversationManager에서 방어하는
+    것은 책임 분리 원칙에 어긋난다. 미래에 다른 호출부가 추가되면 동일 버그
+    재발 가능.
+
+[선택: LastOrDefault()]
+  • 변경 위치가 단 1줄 (근본 원인 지점)
+  • 기존 null 체크 로직 재활용 가능 → 코드 변경 최소화
+  • 모든 호출부를 동시에 보호 (StopCurrentProcess, AddTerminationAction 등)
+  • 가독성이 높고 C# 관용구에 부합
+
+----------------------------------------------------------------
+f. 어떤 순서로 진행할 것인지
+----------------------------------------------------------------
+
+  1) CommandManager.cs 27번 줄 수정
+       activeProcesses.Last()  →  activeProcesses.LastOrDefault()
+
+  2) 수정 후 동일 시나리오 재현 테스트
+       - waitForCompletion 명령어가 포함된 .vng 파일을 실행
+       - 명령어가 완료되기 직전/직후 빠르게 클릭하여 StopCurrentProcess() 유도
+       - 예외가 더 이상 발생하지 않는지 확인
+
+  3) 정상 흐름 확인
+       - 프로세스가 실행 중일 때 클릭 → KillProcess() 정상 호출되는지 확인
+       - 프로세스가 없을 때 클릭 → 조용히 무시되는지 확인
+
+  4) AddTerminationActionToCurrentProcess() 관련 경로도 동일하게 검증
+
+----------------------------------------------------------------
+g. 어디가 어떤 식으로 변경되는지
+----------------------------------------------------------------
+
+파일:
+  Assets/Scripts/VisualNovel/Core/Commands/CommandManager.cs
+
+변경 전 (27번 줄):
+  private CommandProcess topProcess => activeProcesses.Last();
+
+변경 후 (27번 줄):
+  private CommandProcess topProcess => activeProcesses.LastOrDefault();
+
+변경 범위: 1줄, 메서드명 일부 (Last → LastOrDefault)
+그 외 파일 수정 없음.
+
+----------------------------------------------------------------
+h. 주의할 점
+----------------------------------------------------------------
+
+1. CommandProcess는 클래스(참조형)이므로 LastOrDefault()가 반환하는 기본값은
+   null이다. 기존 null 체크 코드가 그대로 유효하다.
+
+2. activeProcesses는 RunningProcess 코루틴 완료 시 자동으로 항목이 제거된다
+   (CommandManager.cs:176). 명령어가 아주 짧게 끝날 경우 StopCurrentProcess()
+   호출 시점에 이미 리스트가 비어있을 수 있으므로, 이번 수정이 핵심 방어선이다.
+
+3. StopAllProcesses()는 Last()를 사용하지 않고 foreach로 전체를 순회하므로
+   동일한 문제가 없다. 수정 불필요.
+
+4. 향후 topProcess를 참조하는 코드를 추가할 때는 반드시 null 반환 가능성을
+   고려하여 null 체크를 포함해야 한다.
+
+================================================================

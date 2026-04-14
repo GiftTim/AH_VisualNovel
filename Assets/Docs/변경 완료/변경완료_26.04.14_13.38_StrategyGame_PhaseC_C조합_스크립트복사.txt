@@ -1,0 +1,224 @@
+================================================================
+변경완료_26.04.14_22.15_StrategyGame_PhaseC_C조합_스크립트복사
+================================================================
+
+[ 작성일 ] 2026-04-14 22:15 KST
+[ 참조 계획 ] 변경계획_26.04.14_13.08_GameDispatchLike_ABC조합_C우선통합계획.txt
+[ 대상 씬 ] Assets/Scenes/Strategy game.unity
+[ 소스 레포 ] https://github.com/ViniciusChrisosthemos/GameDispatchLike.git
+              로컬 클론: C:/Temp/GameDispatchLike
+
+================================================================
+a. 계획 c항과 실제 차이점 (변경 전 확인)
+================================================================
+
+  ① 폴더 경로 (사용자 지정으로 계획 원안과 다름)
+  ─────────────────────────────────────────────
+  계획 원안: Assets/StrategyGame/Scripts/, Assets/StrategyGame/SO/
+  실제 경로:
+    스크립트 → Assets/Scripts/StrategyGame/Core/
+    SO 인스턴스 → Assets/Configuration/StrategyGame/{Character,Days,Game}/
+
+  ② GameDispatchLike 미클론 → Phase 0-2 수행 (C:/Temp/GameDispatchLike)
+
+  ③ 계획에 없던 추가 의존성 발견
+  ─────────────────────────────────────────────
+  - DaySO.cs → MissionSO 직접 참조 (List<MissionSO> 필드)
+    → MissionSO.cs를 Phase C에 함께 포함
+  - DayCharacterManager.cs → MissionUnit 직접 참조 (HandleTeamCompleteMission 파라미터)
+    → MissionUnit.cs를 Phase C에 함께 포함
+  - Stat.cs → using Unity.VisualScripting; (미사용 import)
+    → 제거
+
+================================================================
+b. 변경 전 코드 (원본 GameDispatchLike 기준 수정 부분만)
+================================================================
+
+  [ 1. Singleton.cs - 수정 전 ]
+  ─────────────────────────────
+  _Instance = FindObjectOfType<T>();
+
+  [ 2. Stat.cs - 수정 전 ]
+  ─────────────────────────────
+  using Unity.VisualScripting;   ← 미사용 import 존재
+
+  [ 3. DayManager.cs - 수정 전 (원본 전체 구조) ]
+  ─────────────────────────────
+  - [SerializeField] private DayMissionManager _missionManager;
+  - UnityEvent<List<MissionUnit>> OnMissionAvailable 존재
+  - Start(): _missionManager.OnMissionMiss.AddListener(...) 호출
+  - StartDay(): _missionManager.Init(...) 호출
+  - DayLoopCoroutine():
+      while(true) { ... if (!_missionManager.HasMissions()) { break; } }
+  - UpdateManagers(): _missionManager.UpdateMissions() 호출
+  - ClaimMission(), AcceptMission(), StartMission(),
+    HandleMissionMiss(), HandleNewMissions() 메서드 존재
+
+================================================================
+c. 변경 후 코드 (수정된 파일만)
+================================================================
+
+  [ 1. Singleton.cs - 수정 후 ]
+  ─────────────────────────────
+  _Instance = FindFirstObjectByType<T>();
+  (Unity 6 deprecated API 교체)
+
+  [ 2. Stat.cs - 수정 후 ]
+  ─────────────────────────────
+  using Unity.VisualScripting; 제거
+  (불필요 import 정리)
+
+  [ 3. DayManager.cs - 수정 후 (Phase C 주석 처리 버전) ]
+  ─────────────────────────────
+  - _missionManager 필드 주석 처리
+  - OnMissionAvailable 이벤트 주석 처리
+  - Start(): _missionManager 리스너 주석 처리
+  - StartDay(): _missionManager.Init() 주석 처리
+  - DayLoopCoroutine(float dayDuration) 로 시그니처 변경:
+      while (_elapseTime < dayDuration) { ... }
+      (미션 없이 DaySO.DayDurationInSeconds 기준 시간으로 하루 종료)
+  - UpdateManagers() 메서드 제거 (캐릭터 업데이트만 루프 내 인라인 처리)
+  - ClaimMission, AcceptMission, StartMission,
+    HandleMissionMiss, HandleNewMissions 메서드 주석으로 표시
+
+================================================================
+d. 생성된 파일 목록 (총 34개)
+================================================================
+
+  [Utils] Assets/Scripts/StrategyGame/Core/Utils/
+    - Singleton.cs          ★ FindFirstObjectByType 수정
+    - ClassExtentions.cs    원본 동일
+    - PolygonIntersection.cs 원본 동일 (인코딩 문자 정리)
+    - StringUtils.cs        원본 동일
+
+  [Character] Assets/Scripts/StrategyGame/Core/Character/
+    - Stat.cs               ★ Unity.VisualScripting import 제거
+    - StatManager.cs        원본 동일
+    - CharacterUnit.cs      원본 동일
+    - Team.cs               원본 동일
+    - LevelProgression.cs   원본 동일
+    - SavebleSO.cs          원본 동일
+    - KeywordSO.cs          원본 동일
+    - CharacterSO.cs        원본 동일
+    - PlayerLevelSO.cs      원본 동일
+    - CharacterDatabase.cs  원본 동일
+    - CharacterLevelDatabase.cs 원본 동일
+    - FactoryCharacterUnit.cs  원본 동일
+
+  [GameState] Assets/Scripts/StrategyGame/Core/GameState/
+    - GameNotFoundException.cs 원본 동일 (BadFormatGameException 포함)
+    - GameState.cs          원본 동일
+    - Guild.cs              원본 동일
+    - GameStateSO.cs        원본 동일
+    - FactoryGameState.cs   원본 동일
+    - GameManager.cs        원본 동일
+
+  [Day] Assets/Scripts/StrategyGame/Core/Day/
+    - DayReport.cs          원본 동일
+    - DayCharacterManager.cs 원본 동일
+    - DaySO.cs              원본 동일
+    - DayManager.cs         ★ DayMissionManager 주석 처리, 시간 기반 루프로 변경
+
+  [Mission] Assets/Scripts/StrategyGame/Core/Mission/
+    - MissionSO.cs          원본 동일 (DaySO 컴파일 의존성으로 포함)
+    - MissionUnit.cs        원본 동일 (DayCharacterManager 컴파일 의존성으로 포함)
+
+  [SaveSystem] Assets/Scripts/StrategyGame/Core/SaveSystem/
+    - SaveSystem.cs         원본 동일
+    └── Data/
+        - GameStateData.cs  원본 동일
+        - GuildData.cs      원본 동일
+        - CharacterUnitData.cs 원본 동일
+        - StatManagerData.cs   원본 동일
+        - StatData.cs          원본 동일
+
+================================================================
+e. 작동 흐름
+================================================================
+
+  [ Phase C 기준 실행 흐름 ]
+
+  1. 씬 시작
+     → GameManager (Singleton) Awake 시 _Instance 등록
+     → CharacterDatabase Awake: Resources에서 CharacterSO 로드
+     → CharacterLevelDatabase Awake: PlayerLevelSO 목록 로드
+
+  2. NewGame("길드명") 호출
+     → FactoryGameState.CreateGameState() 실행
+     → GameStateSO의 AvailableCharacters → CharacterUnit 생성
+     → Guild, GameState 초기화
+
+  3. DayManager.StartDay(day, characters) 호출
+     → characters 전원 Available 상태로 초기화
+     → DaySO에서 DayDurationInSeconds 읽어 루프 시간 결정
+     → DayCharacterManager.Init(characters)
+     → DayLoopCoroutine(dayDuration) 코루틴 시작
+
+  4. DayLoop (Phase C: 미션 없는 단순 루프)
+     → 매 0.5초마다 DayCharacterManager.UpdateCharacters() 호출
+     → CharacterUnit.UpdateCharacter(): Resting 상태 타이머 체크
+     → OnTimeUpdated 이벤트 발행
+     → elapseTime >= dayDuration → 루프 종료
+
+  5. 하루 종료
+     → WaitUntil(AllCharacterInBase): 전원 Available/Resting 확인
+     → OnDayEnd(DayReport) 이벤트 발행
+     → GameManager.CompleteDay(dayReport) 호출 시 길드 경험치 처리
+
+  6. 종료 시 자동 저장
+     → OnApplicationQuit → SaveSystem.Save(GameStateData)
+     → Application.persistentDataPath에 JSON 저장
+
+================================================================
+f. 주의할 점
+================================================================
+
+  ① Unity에서 컴파일 확인 필수 (에러 없음 확인 후 씬 구성)
+
+  ② ScriptableObject 인스턴스는 Unity Editor에서 직접 생성
+     - Assets/Configuration/StrategyGame/Game/ 에
+       GameStateSO 인스턴스 생성 (Create → ScriptableObjects → Game State)
+     - Assets/Configuration/StrategyGame/Days/ 에
+       DaySO 인스턴스 생성 (Create → ScriptableObjects → Day)
+     - Assets/Configuration/StrategyGame/Character/ 에
+       CharacterSO 인스턴스 1개 이상 생성
+
+  ③ 씬 구성 순서 (Phase 6)
+     Strategy game.unity 에 빈 GameObject 생성:
+     - [GameManager]     → GameManager.cs 부착
+     - [CharacterDatabase] → CharacterDatabase.cs 부착
+                            Inspector: _charactersFolder = "StrategyGame/Characters" (예시)
+     - [CharacterLevelDatabase] → CharacterLevelDatabase.cs 부착
+                                  Inspector: _levelDescriptionSOs 연결
+     - [DayManager]      → DayManager.cs 부착
+                           Inspector: _dayCharacterManager 연결, _defaultDaySO 연결
+     - [DayCharManager]  → DayCharacterManager.cs 부착
+
+  ④ DayManager.StartDay() 호출 시
+     GameManager.Instance.GameState가 null이면 NullReferenceException 발생
+     → NewGame() 또는 LoadSave() 를 먼저 호출할 것
+
+  ⑤ Phase 8 (A조합) 복원 시
+     DayManager.cs 에서 아래를 주석 해제:
+     - DayMissionManager 필드
+     - OnMissionAvailable 이벤트
+     - _missionManager 호출 3곳
+     - 주석 처리된 5개 메서드
+     - DayLoopCoroutine을 원본 HasMissions() 기반으로 복원
+
+  ⑥ CharacterDatabase의 _charactersFolder
+     Resources 폴더 기준 상대 경로 입력 (예: "StrategyGame/Characters")
+     해당 경로에 CharacterSO 인스턴스 배치 필요
+
+================================================================
+g. 다음 단계 (Phase 6)
+================================================================
+
+  Unity Editor에서 수행:
+  1. 컴파일 에러 0 확인
+  2. SO 인스턴스 생성 (Game, Days, Character 폴더)
+  3. Strategy game.unity 씬에 Manager 오브젝트 배치
+  4. Inspector에서 참조 연결
+  5. Play 버튼으로 기본 동작 확인
+
+================================================================

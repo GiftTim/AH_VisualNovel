@@ -24,7 +24,7 @@ namespace COMMANDS
         private Dictionary<string, CommandDatabase> subDatabases = new Dictionary<string, CommandDatabase>();
 
         private List<CommandProcess> activeProcesses = new List<CommandProcess>();
-        private CommandProcess topProcess => activeProcesses.Last();
+        private CommandProcess topProcess => activeProcesses.LastOrDefault();
 
         private void Awake()
         {

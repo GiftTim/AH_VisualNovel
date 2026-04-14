@@ -33,5 +33,7 @@ wait(1)
 StopSong("Happy2")
 wait(1)
 
+Narration "이 글도 쓰고 진행되는건가?"
+
 
 

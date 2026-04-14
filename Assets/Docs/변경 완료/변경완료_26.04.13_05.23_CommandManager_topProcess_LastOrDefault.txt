@@ -1,0 +1,69 @@
+================================================================
+ 변경완료_26.04.13_05.23
+ CommandManager.topProcess — Last() → LastOrDefault() 수정
+================================================================
+
+■ 참조 문서
+  Assets/Docs/버그 분석/
+  버그분석_26.04.13_05.23_CommandManager_topProcess_EmptyList.txt
+
+----------------------------------------------------------------
+1. 현재 코드와 문서 c항목 대조 결과
+----------------------------------------------------------------
+
+  문서 c항목의 코드와 실제 코드가 일치함 → 변경 진행
+
+----------------------------------------------------------------
+2. 변경 전 / 변경 후 코드
+----------------------------------------------------------------
+
+[파일]
+  Assets/Scripts/VisualNovel/Core/Commands/CommandManager.cs
+  Line 27
+
+[변경 전]
+  private CommandProcess topProcess => activeProcesses.Last();
+
+[변경 후]
+  private CommandProcess topProcess => activeProcesses.LastOrDefault();
+
+----------------------------------------------------------------
+3. 변경 후 작동 흐름
+----------------------------------------------------------------
+
+① 명령어 실행 중 사용자가 클릭 (userPrompt = true)
+  ConversationManager.LINE_RunCommands() 내부 while 루프에서 감지
+
+② CommandManager.instance.StopCurrentProcess() 호출
+
+③ topProcess 게터 실행
+   - activeProcesses에 항목이 있으면 → 마지막 CommandProcess 반환
+   - activeProcesses가 비어있으면 → null 반환 (예외 없음)  ← 수정 효과
+
+④ null 체크 통과
+   - topProcess != null  → KillProcess() 호출하여 프로세스 정상 종료
+   - topProcess == null  → 아무것도 하지 않고 조용히 반환
+
+⑤ LINE_RunCommands 코루틴 정상 지속
+   → RunningConversation 코루틴도 크래시 없이 진행
+   → 다음 대사 / 명령어로 정상 이동
+
+----------------------------------------------------------------
+4. 주의할 점
+----------------------------------------------------------------
+
+1. CommandProcess는 클래스(참조형)이므로 LastOrDefault() 반환 기본값은
+   null이다. 기존 null 체크 로직이 그대로 유효하다.
+
+2. topProcess를 참조하는 메서드가 2곳이다.
+     - StopCurrentProcess()          : null 체크 있음 → 안전
+     - AddTerminationActionToCurrentProcess() : null 체크 있음 → 안전
+   두 곳 모두 이번 수정으로 동시에 보호된다.
+
+3. StopAllProcesses()는 foreach로 전체 순회하므로 이번 버그와 무관하다.
+   수정 대상 아님.
+
+4. 향후 topProcess를 참조하는 코드를 추가할 때는 반드시
+   null 반환 가능성을 고려하여 null 체크를 포함해야 한다.
+
+================================================================

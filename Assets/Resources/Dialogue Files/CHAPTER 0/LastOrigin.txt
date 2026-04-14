@@ -37,11 +37,8 @@ choice "준비되셨나요?"
 
 Man.Move(2 -spd 2), Mina.Move(2 -spd 2)
 Man.Hide(), Mina.Hide()
-wait(5)
 ClearLayerMedia(background -blend leftRight -spd 0.5)
-wait(1)
 StopSong("Happy2")
-wait(1)
 
-
+narrator "진행이 될 것 같다"
 
