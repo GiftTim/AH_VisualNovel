@@ -10,13 +10,6 @@ using UnityEngine;
 /// </summary>
 public class CharacterDatabase : Singleton<CharacterDatabase>
 {
-    /// <summary>
-    /// CharacterSO 인스턴스들이 위치한 Resources 기준 상대 경로.
-    /// 예) "StrategyGame/Characters" → Resources/StrategyGame/Characters/ 폴더
-    /// Inspector에서 설정한다.
-    /// </summary>
-    [SerializeField] private string _charactersFolder;
-
     // ID(string) → CharacterSO 매핑 딕셔너리. 빠른 검색을 위해 사용
     private Dictionary<string, CharacterSO> _characterSOs;
 
@@ -29,7 +22,8 @@ public class CharacterDatabase : Singleton<CharacterDatabase>
         _characterSOs = new Dictionary<string, CharacterSO>();
 
         // Resources.LoadAll: 해당 폴더의 모든 CharacterSO 에셋을 배열로 가져옴
-        var characterList = Resources.LoadAll<CharacterSO>(_charactersFolder).ToList();
+        // 경로는 StrategyGamePaths.Characters 상수에서 읽어옴 ("StrategyGame/Characters")
+        var characterList = Resources.LoadAll<CharacterSO>(StrategyGamePaths.Characters).ToList();
 
         characterList.ForEach(c =>
         {

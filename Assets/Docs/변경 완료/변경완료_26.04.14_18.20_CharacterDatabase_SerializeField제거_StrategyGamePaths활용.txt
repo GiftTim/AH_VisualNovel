@@ -1,0 +1,107 @@
+================================================================
+변경완료_26.04.14_18.20
+CharacterDatabase - _charactersFolder SerializeField 제거 및 StrategyGamePaths 활용
+================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+변경 전 코드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+파일: Assets/Scripts/StrategyGame/Core/Character/CharacterDatabase.cs
+
+    /// <summary>
+    /// CharacterSO 인스턴스들이 위치한 Resources 기준 상대 경로.
+    /// 예) "StrategyGame/Characters" → Resources/StrategyGame/Characters/ 폴더
+    /// Inspector에서 설정한다.
+    /// </summary>
+    [SerializeField] private string _charactersFolder;
+
+    private Dictionary<string, CharacterSO> _characterSOs;
+
+    private void Awake()
+    {
+        _characterSOs = new Dictionary<string, CharacterSO>();
+
+        var characterList = Resources.LoadAll<CharacterSO>(_charactersFolder).ToList();
+
+        characterList.ForEach(c =>
+        {
+            _characterSOs.Add(c.ID, c);
+        });
+    }
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+변경 후 코드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+파일: Assets/Scripts/StrategyGame/Core/Character/CharacterDatabase.cs
+
+    private Dictionary<string, CharacterSO> _characterSOs;
+
+    private void Awake()
+    {
+        _characterSOs = new Dictionary<string, CharacterSO>();
+
+        // 경로는 StrategyGamePaths.Characters 상수에서 읽어옴 ("StrategyGame/Characters")
+        var characterList = Resources.LoadAll<CharacterSO>(StrategyGamePaths.Characters).ToList();
+
+        characterList.ForEach(c =>
+        {
+            _characterSOs.Add(c.ID, c);
+        });
+    }
+
+참조 상수 (변경 없음):
+파일: Assets/Scripts/StrategyGame/Core/Utils/StrategyGamePaths.cs
+
+    private const string RESOURCES_ROOT = "StrategyGame/";
+    public const string Characters = RESOURCES_ROOT + "Characters";  // = "StrategyGame/Characters"
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+변경 후 작동 흐름
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. 게임 시작 → CharacterDatabase.Awake() 호출
+
+2. StrategyGamePaths.Characters 상수 참조
+   → 컴파일 타임에 이미 "StrategyGame/Characters" 문자열로 확정됨
+   → Inspector 입력값 없이 코드에서 직접 경로를 가져옴
+
+3. Resources.LoadAll<CharacterSO>("StrategyGame/Characters") 실행
+   → Unity가 Assets/Resources/StrategyGame/Characters/ 폴더 안의
+     모든 CharacterSO 에셋을 배열로 반환
+
+4. 각 CharacterSO를 딕셔너리에 등록
+   → Key: CharacterSO.ID (string)
+   → Value: CharacterSO 오브젝트
+
+5. 이후 다른 스크립트에서 CharacterDatabase.Instance.GetCharacterSO(id) 호출 시
+   → 딕셔너리에서 ID로 빠르게 검색해 반환
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+주의할 점
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Resources 폴더에 CharacterSO 에셋이 있어야 함
+   경로: Assets/Resources/StrategyGame/Characters/
+   이 폴더가 비어 있으면 LoadAll이 빈 배열을 반환하고
+   딕셔너리에 아무것도 등록되지 않는다. (오류 없이 조용히 실패)
+   → 현재 해당 폴더에 CharacterSO 에셋이 없으므로 에셋 생성이 필요하다.
+
+2. 경로를 바꾸려면 StrategyGamePaths.cs 한 곳만 수정
+   CharacterDatabase를 비롯해 Characters 상수를 참조하는 모든 스크립트에
+   자동으로 반영된다.
+
+3. 기존 씬에 저장된 _charactersFolder 직렬화 값은 무효화됨
+   Inspector에서 설정했던 값("Characters Folder:StrategyGame/Characters" 등)은
+   더 이상 사용되지 않는다. 씬을 열면 해당 필드가 사라진 상태로 표시된다.
+   → 정상 동작이며 문제 없음.
+
+4. 잘못된 경로를 넣었을 때 오류 메시지가 없음 (Unity 기본 동작)
+   Resources.LoadAll은 경로가 존재하지 않아도 빈 배열을 반환할 뿐
+   오류를 던지지 않는다. 로드 결과가 비어 있는지 확인하려면
+   Awake에 Debug.Log(characterList.Count) 를 임시로 추가해 확인할 수 있다.

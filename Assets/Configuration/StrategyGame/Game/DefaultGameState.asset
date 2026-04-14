@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: DefaultGameState
   m_EditorClassIdentifier: Assembly-CSharp::GameStateSO
   AvailableCharacters:
-  - {fileID: 11400000, guid: ecee3588f94a7d34ab4cd44899cd1d1c, type: 2}
+  - {fileID: 11400000, guid: e783325c28b2cd641ac88e8f8fb6173a, type: 2}
   Balance: 100
   Reputation: 0
   CurrentDay: 1

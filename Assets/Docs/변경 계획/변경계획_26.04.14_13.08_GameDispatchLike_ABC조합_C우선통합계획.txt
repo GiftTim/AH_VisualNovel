@@ -591,44 +591,6 @@ h. 주의할 점
   지금은 설치하지 않아도 된다.
 
 ================================================================
-i. 실제 진행 시 확인된 차이점 (26.04.14 기준)
-================================================================
-
-  [ 계획 c항과 실제 현재 상태 비교 ]
-
-  ① 폴더 경로 변경 (사용자 지정)
-  ─────────────────────────────────────────────────────────────
-  계획 원안:
-    Assets/StrategyGame/Scripts/{Utils,Character,Day,...}
-    Assets/StrategyGame/SO/{Character,Days,Game}
-
-  실제 사용 경로 (사용자 결정):
-    Assets/Scripts/StrategyGame/Core/{Utils,Character,Day,...}
-    Assets/Configuration/StrategyGame/{Character,Days,Game}
-
-  현재 상태:
-    - Assets/Scripts/StrategyGame/Core/ : 폴더 존재, .cs 파일 없음
-    - Assets/Configuration/StrategyGame/Character/ : 폴더만 존재
-    - Assets/Configuration/StrategyGame/Days/      : 폴더만 존재
-    - Assets/Configuration/StrategyGame/Game/      : 폴더만 존재
-
-  ② GameDispatchLike 미클론 (Phase 0-2 미완료)
-  ─────────────────────────────────────────────────────────────
-  C:/Temp/GameDispatchLike 없음 → 클론 후 진행
-
-  ③ DOTween 설치 여부 재확인
-  ─────────────────────────────────────────────────────────────
-  사용자 확인: DotweenPro 다운로드 완료 상태
-  → 계획 h항 ⑧번 주의사항과 상충하나,
-    C+B+A 범위 스크립트에서는 미사용이므로 설치 여부 무관
-    (UI/View 단계에서 활용 예정)
-
-  [ 이 차이점을 반영한 경로 수정 ]
-  계획 d항 및 f항의 모든 "Assets/StrategyGame/" 경로를
-  Scripts의 경우 "Assets/Scripts/StrategyGame/Core/"
-  SO의 경우 "Assets/Configuration/StrategyGame/" 로 대체하여 진행
-
-================================================================
 [ 다음 즉시 실행 가능한 첫 번째 액션 ]
 
   1. 터미널에서 실행:

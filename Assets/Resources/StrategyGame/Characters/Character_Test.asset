@@ -12,23 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0a6c49970f63a94385a4b9f5f6fdef1, type: 3}
   m_Name: Character_Test
   m_EditorClassIdentifier: Assembly-CSharp::CharacterSO
-  ID: char_001
-  Name: "\uD14C\uC2A4\uD2B8"
+  ID: Char_001
+  Name: TestCharcter
   BaseStats:
     _strengh:
-      BaseValue: 0
+      BaseValue: 5
       Bonus: 
     _endurance:
-      BaseValue: 0
+      BaseValue: 5
       Bonus: 
     _agility:
-      BaseValue: 0
+      BaseValue: 5
       Bonus: 
     _charisma:
-      BaseValue: 0
+      BaseValue: 5
       Bonus: 
     _intelligence:
-      BaseValue: 0
+      BaseValue: 5
       Bonus: 
     _maxStatValue: 10
   FaceArt: {fileID: 0}
@@ -36,4 +36,5 @@ MonoBehaviour:
   FullArt: {fileID: 0}
   LevelProgression: {fileID: 11400000, guid: 1b15adc0924ca524b82f33e6a7d8196f, type: 2}
   TimeToRest: 10
-  Keywords: []
+  Keywords:
+  - {fileID: 0}
