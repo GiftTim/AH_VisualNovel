@@ -273,7 +273,7 @@ MonoBehaviour:
   OnGamePausedChange:
     m_PersistentCalls:
       m_Calls: []
-  _runOnStart: 0
+  _runOnStart: 1
 --- !u!1 &387129036
 GameObject:
   m_ObjectHideFlags: 0
