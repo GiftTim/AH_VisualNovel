@@ -11,12 +11,12 @@ using static Guild;
 /// 새 게임 생성, 저장/불러오기, 하루 완료 처리를 담당한다.
 ///
 /// 의존 관계:
-///   GameManager → CharacterDatabase (싱글턴, 씬에 배치 필요)
-///   GameManager → CharacterLevelDatabase (싱글턴, 씬에 배치 필요)
-///   GameManager → FactoryCharacterUnit → FactoryGameState → GameState
-///   GameManager → SaveSystem (static)
+///   SGManager → CharacterDatabase (싱글턴, 씬에 배치 필요)
+///   SGManager → CharacterLevelDatabase (싱글턴, 씬에 배치 필요)
+///   SGManager → FactoryCharacterUnit → FactoryGameState → GameState
+///   SGManager → SaveSystem (static)
 /// </summary>
-public class GameManager : Singleton<GameManager>
+public class SGManager : Singleton<SGManager>
 {
     /// <summary>
     /// 새 게임 또는 저장 파일 없을 때의 초기 게임 설정.
@@ -121,6 +121,6 @@ public class GameManager : Singleton<GameManager>
         SaveSystem.DeleteSave(saveFile);
     }
 
-    /// <summary>현재 게임 상태. DayManager 등이 GameManager.Instance.GameState로 접근한다.</summary>
+    /// <summary>현재 게임 상태. DayManager 등이 SGManager.Instance.GameState로 접근한다.</summary>
     public GameState GameState => _gameState;
 }

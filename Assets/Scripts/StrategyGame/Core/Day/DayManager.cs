@@ -46,7 +46,7 @@ public class DayManager : MonoBehaviour
     private bool _isPaused = false; // 일시정지 여부
     private DayReport _dayReport;   // 이날의 임무 결과 집계
 
-    private GameState _gameState;   // 현재 게임 상태 (GameManager에서 참조)
+    private GameState _gameState;   // 현재 게임 상태 (SGManager에서 참조)
 
     private void Start()
     {
@@ -54,7 +54,7 @@ public class DayManager : MonoBehaviour
 
         if (_runOnStart)
         {
-            GameManager.Instance.NewGame("TestGuild");
+            SGManager.Instance.NewGame("TestGuild");
             StartDay(1, new System.Collections.Generic.List<CharacterUnit>());
         }
     }
@@ -67,7 +67,7 @@ public class DayManager : MonoBehaviour
     public void StartDay(int day, List<CharacterUnit> characters)
     {
         characters.ForEach(c => c.SetStatusToAvailable()); // 전원 대기 상태로 초기화
-        _gameState = GameManager.Instance.GameState;        // 현재 게임 상태 참조
+        _gameState = SGManager.Instance.GameState;        // 현재 게임 상태 참조
 
         _isPaused = false;
         _dayReport = new DayReport(); // 리포트 초기화
