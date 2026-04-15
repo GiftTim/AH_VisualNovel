@@ -1,0 +1,357 @@
+================================================================
+변경계획_26.04.15_20.30_StrategyGame_Hierarchy_오브젝트구성
+================================================================
+
+[ 작성일 ] 2026-04-15 12:59 KST
+[ 대상 씬 ] Assets/Scenes/Strategy game.unity
+[ 적용 시스템 ] ③ 유틸리티 + ⑤ 캐릭터 + ⑦ Day 진행 + ⑧ 세이브 (C 조합)
+[ 전제 문서 ] 변경계획_26.04.14_13.08_GameDispatchLike_ABC조합_C우선통합계획.txt
+
+================================================================
+a. 목차
+================================================================
+
+  1. 요구한 기능
+  2. 현재 상황 (씬 Hierarchy 실제 분석)
+  3. [Manager] 기준 추가 가능 오브젝트
+  4. 왜 이 방식인가
+  5. 진행 순서
+  6. 어디가 어떤 식으로 변경되는지
+  7. 주의할 점
+
+================================================================
+b. 요구한 기능
+================================================================
+
+  질문: ③ 유틸리티 + ⑤ 캐릭터 + ⑦ Day 진행 + ⑧ 세이브를 적용한 상태에서,
+        Hierarchy에 [Manager]만 있을 때 뭘 더 넣을 수 있는가?
+
+  목표:
+  - C 조합에서 씬에 반드시 배치해야 할 MonoBehaviour 오브젝트 전체 파악
+  - 현재 씬에서 빠진 오브젝트 확인
+  - Inspector 연결이 필요한 ScriptableObject 연결 현황 파악
+  - B 조합(경로탐색/오디오), A 조합(임무) 추가 시 필요한 오브젝트 미리 파악
+
+================================================================
+c. 현재 상황 및 코드
+================================================================
+
+  [ 씬 파일 실제 분석 결과 (Assets/Scenes/Strategy game.unity) ]
+
+  씬에 이미 배치된 오브젝트 목록 (확인됨):
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │ GameObject 이름       │ 부착된 컴포넌트         │ 상태      │
+  ├─────────────────────────────────────────────────────────────┤
+  │ SGManager             │ GameManager.cs          │ ✅ 배치됨  │
+  │ DayManager            │ DayManager.cs           │ ✅ 배치됨  │
+  │ DayCharacterManager   │ DayCharacterManager.cs  │ ✅ 배치됨  │
+  │ CharacterDatabase     │ CharacterDatabase.cs    │ ✅ 배치됨  │
+  │ CharacterLevelDatabase│ CharacterLevelDatabase  │ ✅ 배치됨  │
+  │ [Manager]             │ (부모 그룹 오브젝트)    │ ✅ 배치됨  │
+  │ Canvas                │ Canvas                  │ ✅ 배치됨  │
+  │ EventSystem           │ EventSystem             │ ✅ 배치됨  │
+  │ Main Camera           │ Camera                  │ ✅ 배치됨  │
+  │ Directional Light     │ Light                   │ ✅ 배치됨  │
+  └─────────────────────────────────────────────────────────────┘
+
+  결론: C 조합에 필요한 5개 MonoBehaviour Singleton 오브젝트는
+        이미 모두 씬에 배치되어 있다.
+
+  [ C 조합 MonoBehaviour 클래스 의존 관계 ]
+
+  ┌── Singleton<T> 기반 (씬 배치 필수) ────────────────────────┐
+  │  GameManager : Singleton<GameManager>                       │
+  │    → GameManager.Instance로 DayManager, UI 등이 접근        │
+  │    → [SerializeField] DefaultGameState (GameStateSO)        │
+  │                                                             │
+  │  CharacterDatabase : Singleton<CharacterDatabase>           │
+  │    → Awake()에서 Resources.LoadAll<CharacterSO> 자동 로드   │
+  │    → GameManager.Start()에서 FactoryCharacterUnit가 사용    │
+  │                                                             │
+  │  CharacterLevelDatabase : Singleton<CharacterLevelDatabase> │
+  │    → [SerializeField] List<PlayerLevelSO> _levelSOs         │
+  │    → Guild.HandleDayReport()에서 레벨업 판정 시 사용        │
+  └─────────────────────────────────────────────────────────────┘
+
+  ┌── MonoBehaviour (씬 배치 필수) ────────────────────────────┐
+  │  DayManager : MonoBehaviour                                 │
+  │    → [SerializeField] DayCharacterManager _dayCharacterMgr  │
+  │    → [SerializeField] DaySO _defaultDaySO                   │
+  │    → [SerializeField] List<DaySO> _daySOs (선택)            │
+  │                                                             │
+  │  DayCharacterManager : MonoBehaviour                        │
+  │    → DayManager._dayCharacterManager 필드에서 참조           │
+  │    → Inspector 연결 없음 (Init()으로 런타임 설정)            │
+  └─────────────────────────────────────────────────────────────┘
+
+  [ Inspector 연결 현황 - 확인 필요 ]
+
+  아래 항목은 씬에 오브젝트가 있어도 SO를 연결하지 않으면
+  게임 실행 시 NullReferenceException이 발생한다.
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │ 오브젝트            │ 필드                  │ 연결 SO 타입   │
+  ├──────────────────────────────────────────────────────────────┤
+  │ SGManager           │ DefaultGameState      │ GameStateSO    │
+  │ DayManager          │ _dayCharacterManager  │ (씬 오브젝트)  │
+  │ DayManager          │ _defaultDaySO         │ DaySO          │
+  │ DayManager          │ _daySOs               │ List<DaySO>    │
+  │ CharacterLevelDatabase │ _levelDescriptionSOs│ List<PlayerLevelSO> │
+  └──────────────────────────────────────────────────────────────┘
+
+  [ ScriptableObject 인스턴스 생성 현황 ]
+
+  CreateAssetMenu가 정의된 SO 클래스와 현재 인스턴스 경로:
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │ SO 클래스         │ CreateAssetMenu 경로          │ 인스턴스  │
+  ├──────────────────────────────────────────────────────────────┤
+  │ CharacterSO       │ StrategySystem/Character      │ 확인 필요 │
+  │ GameStateSO       │ StrategySystem/Game State     │ 확인 필요 │
+  │ DaySO             │ StrategySystem/Day            │ 확인 필요 │
+  │ PlayerLevelSO     │ StrategySystem/Player Level   │ 확인 필요 │
+  │ MissionSO         │ StrategySystem/Mission        │ (A 조합용)│
+  └──────────────────────────────────────────────────────────────┘
+
+================================================================
+d. [Manager] 기준 추가 가능 오브젝트
+================================================================
+
+  [ 현재 C 조합: 추가 대상 없음 ]
+
+  C 조합(③+⑤+⑦+⑧)에 필요한 모든 MonoBehaviour 오브젝트는
+  이미 씬에 배치되어 있다. 새 GameObject를 만들 필요 없음.
+
+  단, 아래 Inspector SO 연결이 미완성이면 즉시 연결해야 한다.
+
+  ─────────────────────────────────────────────────────────────
+  [ 즉시 해야 할 것: Inspector SO 연결 ]
+  ─────────────────────────────────────────────────────────────
+
+  ① SGManager (GameManager)
+     - DefaultGameState 필드 → GameStateSO 인스턴스 연결
+     - 없으면: NewGame() 또는 LoadData() 시 NullRef
+
+  ② DayManager
+     - _dayCharacterManager 필드 → DayCharacterManager 오브젝트 드래그
+     - _defaultDaySO 필드 → DaySO 인스턴스 연결
+     - 없으면: StartDay() 시 즉시 에러
+
+  ③ CharacterLevelDatabase
+     - _levelDescriptionSOs 목록 → PlayerLevelSO 인스턴스 추가
+     - 없으면: Guild.HandleDayReport() 에서 레벨업 판정 불가
+
+  ─────────────────────────────────────────────────────────────
+  [ B 조합 추가 시: [Manager] 하위에 넣을 수 있는 오브젝트 ]
+  ─────────────────────────────────────────────────────────────
+
+  ④ PathFinder (PathFinderManager.cs) - 아직 스크립트 없음
+     위치: [Manager] 하위 또는 독립
+     역할: BFS 기반 경로 탐색 (맵 이동 로직)
+     의존: 없음 (독립 시스템)
+
+  ⑤ SoundManager (SoundManager.cs) - 아직 스크립트 없음
+     위치: [Manager] 하위
+     역할: BGM/SFX 재생 관리 싱글턴
+     의존: 없음 (독립 시스템)
+
+  ─────────────────────────────────────────────────────────────
+  [ A 조합 추가 시: [Manager] 하위에 넣을 수 있는 오브젝트 ]
+  ─────────────────────────────────────────────────────────────
+
+  ⑥ DayMissionManager (DayMissionManager.cs) - 아직 스크립트 없음
+     위치: [Manager] 하위 (DayManager의 자식 또는 형제)
+     역할: 임무 생성/파견/완료 처리
+     의존: DayManager (Inspector에서 연결 필요)
+     추가 조건: DayManager.cs의 A 조합 주석 해제 필요
+
+  ─────────────────────────────────────────────────────────────
+  [ 전체 목표 Hierarchy 구조 (A+B+C 완성 시) ]
+  ─────────────────────────────────────────────────────────────
+
+  Main Camera
+  Directional Light
+  Canvas
+    └── (UI 요소들 - 추후 추가)
+  EventSystem
+  [Manager]
+    ├── SGManager            ← GameManager.cs          [현재 있음]
+    ├── DayManager           ← DayManager.cs            [현재 있음]
+    ├── DayCharacterManager  ← DayCharacterManager.cs   [현재 있음]
+    ├── DayMissionManager    ← DayMissionManager.cs     [A 조합]
+    ├── CharacterDatabase    ← CharacterDatabase.cs     [현재 있음]
+    ├── CharacterLevelDatabase ← CharacterLevelDatabase [현재 있음]
+    ├── PathFinder           ← PathFinderManager.cs     [B 조합]
+    └── SoundManager         ← SoundManager.cs          [B 조합]
+
+================================================================
+e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+================================================================
+
+  Q. [Manager] 하나에 전부 자식으로 두는 이유?
+  ──────────────────────────────────────────────
+  ✅ 장점:
+  - Hierarchy 상단에서 Manager 그룹을 접고 펼칠 수 있어 가독성 높음
+  - 씬에 오브젝트가 많아질 때 Manager 계층 구분이 명확
+  - DontDestroyOnLoad를 [Manager] 하나에만 적용하면
+    모든 자식이 씬 전환 시 자동으로 유지됨 (선택 사항)
+
+  Q. DayCharacterManager를 DayManager의 자식으로 두지 않는 이유?
+  ────────────────────────────────────────────────────────────────
+  ✅ Inspector 드래그로 연결하므로 부모-자식 관계가 필요 없다.
+  씬 구조는 flat하게 유지하고 참조는 SerializeField로 처리하는
+  GameDispatchLike 원본의 패턴을 따른다.
+
+  Q. CharacterDatabase를 Resources 기반으로 처리하는 이유?
+  ──────────────────────────────────────────────────────────
+  ✅ CharacterSO는 게임 데이터(캐릭터 수십 개)이므로
+  Inspector에서 수동 연결하면 관리가 매우 번거롭다.
+  Resources.LoadAll<CharacterSO>("StrategyGame/Characters") 방식은
+  폴더에 SO만 추가하면 코드 수정 없이 자동 인식된다.
+
+================================================================
+f. 어떤 순서로 진행할 것인지
+================================================================
+
+  ══════════════════════════════════════════════════════
+  [ STEP 1 ] Inspector SO 연결 (즉시, 코딩 불필요)
+  ══════════════════════════════════════════════════════
+
+  □ 1-1. SO 인스턴스 생성 (아직 없는 경우)
+         Assets/Configuration/StrategyGame/ 하위 적절한 폴더에:
+         - GameStateSO 인스턴스 (우클릭 → Create → StrategySystem/Game State)
+         - DaySO 인스턴스 (우클릭 → Create → StrategySystem/Day)
+         - PlayerLevelSO 인스턴스 최소 1개 (우클릭 → Create → StrategySystem/Player Level)
+
+  □ 1-2. CharacterSO 인스턴스 생성 (아직 없는 경우)
+         Resources/StrategyGame/Characters/ 폴더에 생성
+         ※ CharacterDatabase가 이 경로에서 자동 로드함
+
+  □ 1-3. SGManager Inspector 연결
+         DefaultGameState → 생성한 GameStateSO 드래그
+
+  □ 1-4. DayManager Inspector 연결
+         _dayCharacterManager → 씬의 DayCharacterManager 드래그
+         _defaultDaySO → 생성한 DaySO 드래그
+
+  □ 1-5. CharacterLevelDatabase Inspector 연결
+         _levelDescriptionSOs 배열 크기 설정 후 PlayerLevelSO 드래그
+
+  □ 1-6. 플레이 테스트
+         Console 에러 없으면 C 조합 완전 동작 확인
+
+  ══════════════════════════════════════════════════════
+  [ STEP 2 ] B 조합 추가 (PathFinder + SoundManager)
+  ══════════════════════════════════════════════════════
+
+  □ 2-1. PathFinderManager.cs, SoundManager.cs 스크립트 복사/작성
+  □ 2-2. [Manager] 하위에 PathFinder, SoundManager 오브젝트 생성
+  □ 2-3. 컴파일 확인
+
+  ══════════════════════════════════════════════════════
+  [ STEP 3 ] A 조합 추가 (임무 시스템)
+  ══════════════════════════════════════════════════════
+
+  □ 3-1. DayMissionManager.cs 스크립트 작성
+  □ 3-2. DayManager.cs A 조합 주석 해제
+  □ 3-3. [Manager] 하위에 DayMissionManager 오브젝트 생성
+  □ 3-4. DayManager Inspector에서 _missionManager 필드 연결
+  □ 3-5. MissionSO 인스턴스 생성 및 DayManager에 연결
+
+================================================================
+g. 어디가 어떤 식으로 변경되는지
+================================================================
+
+  [ STEP 1 - Inspector 연결만 변경, 스크립트/GameObject 변경 없음 ]
+
+  변경 위치: Assets/Scenes/Strategy game.unity (Inspector 연결만)
+  ─────────────────────────────────────────────────────
+  SGManager.DefaultGameState         → null → GameStateSO 인스턴스
+  DayManager._dayCharacterManager    → null → DayCharacterManager
+  DayManager._defaultDaySO           → null → DaySO 인스턴스
+  CharacterLevelDatabase._levelSOs   → [] → PlayerLevelSO 목록
+
+  생성되는 에셋 (Assets/Configuration/StrategyGame/ 추천):
+  - GameStateSO 인스턴스 1개
+  - DaySO 인스턴스 1개 이상
+  - PlayerLevelSO 인스턴스 1개 이상
+
+  생성되는 에셋 (Assets/Resources/StrategyGame/Characters/):
+  - CharacterSO 인스턴스 1개 이상
+    (CharacterDatabase가 이 경로를 Resources.LoadAll로 읽음)
+
+  [ STEP 2 ~ 3 - B/A 조합 추가 시 ]
+
+  추가 위치: Assets/Scenes/Strategy game.unity (GameObject 추가)
+  ─────────────────────────────────────────────────────
+  [Manager] 하위에 PathFinder, SoundManager, DayMissionManager 추가
+
+  변경되는 스크립트:
+  - DayManager.cs: A 조합 주석 해제 (Step 3에서)
+
+  변경되지 않는 것:
+  - Assets/Scripts/VisualNovel/ → 건드리지 않음
+  - [Manager] 하위 기존 5개 오브젝트 → 구조 변경 없음
+
+================================================================
+h. 주의할 점
+================================================================
+
+  ① CharacterSO는 반드시 Resources/StrategyGame/Characters/ 에 배치
+  ─────────────────────────────────────────────────────────────────
+  CharacterDatabase.Awake()가 StrategyGamePaths.Characters 경로
+  ("StrategyGame/Characters")에서 Resources.LoadAll로 로드한다.
+  이 경로 밖에 있으면 CharacterDatabase가 빈 딕셔너리가 되어
+  FactoryCharacterUnit.CreateCharacterUnit() 시 null 반환.
+
+  ② DayManager._dayCharacterManager는 Inspector 연결 필수
+  ─────────────────────────────────────────────────────────────────
+  DayManager.StartDay()가 _dayCharacterManager.Init()을 호출한다.
+  연결 없으면 StartDay() 첫 줄에서 NullReferenceException 발생.
+
+  ③ PlayerLevelSO가 0개이면 Mathf.Clamp 인덱스 에러 발생
+  ─────────────────────────────────────────────────────────────────
+  CharacterLevelDatabase.GetLevel(0) 호출 시 빈 목록이면
+  IndexOutOfRangeException. 최소 레벨 0, 1 두 개를 만들어 연결할 것.
+
+  ④ DaySO의 DayDurationInSeconds는 테스트 시 짧게 설정
+  ─────────────────────────────────────────────────────────────────
+  Phase C에서는 DayDurationInSeconds만큼 실시간으로 기다린다.
+  처음 테스트 시 5~10초로 설정해 하루 종료 이벤트가 발행되는지 확인.
+  운영값은 검증 후 조정.
+
+  ⑤ [Manager]에 DontDestroyOnLoad 적용 시 씬 전환 주의
+  ─────────────────────────────────────────────────────────────────
+  현재는 씬이 1개(Strategy game.unity)이므로 문제 없다.
+  Visual Novel ↔ Strategy Game 씬 전환을 구현할 때,
+  [Manager]에 DontDestroyOnLoad를 적용하면 씬 전환 후 중복 생성
+  방지를 위한 추가 처리가 필요하다.
+
+  ⑥ B/A 조합 추가 전 C 조합 완전 동작 확인 필수
+  ─────────────────────────────────────────────────────────────────
+  Inspector 연결이 완료되고 플레이 테스트에서 에러 없는 상태를
+  확인한 후에 다음 조합을 추가할 것.
+  에러가 있는 상태에서 오브젝트를 추가하면 원인 추적이 어려워짐.
+
+================================================================
+[ 즉시 실행 가능한 첫 번째 액션 ]
+
+  1. Assets/Configuration/StrategyGame/ 폴더에서
+     우클릭 → Create → StrategySystem/Game State → GameStateSO 생성
+
+  2. 우클릭 → Create → StrategySystem/Day → DaySO 생성
+     DayDurationInSeconds = 10 (테스트용)
+
+  3. 우클릭 → Create → StrategySystem/Player Level → PlayerLevelSO 2개 생성
+     Level_0: ExpToLevelUp = 100
+     Level_1: ExpToLevelUp = 300
+
+  4. Assets/Resources/StrategyGame/Characters/ 폴더 생성 후
+     우클릭 → Create → StrategySystem/Character → CharacterSO 1개 생성
+
+  5. 씬에서 각 Inspector 연결 (Step 1-3 ~ 1-5)
+
+  6. 플레이 → Console 에러 0 확인
+
+================================================================

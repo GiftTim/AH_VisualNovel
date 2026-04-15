@@ -1,0 +1,217 @@
+================================================================
+변경완료_26.04.15_15.30_StrategyGame_A조합_임무파견시스템
+================================================================
+
+[ 작성일 ] 2026-04-15 15:30 KST
+[ 대상 씬 ] Assets/Scenes/Strategy game.unity
+[ 참조 계획 ] 변경계획_26.04.15_14.52_StrategyGame_A조합_임무파견시스템
+
+================================================================
+1. 비교 결과
+================================================================
+
+  계획 c(현재 상황 및 코드)와 실제 코드 비교:
+
+  ① DayManager.cs 23번째 줄 _missionManager 주석 → 일치 ✅
+  ② DayManager.cs 32번째 줄 OnMissionAvailable 주석 → 일치 ✅
+  ③ DayManager.cs 55번째 줄 Start() AddListener 주석 → 일치 ✅
+  ④ DayManager.cs 73번째 줄 missionAmount 주석 → 일치 ✅
+  ⑤ DayManager.cs 77번째 줄 _missionManager.Init() 주석 → 일치 ✅
+  ⑥ DayManager.cs 96번째 줄 루프 조건 _elapseTime < dayDuration → 일치 ✅
+  ⑦ DayManager.cs 109번째 줄 UpdateMissions() 주석 → 일치 ✅
+  ⑧ DayManager.cs 123~128번째 줄 메서드 스텁 주석 → 일치 ✅
+  ⑨ Mission/ 폴더에 DayMissionManager.cs 없음 → 일치 ✅
+
+  → 차이 없음. 변경 진행.
+
+================================================================
+2. 변경 내용
+================================================================
+
+  ─────────────────────────────────────────────────────────────
+  [PHASE 8-1] DayMissionManager.cs 신규 생성
+  ─────────────────────────────────────────────────────────────
+  경로: Assets/Scripts/StrategyGame/Core/Mission/DayMissionManager.cs
+
+  변경 전: 파일 없음
+
+  변경 후:
+  ┌────────────────────────────────────────────────────────────┐
+  │ public class DayMissionManager : MonoBehaviour             │
+  │ {                                                          │
+  │   public UnityEvent<MissionUnit> OnMissionMiss;            │
+  │   private List<(MissionUnit, float)> _pendingMissions;     │
+  │   private List<MissionUnit> _activeMissions;               │
+  │   private Action<List<MissionUnit>> _newMissionsCallback;  │
+  │                                                            │
+  │   public void Init(List<MissionSO> missionSOs,             │
+  │       int missionAmount, float dayDuration,                │
+  │       Action<List<MissionUnit>> newMissionsCallback)       │
+  │   // → 셔플 후 missionAmount 개 선택                       │
+  │   // → 등장 시간 고르게 배분 (interval = dur / (n+1))      │
+  │                                                            │
+  │   public void UpdateMissions(float elapsedTime)            │
+  │   // → spawnTime 도달 임무를 activeMissions으로 이동       │
+  │   // → _newMissionsCallback 발행                           │
+  │   // → 각 activeMission.UpdateMission() 호출               │
+  │                                                            │
+  │   public bool HasMissions()                                │
+  │   // → pendingMissions.Count > 0 → true                   │
+  │   // → activeMissions 중 미처리 존재 → true                │
+  │   // → 전부 처리 → false                                   │
+  │                                                            │
+  │   private void HandleMissionLost(MissionUnit m)            │
+  │   // → OnMissionMiss 이벤트 발행                           │
+  │ }                                                          │
+  └────────────────────────────────────────────────────────────┘
+
+  ─────────────────────────────────────────────────────────────
+  [PHASE 8-2] DayManager.cs 수정
+  ─────────────────────────────────────────────────────────────
+  경로: Assets/Scripts/StrategyGame/Core/Day/DayManager.cs
+
+  ┌──────────────────────────────────────────────────────────────────┐
+  │ 위치                    │ 변경 전                  │ 변경 후      │
+  ├──────────────────────────────────────────────────────────────────┤
+  │ 필드 _missionManager    │ // [SerializeField]...  │ 주석 해제    │
+  │ 이벤트 OnMissionAvailable│ // public UnityEvent...│ 주석 해제    │
+  │ Start() AddListener     │ // _missionManager....  │ 주석 해제    │
+  │ StartDay() missionAmount│ // var missionAmount... │ 주석 해제    │
+  │ StartDay() Init()       │ // _missionManager....  │ 주석 해제    │
+  │ StartDay() 코루틴 호출  │ DayLoopCoroutine(dur)   │ DayLoopCoroutine() │
+  │ 코루틴 시그니처         │ (float dayDuration)     │ 파라미터 제거│
+  │ 루프 조건               │ _elapseTime < dayDuration│ HasMissions()│
+  │ UpdateMissions() 호출   │ // _missionManager....  │ 주석 해제    │
+  │ 메서드 5개              │ // 스텁 주석             │ 전체 복원    │
+  └──────────────────────────────────────────────────────────────────┘
+
+  복원된 메서드 전체 (변경 전 → 변경 후):
+
+  변경 전:
+    // public void ClaimMission(MissionUnit missionUnit, bool isSuccess) { ... }
+    // public void AcceptMission(MissionUnit mission, Team team) { ... }
+    // public void StartMission(MissionUnit mission) { ... }
+    // private void HandleMissionMiss(MissionUnit missionUnit) { _dayReport.HandleMissionMiss(); }
+    // private void HandleNewMissions(List<MissionUnit> newMissions) { ... }
+
+  변경 후:
+    public void ClaimMission(MissionUnit missionUnit, bool isSuccess)
+    {
+        _dayCharacterManager.HandleTeamCompleteMission(
+            missionUnit, missionUnit.Team, isSuccess, CurrentTime);
+        if (isSuccess)
+            _dayReport.HandleMissionSucceded(missionUnit.Gold);
+        else
+            _dayReport.HandleMissionFailed();
+        missionUnit.ClaimMission();
+    }
+
+    public void AcceptMission(MissionUnit mission, Team team)
+    {
+        _dayReport.HandleMissionAccepted(team.Members);
+        _dayCharacterManager.HandleTeamAcceptMission(team);
+        mission.AcceptMission(team);
+    }
+
+    public void StartMission(MissionUnit mission)
+    {
+        _dayCharacterManager.HandleTeamStartMission(mission.Team);
+        mission.StartMission(CurrentTime);
+    }
+
+    private void HandleMissionMiss(MissionUnit missionUnit)
+    {
+        _dayReport.HandleMissionMiss();
+    }
+
+    private void HandleNewMissions(List<MissionUnit> newMissions)
+    {
+        _dayReport.AddCalls(newMissions.Count);
+        OnMissionAvailable?.Invoke(newMissions);
+    }
+
+================================================================
+3. 동작 흐름
+================================================================
+
+  씬 시작 시:
+    DayManager.Start()
+      → _missionManager.OnMissionMiss.AddListener(HandleMissionMiss)
+      (임무 소멸 이벤트 구독 등록)
+
+  StartDay(day, characters) 호출 시:
+    1. 캐릭터 전원 Available 상태 초기화
+    2. GameManager.Instance.GameState 참조
+    3. DayReport 초기화
+    4. daySO 선택 (날짜에 따라 또는 기본값)
+    5. missionAmount 계산 (UseAllMissions이면 전체, 아니면 MissionAmount)
+    6. DayCharacterManager.Init(characters)
+    7. DayMissionManager.Init(missionSOs, missionAmount, dayDuration, HandleNewMissions)
+       → 임무 셔플 → missionAmount 개 선택 → 등장 시간 고르게 배분
+    8. DayLoopCoroutine() 시작
+
+  DayLoopCoroutine() 실행 중 (0.5초마다):
+    - DayCharacterManager.UpdateCharacters() 호출 (캐릭터 휴식 타이머 등)
+    - DayMissionManager.UpdateMissions(elapsedTime) 호출
+        → spawnTime 도달 임무: _pendingMissions → _activeMissions
+        → HandleNewMissions 콜백 → DayReport.AddCalls() + OnMissionAvailable 발행
+        → 각 activeMission.UpdateMission() 호출 (수락 타이머/완료 타이머 체크)
+    - HasMissions()가 false가 되면 루프 종료
+        → pendingMissions 비어있음 + activeMissions 전부 Claimed/Lost
+
+  루프 종료 후:
+    - WaitUntil(AllCharacterInBase) 대기
+    - OnDayEnd(dayReport) 발행
+
+  임무 수락 흐름 (외부에서 호출):
+    AcceptMission(mission, team)
+      → DayReport.HandleMissionAccepted()
+      → DayCharacterManager.HandleTeamAcceptMission() (팀 → Going 상태)
+      → MissionUnit.AcceptMission(team)
+
+    StartMission(mission)
+      → DayCharacterManager.HandleTeamStartMission() (팀 → InMission 상태)
+      → MissionUnit.StartMission(CurrentTime) (완료 타이머 시작)
+
+    ClaimMission(missionUnit, isSuccess)
+      → DayCharacterManager.HandleTeamCompleteMission() (캐릭터 경험치 + 귀환 상태)
+      → DayReport.HandleMissionSucceded/Failed()
+      → MissionUnit.ClaimMission() (Claimed 상태로 전환)
+
+================================================================
+4. 주의할 점
+================================================================
+
+  ① DayLoopCoroutine 파라미터 제거
+     → 계획 h①에 따라 dayDuration 파라미터를 코루틴에서 제거했다.
+     → DayDurationInSeconds는 _missionManager.Init() 호출 시 직접 전달된다.
+     → DayLoopCoroutine()은 파라미터 없이 호출된다.
+
+  ② HasMissions() 무한루프 방지
+     → DayMissionManager.HasMissions()는 pendingMissions와 activeMissions를 모두 체크한다.
+     → MissionUnit이 Lost 또는 Claimed 상태가 되면 카운트에서 제외된다.
+     → 반드시 각 임무가 TimeToAccept 내에 수락되지 않으면 Lost가 되도록 MissionSO를 설정할 것.
+
+  ③ PHASE 8-3, 8-4는 Unity Editor에서 수동 진행 필요
+     → MissionSO 인스턴스(Mission_Test01.asset) 생성
+     → Day_Default.asset에 MissionSOs 연결, DayDurationInSeconds=120, UseAllMissions=true
+     → 씬 [Manager] 하위에 [DayMissionManager] 오브젝트 추가
+     → DayMissionManager.cs 컴포넌트 부착
+     → DayManager Inspector의 _missionManager 필드에 [DayMissionManager] 연결
+
+  ④ StartDay() 호출 전 GameManager.NewGame() 선행 필요
+     → _gameState = GameManager.Instance.GameState 참조가 있으므로
+       GameManager.NewGame() 또는 LoadSave() 없이 StartDay()를 호출하면 NullReferenceException 발생.
+
+  ⑤ MissionUnit.Gold 원본 버그 유지
+     → MissionUnit.cs 197번째 줄: public int Gold => _missionSO.RewardExperience;
+     → 원본 레포 버그 그대로 유지. 실제 골드 보상 필요 시 RewardGold로 수정.
+
+================================================================
+[ 미완료 항목 (Unity Editor 수동 작업 필요) ]
+
+  □ PHASE 8-3: MissionSO 인스턴스 생성 + Day_Default.asset 연결
+  □ PHASE 8-4: 씬에 [DayMissionManager] 오브젝트 추가 + DayManager 연결
+  □ PHASE 8-5: Play → 동작 확인
+
+================================================================

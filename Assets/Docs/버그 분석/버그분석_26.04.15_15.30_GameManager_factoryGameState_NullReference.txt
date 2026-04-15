@@ -1,0 +1,174 @@
+================================================================
+ 버그분석_26.04.15_16.30
+ GameManager._factoryGameState — DayManager.Start() 실행 순서 경쟁으로 Null 역참조
+================================================================
+
+■ 목차
+  a. 목차
+  b. 문제점
+  c. 현재 상황 및 코드
+  d. 해결 방향
+  e. 다른 방법들과 d를 선택한 이유
+  f. 진행 순서
+  g. 변경 위치 및 내용
+  h. 주의할 점
+
+----------------------------------------------------------------
+b. 문제점
+----------------------------------------------------------------
+
+발생 예외:
+  NullReferenceException: Object reference not set to an instance of an object
+  GameManager.NewGame (System.String guildName)  [GameManager.cs:109]
+  DayManager.Start ()                            [DayManager.cs:57]
+
+원인 요약:
+  GameManager._factoryGameState는 GameManager.Start()에서 초기화된다.
+  DayManager.Start()도 같은 Start 단계에서 실행되므로, DayManager.Start()가
+  GameManager.Start()보다 먼저 실행될 경우 _factoryGameState가 아직 null인
+  상태에서 GameManager.NewGame()이 호출되어 NullReferenceException이 발생한다.
+
+발생 시나리오:
+  1) Play 시작 → Unity가 모든 MonoBehaviour의 Start()를 호출
+  2) DayManager.Start()가 GameManager.Start()보다 먼저 실행됨
+  3) DayManager.Start()에서 GameManager.Instance.NewGame("TestGuild") 호출
+  4) GameManager.NewGame() 내부에서 _factoryGameState.CreateGameState() 호출
+  5) _factoryGameState가 아직 null → NullReferenceException
+
+----------------------------------------------------------------
+c. 현재 상황 및 코드
+----------------------------------------------------------------
+
+[GameManager.cs:34-38]  ← 팩토리 초기화가 Start()에 있음
+  private void Start()
+  {
+      _factoryCharacterUnit = new FactoryCharacterUnit(CharacterDatabase.Instance);
+      _factoryGameState = new FactoryGameState(_factoryCharacterUnit);
+  }
+
+[GameManager.cs:106-110]  ← NewGame() 내부에서 _factoryGameState 사용
+  public void NewGame(string guildName)
+  {
+      var saveFile = guildName.Replace(" ", "_") + ".json";
+      _gameState = _factoryGameState.CreateGameState(saveFile, guildName, DefaultGameState);  // ← null 역참조
+  }
+
+[DayManager.cs:51-58]  ← Start()에서 NewGame() 호출 (실행 순서 미보장)
+  private void Start()
+  {
+      _missionManager.OnMissionMiss.AddListener(HandleMissionMiss);
+
+      if (_runOnStart)
+      {
+          GameManager.Instance.NewGame("TestGuild");  // ← GameManager.Start()보다 먼저 실행될 수 있음
+          StartDay(1, new System.Collections.Generic.List<CharacterUnit>());
+      }
+  }
+
+[CharacterDatabase.cs]  ← Awake()에서 초기화됨 (Start보다 먼저 실행 보장)
+  private void Awake()
+  {
+      // Resources 폴더에서 CharacterSO 로드 → 딕셔너리 구성
+  }
+
+  GameManager.cs 주석:
+  "CharacterDatabase가 Awake에서 준비되므로 Start가 안전하다"
+  → GameManager가 Start()를 쓴 이유: CharacterDatabase.Awake()가 먼저 끝난 뒤
+    CharacterDatabase.Instance를 안전하게 참조하기 위함.
+  → 그러나 다른 스크립트의 Start()와의 순서는 여전히 미보장.
+
+----------------------------------------------------------------
+d. 해결 방향
+----------------------------------------------------------------
+
+  GameManager의 팩토리 초기화를 Start()에서 Awake()로 이동한다.
+
+  근거:
+    - CharacterDatabase.Awake()는 딕셔너리를 구성한다.
+    - FactoryCharacterUnit 생성 시 CharacterDatabase.Instance를 인자로 넘기는데,
+      이 시점은 레퍼런스만 저장하는 것이고 딕셔너리 실제 조회는 CreateCharacterUnit()
+      호출 시 발생한다.
+    - 모든 Awake()는 어떤 Start()보다도 먼저 완료되므로, GameManager.Awake()가
+      DayManager.Start()보다 반드시 먼저 실행된다.
+    - CharacterDatabase.Instance는 Awake 단계에 FindFirstObjectByType<T>()로
+      씬에서 컴포넌트를 찾아 반환하므로, 같은 Awake 단계라도 레퍼런스 접근은 안전하다.
+
+  결론:
+    GameManager의 팩토리 초기화를 Awake()로 옮기면 어떤 스크립트의 Start()에서도
+    _factoryGameState가 이미 초기화된 상태임이 보장된다.
+
+----------------------------------------------------------------
+e. 다른 방법들과 d를 선택한 이유
+----------------------------------------------------------------
+
+  [방법 1] Script Execution Order 설정 (Unity Editor 메뉴에서 순서 지정)
+    장점: 코드 수정 없음
+    단점: Editor 설정에 의존 → 설정 파일 누락 시 재발, 팀 작업 시 전달 누락 위험.
+         스크립트가 늘어날수록 순서 관리가 복잡해짐.
+    → 채택 안 함
+
+  [방법 2] DayManager._runOnStart 처리를 코루틴으로 한 프레임 지연
+    장점: GameManager 미수정
+    단점: "한 프레임 기다린다"는 로직이 근본 원인을 숨기는 임시방편.
+         실제 게임 코드에서 StartDay()를 호출하는 다른 경로에서도 동일 문제 재발 가능.
+    → 채택 안 함
+
+  [방법 3] GameManager.Awake()로 팩토리 초기화 이동 ← 채택
+    장점: Unity 생명주기 원칙에 부합 (의존 없는 초기화는 Awake, 의존 있는 초기화는 Start).
+         코드 레벨에서 근본 원인 해결. 어떤 경로로 NewGame()을 호출해도 안전.
+    단점: CharacterDatabase.Instance와 Awake 단계가 겹치나, 레퍼런스만 저장하는
+         것이므로 실질적 문제 없음.
+    → 채택
+
+----------------------------------------------------------------
+f. 진행 순서
+----------------------------------------------------------------
+
+  STEP 1. GameManager.cs 수정
+    - Start()의 팩토리 초기화 2줄을 Awake()로 이동
+    - 기존 Start() 주석 내용 Awake()로 이전
+
+----------------------------------------------------------------
+g. 변경 위치 및 내용
+----------------------------------------------------------------
+
+  경로: Assets/Scripts/StrategyGame/Core/GameState/GameManager.cs
+
+  [ 변경 전 ]
+    private void Start()
+    {
+        _factoryCharacterUnit = new FactoryCharacterUnit(CharacterDatabase.Instance);
+        _factoryGameState = new FactoryGameState(_factoryCharacterUnit);
+    }
+
+  [ 변경 후 ]
+    private void Awake()
+    {
+        _factoryCharacterUnit = new FactoryCharacterUnit(CharacterDatabase.Instance);
+        _factoryGameState = new FactoryGameState(_factoryCharacterUnit);
+    }
+
+  ※ Start() 메서드는 내용이 없어지므로 완전 제거한다.
+
+----------------------------------------------------------------
+h. 주의할 점
+----------------------------------------------------------------
+
+  ① CharacterDatabase.Awake() 실행 보장
+     → CharacterDatabase는 Awake()에서 딕셔너리를 구성한다.
+     → GameManager.Awake()에서 CharacterDatabase.Instance를 참조하는 시점에
+       CharacterDatabase.Awake()가 아직 실행 안 됐을 수 있으나,
+       FactoryCharacterUnit 생성자는 레퍼런스만 저장하므로 문제없다.
+     → 실제 딕셔너리 조회(CreateCharacterUnit)는 StartDay() 시점이므로
+       모든 Awake()가 끝난 뒤인 Start() 이후에 실행된다.
+
+  ② _runOnStart는 테스트 전용 코드
+     → 테스트 완료 후 DayManager.Start()의 _runOnStart 블록 및 해당 필드를 제거할 것.
+     → 실제 게임에서는 UI 버튼 등 외부 이벤트를 통해 StartDay()를 호출한다.
+
+  ③ 이 수정이 완료되면 NullReferenceException 없이 아래 순서로 실행된다:
+     Awake 단계: CharacterDatabase.Awake() → GameManager.Awake() (팩토리 초기화)
+     Start 단계: DayManager.Start() → NewGame("TestGuild") → StartDay(1, [])
+                 → DayLoopCoroutine() 시작 → 임무 등장 로그 출력
+
+================================================================

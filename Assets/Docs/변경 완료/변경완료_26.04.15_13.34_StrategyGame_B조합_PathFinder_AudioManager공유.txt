@@ -1,0 +1,195 @@
+================================================================
+변경완료_26.04.15_13.34_StrategyGame_B조합_PathFinder_AudioManager공유
+================================================================
+
+[ 작성일 ] 2026-04-15 KST
+[ 대상 씬 ] Assets/Scenes/Strategy game.unity
+[ 참조 계획 ] 변경계획_26.04.15_13.34_StrategyGame_B조합_PathFinder_AudioManager공유_최종.txt
+[ 현재 상태 ] C 조합(③+⑤+⑦+⑧) 완료 → B 조합 (PathFinder + AudioManager 공유) 추가 완료
+
+================================================================
+1. 현재 코드와 계획 c섹션 비교 결과
+================================================================
+
+  [ 비교 결과: 다른 점 없음 → 변경 진행 ]
+
+  계획 c섹션이 명시한 씬 상태 (C 조합 완료):
+    [Manager]
+      ├── SGManager             (GameManager.cs)      ✅ 확인됨
+      ├── DayManager            (DayManager.cs)        ✅ 확인됨
+      ├── DayCharacterManager   (DayCharacterManager.cs) ✅ 확인됨
+      ├── CharacterDatabase     (CharacterDatabase.cs) ✅ 확인됨
+      └── CharacterLevelDatabase(CharacterLevelDatabase.cs) ✅ 확인됨
+
+  Audio Manager 없음 → ✅ 계획과 동일
+  [PathFinder] 없음  → ✅ 계획과 동일
+  PathFinder 폴더 없음 → ✅ 계획과 동일 (.meta만 존재)
+
+  계획 c섹션이 명시한 Node.cs 수정 필요 2건:
+    ① using UnityEngine.Experimental.GlobalIllumination; → 제거 필요 ✅
+    ② _circle.gameObject.SetActive(false); → null 체크 필요    ✅
+
+================================================================
+2. 변경 내용
+================================================================
+
+  ─────────────────────────────────────────────────────────────
+  파트 1: PathFinderManager.cs (신규 생성)
+  ─────────────────────────────────────────────────────────────
+
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/PathFinderManager.cs
+  GUID: c3d4e5f678901234567890abcdef0001
+  변경: 없음 (원본 그대로 복사)
+
+  [ 변경 전 ] 파일 없음
+
+  [ 변경 후 ] PathFinderManager.cs 생성
+    - BFS 기반 최단 경로 탐색
+    - GetPath(Node origin, Node dest) → List<Node>
+    - _debug = true 시 에디터에서 I 키 → 경로 탐색 테스트
+    - OnDrawGizmos()로 에디터에서 노드 연결선/경로 시각화
+
+  ─────────────────────────────────────────────────────────────
+  파트 2: Node.cs (신규 생성, 수정 2건 적용)
+  ─────────────────────────────────────────────────────────────
+
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/Node.cs
+  GUID: d4e5f678901234567890abcdef000123
+
+  [ 변경 전 → 변경 후 ]
+
+  수정 ①: using 제거
+    변경 전: using UnityEngine.Experimental.GlobalIllumination;
+    변경 후: (줄 제거)
+
+  수정 ②: OnValidate() null 체크 추가
+    변경 전:
+      if (!_debug)
+      {
+          _circle.gameObject.SetActive(false);
+          return;
+      }
+
+    변경 후:
+      if (!_debug)
+      {
+          if (_circle != null) _circle.gameObject.SetActive(false);
+          return;
+      }
+
+  ─────────────────────────────────────────────────────────────
+  파트 3: Strategy game.unity 씬 수정
+  ─────────────────────────────────────────────────────────────
+
+  [ 변경 전 Hierarchy ]
+    Main Camera
+    Directional Light
+    Canvas
+    EventSystem
+    [Manager]
+      ├── SGManager             (GameManager.cs)
+      ├── DayManager            (DayManager.cs)
+      ├── DayCharacterManager   (DayCharacterManager.cs)
+      ├── CharacterDatabase     (CharacterDatabase.cs)
+      └── CharacterLevelDatabase(CharacterLevelDatabase.cs)
+
+  [ 변경 후 Hierarchy ]
+    Main Camera
+    Directional Light
+    Canvas
+    EventSystem
+    [Manager]
+      ├── SGManager             (GameManager.cs)
+      ├── DayManager            (DayManager.cs)
+      ├── DayCharacterManager   (DayCharacterManager.cs)
+      ├── CharacterDatabase     (CharacterDatabase.cs)
+      ├── CharacterLevelDatabase(CharacterLevelDatabase.cs)
+      ├── Audio Manager         (AudioManager.cs) ← 신규 (fileID: 2000000001~2000000003)
+      └── [PathFinder]          (PathFinderManager.cs) ← 신규 (fileID: 2000000004~2000000006)
+    [Nodes]                                        ← 신규 씬 루트 (fileID: 2000000007~2000000008)
+      ├── Node(0)               (Node.cs) Position(-2, 0, 0)
+      ├── Node(1)               (Node.cs) Position( 0, 0, 0) _isBidirectional=true
+      └── Node(2)               (Node.cs) Position( 2, 0, 0)
+
+  Audio Manager Inspector 연결 내용:
+    musicMixer  → Main.mixer / Music  그룹 (fileID: 3526808503534993219)
+    sfxMixer    → Main.mixer / SFX    그룹 (fileID: -4151330283605287644)
+    voicesMixer → Main.mixer / Voices 그룹 (fileID: -8005055542272614670)
+    audioFalloffCurve → Main Menu.unity AudioManager와 동일한 커브
+      key0: time=0, value=-80, inSlope=81, outSlope=81
+      key1: time=1, value= 1, inSlope=81, outSlope=81
+
+  [PathFinder] Inspector 연결 내용:
+    nodesParent → [Nodes] Transform (fileID: 2000000008)
+    _debug = true
+    Origin  → Node(0) (fileID: 2000000011)
+    Destiny → Node(2) (fileID: 2000000017)
+
+  Node Neighbors 연결:
+    Node(0).Neighbors → [Node(1)]         (fileID: 2000000014)
+    Node(1).Neighbors → [Node(0), Node(2)] (fileID: 2000000011, 2000000017)
+    Node(2).Neighbors → [Node(1)]         (fileID: 2000000014)
+
+================================================================
+3. 작동 흐름
+================================================================
+
+  [ PathFinder 흐름 ]
+  1. Start(): [Nodes] 하위 자식을 순회해 Node 목록 수집
+  2. Update(): I 키 입력 → GetPath(Node(0), Node(2)) 호출
+  3. GetPath(): BFS로 Node(0) → Node(1) → Node(2) 경로 탐색
+  4. Console: "Path 3" 출력 (3개 노드 = Node(0), Node(1), Node(2))
+  5. OnDrawGizmos(): 에디터에서 Cyan 선(전체 연결), Red 선(현재 경로) 표시
+
+  [ AudioManager 흐름 ]
+  - Main Menu → Strategy game 씬 전환 시:
+      Main Menu의 AudioManager.instance 유지 (DontDestroyOnLoad)
+      Strategy game의 Audio Manager 복사본 → DestroyImmediate로 자동 제거
+  - Strategy game 직접 실행 시:
+      Strategy game의 Audio Manager가 싱글턴으로 동작
+  - AudioManager.instance.PlayTrack("경로", channel, loop) → BGM 재생
+  - AudioManager.instance.PlaySoundEffect("경로", volume) → SFX 재생
+
+================================================================
+4. 주의할 점
+================================================================
+
+  ① Unity Editor 재컴파일 필수
+  ─────────────────────────────────────────────────────────────
+  PathFinderManager.cs / Node.cs 신규 파일 추가 후
+  Unity Editor가 자동 컴파일한다. Console 에러 0 확인 후 씬 사용.
+
+  ② Unity가 .meta GUID를 재생성하는 경우
+  ─────────────────────────────────────────────────────────────
+  Unity Editor가 기존 .meta를 무시하고 새 GUID를 생성하면
+  씬 파일의 스크립트 참조(guid: c3d4e5f... / d4e5f678...)가 깨진다.
+  이 경우 Inspector에서 직접 PathFinderManager.cs / Node.cs를 드래그하여
+  Missing Script를 재연결해야 한다.
+
+  ③ AudioMixerGroup 3개 연결 Inspector에서 확인
+  ─────────────────────────────────────────────────────────────
+  씬 파일에 YAML로 연결했으나, Unity가 씬을 열 때 올바르게
+  로드됐는지 Inspector에서 3개 필드가 모두 연결된 것을 눈으로 확인.
+  미연결 시 ConfigMenu SetMusicVolume() 호출에서 NullReferenceException.
+
+  ④ PathFinder 테스트: Play → I 키 → "Path 3" Console 확인
+  ─────────────────────────────────────────────────────────────
+  _debug = true, Origin = Node(0), Destiny = Node(2) 이미 씬에 설정됨.
+  Play 모드에서 I 키를 누르면 Console에 "Path 3"이 출력되어야 정상.
+
+  ⑤ DontDestroyOnLoad 중복 경고 (에디터 환경)
+  ─────────────────────────────────────────────────────────────
+  에디터에서 Play/Stop 반복 시 AudioManager 중복 경고가 Console에
+  출력될 수 있으나, 빌드 실행 시에는 발생하지 않는다. 무시 가능.
+
+================================================================
+5. 변경되지 않은 것
+================================================================
+
+  - AudioManager.cs / AudioChannel.cs / AudioTrack.cs → 수정 없음
+  - Main Menu.unity의 Audio Manager → 수정 없음
+  - VisualNovel.unity → 수정 없음
+  - C 조합 스크립트 전체 → 수정 없음
+  - Assets/Scripts/VisualNovel/ → 건드리지 않음
+
+================================================================

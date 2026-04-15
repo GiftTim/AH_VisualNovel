@@ -1,0 +1,123 @@
+================================================================
+변경완료_26.04.15_17.23_StrategyGame_A조합_임무파견시스템_디버그로그추가
+================================================================
+
+[ 작성일 ] 2026-04-15 16:00 KST
+[ 대상 씬 ] Assets/Scenes/Strategy game.unity
+[ 참조 변경 ] 변경완료_26.04.15_15.30_StrategyGame_A조합_임무파견시스템.txt
+[ 목적 ] Play 테스트 시 이벤트 발생 여부를 Console 창에서 확인하기 위한 임시 디버그 로그 추가
+
+================================================================
+2. 변경 내용
+================================================================
+
+  ─────────────────────────────────────────────────────────────
+  파트 1: DayMissionManager.cs - 임무 등장 로그
+  ─────────────────────────────────────────────────────────────
+  경로: Assets/Scripts/StrategyGame/Core/Mission/DayMissionManager.cs
+
+  [ 변경 전 ] UpdateMissions() 내 toActivate 처리 블록
+    if (toActivate.Count > 0)
+    {
+        var newMissions = new List<MissionUnit>();
+        foreach (var entry in toActivate)
+        {
+            _pendingMissions.Remove(entry);
+            _activeMissions.Add(entry.mission);
+            newMissions.Add(entry.mission);
+        }
+        _newMissionsCallback?.Invoke(newMissions);
+    }
+
+  [ 변경 후 ]
+    if (toActivate.Count > 0)
+    {
+        var newMissions = new List<MissionUnit>();
+        foreach (var entry in toActivate)
+        {
+            _pendingMissions.Remove(entry);
+            _activeMissions.Add(entry.mission);
+            newMissions.Add(entry.mission);
+            Debug.Log($"[DayMissionManager] 임무 등장: {entry.mission.MissionSO.Name} (spawnTime={entry.spawnTime:F1}s)");
+        }
+        _newMissionsCallback?.Invoke(newMissions);
+    }
+
+  ─────────────────────────────────────────────────────────────
+  파트 2: DayMissionManager.cs - 임무 소멸(Lost) 로그
+  ─────────────────────────────────────────────────────────────
+
+  [ 변경 전 ] HandleMissionLost()
+    private void HandleMissionLost(MissionUnit missionUnit)
+    {
+        OnMissionMiss?.Invoke(missionUnit);
+    }
+
+  [ 변경 후 ]
+    private void HandleMissionLost(MissionUnit missionUnit)
+    {
+        Debug.Log($"[DayMissionManager] 임무 소멸(Lost): {missionUnit.MissionSO.Name}");
+        OnMissionMiss?.Invoke(missionUnit);
+    }
+
+  ─────────────────────────────────────────────────────────────
+  파트 3: DayManager.cs - 하루 종료 로그
+  ─────────────────────────────────────────────────────────────
+  경로: Assets/Scripts/StrategyGame/Core/Day/DayManager.cs
+
+  [ 변경 전 ] DayLoopCoroutine() 말미
+    OnDayEnd?.Invoke(_dayReport);
+
+  [ 변경 후 ]
+    Debug.Log("[DayManager] 하루 종료 → OnDayEnd 발행");
+    OnDayEnd?.Invoke(_dayReport);
+
+================================================================
+3. 동작 흐름
+================================================================
+
+  Play 시작
+    └─ DayManager.StartDay() 호출
+         └─ DayLoopCoroutine() 시작
+
+  경과 시간 60초 도달 (DayDurationInSeconds=120, 임무 1개 → interval=60s)
+    └─ DayMissionManager.UpdateMissions()
+         └─ spawnTime 도달 감지
+              └─ Console: "[DayMissionManager] 임무 등장: 테스트 임무 (spawnTime=60.0s)"
+              └─ _newMissionsCallback 발행 → DayManager.HandleNewMissions()
+                   └─ OnMissionAvailable 이벤트 발행 (UI 연결 시 수신 가능)
+
+  수락 없이 TimeToAccept(40초) 초과 시
+    └─ MissionUnit.OnMissioMiss 발행
+         └─ DayMissionManager.HandleMissionLost()
+              └─ Console: "[DayMissionManager] 임무 소멸(Lost): 테스트 임무"
+              └─ OnMissionMiss 발행 → DayManager.HandleMissionMiss()
+
+  HasMissions() = false 확정 후
+    └─ WaitUntil(AllCharacterInBase) 대기
+         └─ Console: "[DayManager] 하루 종료 → OnDayEnd 발행"
+              └─ OnDayEnd 이벤트 발행
+
+================================================================
+4. 주의할 점
+================================================================
+
+  ① 이 Debug.Log는 테스트용 임시 코드
+     → 시스템이 정상 동작함을 확인한 뒤 제거할 것.
+     → 제거 대상 위치:
+        - DayMissionManager.cs UpdateMissions() foreach 내부
+        - DayMissionManager.cs HandleMissionLost() 첫 줄
+        - DayManager.cs OnDayEnd 호출 직전 줄
+
+  ② Console에 아무 로그도 안 찍히는 경우 점검 순서
+     1) [DayManager] Inspector → _missionManager 필드가 null이 아닌지 확인
+     2) [DayMissionManager] 오브젝트에 DayMissionManager.cs 컴포넌트가 붙어있는지 확인
+     3) Day_Default.asset의 MissionSOs 리스트에 Mission_Test.asset이 연결됐는지 확인
+     4) StartDay()가 실제로 호출되는지 확인 (GameManager.NewGame() 선행 필요)
+
+  ③ "임무 등장" 로그만 찍히고 "하루 종료" 로그가 안 찍히는 경우
+     → Mission_Test.asset의 TimeToAccept가 0이면 즉시 Lost 처리되지만
+       HasMissions()가 false로 전환되지 않는 버그 가능성 있음.
+     → TimeToAccept를 반드시 양수(테스트 권장값: 40)로 설정할 것.
+
+================================================================

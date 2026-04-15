@@ -1,0 +1,330 @@
+================================================================
+변경계획_26.04.15_17.00_StrategyGame_UI_임무파견_Hierarchy연결
+================================================================
+
+[ 작성일 ] 2026-04-15 17:00 KST
+[ 대상 씬 ] Assets/Scenes/Strategy game.unity
+[ 참조 레포 ] https://github.com/ViniciusChrisosthemos/GameDispatchLike.git
+[ 참조 변경 ] 변경완료_26.04.15_15.30_StrategyGame_A조합_임무파견시스템.txt
+
+================================================================
+a. 목차
+================================================================
+
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 구현 방향
+  e. 다른 방법들과 d를 선택한 이유
+  f. 진행 순서
+  g. 변경 위치 및 내용
+  h. 주의할 점
+
+================================================================
+b. 요구한 기능
+================================================================
+
+  DayManager의 이벤트(OnMissionAvailable, OnTimeUpdated, OnDayEnd)를
+  Unity Hierarchy의 UI 오브젝트와 연결하여 다음 흐름을 화면에서 확인한다:
+
+  ① 임무 등장 시 → 임무 카드(UIMissionController) UI 생성
+  ② 임무 카드 클릭 → 임무 정보 패널(UIMissionManagerViewController) 열림
+  ③ 팀 수락 버튼 클릭 → DayManager.AcceptMission() → DayManager.StartMission() 호출
+  ④ 임무 완료/실패 → DayManager.ClaimMission() 호출 → 카드 제거
+  ⑤ 하루 종료 → DayReport 결과 화면 표시
+
+================================================================
+c. 현재 상황 및 코드
+================================================================
+
+  [DayManager.cs] — 이미 완성된 이벤트 인터페이스
+    public UnityEvent<List<CharacterUnit>> OnDayStart;
+    public UnityEvent<DayReport>           OnDayEnd;
+    public UnityEvent<float>               OnTimeUpdated;
+    public UnityEvent<List<MissionUnit>>   OnMissionAvailable;
+
+    public void AcceptMission(MissionUnit mission, Team team)
+    public void StartMission(MissionUnit mission)
+    public void ClaimMission(MissionUnit missionUnit, bool isSuccess)
+    public void PauseDay() / ResumeDay()
+
+  [MissionUnit.cs] — 각 임무 인스턴스의 상태 이벤트
+    public UnityEvent<MissionUnit> OnMissionAccepted
+    public UnityEvent<MissionUnit> OnMissionStarted
+    public UnityEvent<MissionUnit> OnMissionCompleted
+    public UnityEvent<MissionUnit> OnMissioMiss
+    public UnityEvent<MissionUnit> OnMissionClaimed
+    public UnityEvent<MissionUnit, RandomMissionEvent> OnMissionHasEvent
+
+    public string Name / Description / int Gold / int Exp / int MaxTeamSize
+    public float GetTimeLeftToMakeAction(float currentTime)  ← 진행률 0~1
+    public bool IsMissionWaitingToBeAccepted() / IsMissionCompleted() / IsMissionLost()
+
+  [현재 씬 Hierarchy — 스크립트 관련 오브젝트]
+    [Manager]
+      ├── SGManager          (GameManager.cs)
+      ├── DayManager         (DayManager.cs)
+      ├── DayCharacterManager(DayCharacterManager.cs)
+      ├── DayMissionManager  (DayMissionManager.cs)
+      ├── CharacterDatabase  (CharacterDatabase.cs)
+      └── CharacterLevelDatabase (CharacterLevelDatabase.cs)
+
+  UI 스크립트 없음 (Canvas 미존재)
+
+  [참조 레포 View 구조]
+    UIDayManager.cs               ← DayManager 이벤트 구독 허브
+    UIMissionController.cs        ← 임무 카드 프리팹 스크립트
+    UIMissionManagerViewController.cs ← 임무 상세/수락/결과 패널
+
+================================================================
+d. 구현 방향
+================================================================
+
+  레퍼런스 레포의 3계층 구조를 그대로 채택한다:
+    Layer 1: UIDayManager       — DayManager 이벤트 수신 + UI 오케스트레이션
+    Layer 2: UIMissionController — 개별 임무 카드 (프리팹)
+    Layer 3: UIMissionManagerViewController — 임무 상세 패널
+
+  레퍼런스 레포와의 차이점 (이 프로젝트에 맞게 조정):
+    ① SoundManager 의존 제거 (AudioManager 공유 구조로 추후 연결)
+    ② SpriteFill(커스텀 컴포넌트) → Unity 기본 Image.fillAmount로 대체
+    ③ AnimatePathController(맵 애니메이션) → 1단계에서 생략, 콜백 직접 호출
+    ④ 팀 선택 UI(UISelectTeamViewController) → 1단계에서 버튼 1개로 단순화
+       (캐릭터 없이 테스트 중이므로 빈 Team으로 즉시 수락)
+
+================================================================
+e. 다른 방법들과 d를 선택한 이유
+================================================================
+
+  [방법 A] Inspector에서 UnityEvent에 직접 함수 드래그 연결
+    → OnMissionAvailable 파라미터가 List<MissionUnit>이라 Inspector 연결 불가.
+    → 채택 안 함.
+
+  [방법 B] 레퍼런스 레포 스크립트를 그대로 복사
+    → SpriteFill, SoundManager.Instance 등 미존재 의존성으로 컴파일 에러 발생.
+    → 채택 안 함.
+
+  [방법 C] UIDayManager + 간소화된 UIMissionController + 간소화된 패널 ← 채택
+    → 레퍼런스 레포의 구조·연결 방식을 따르되 외부 의존성 제거.
+    → 현재 테스트(캐릭터 없음) 환경에서 동작 가능.
+    → 나중에 팀 선택 UI, 애니메이션 등 기능을 점진적으로 추가하기 용이.
+
+================================================================
+f. 진행 순서
+================================================================
+
+  PHASE UI-1: 스크립트 작성
+    ① UIDayManager.cs 신규 생성
+    ② UIMissionController.cs 신규 생성
+    ③ UIMissionManagerViewController.cs 신규 생성
+
+  PHASE UI-2: Hierarchy 구성 (Unity Editor 수동)
+    ① Canvas 생성
+    ② [DayScreen] 오브젝트 구성
+    ③ [MissionCard] 프리팹 생성
+
+  PHASE UI-3: Inspector 연결 (Unity Editor 수동)
+    ① UIDayManager → DayManager 연결
+    ② UIDayManager → 패널/프리팹 연결
+
+  PHASE UI-4: 테스트
+    ① Play → 60초 후 임무 카드 등장 확인
+    ② 카드 클릭 → 패널 열림 확인
+    ③ 수락 버튼 클릭 → 하루 종료 확인
+
+================================================================
+g. 변경 위치 및 내용
+================================================================
+
+  ─────────────────────────────────────────────────────────────
+  [PHASE UI-1-①] UIDayManager.cs 신규 생성
+  ─────────────────────────────────────────────────────────────
+  경로: Assets/Scripts/StrategyGame/UI/UIDayManager.cs
+
+  역할: DayManager 이벤트를 구독해 UI 전체를 오케스트레이션한다.
+
+  주요 구조:
+  ┌─────────────────────────────────────────────────────────┐
+  │ public class UIDayManager : MonoBehaviour               │
+  │ {                                                       │
+  │   [SerializeField] DayManager _dayManager               │
+  │   [SerializeField] Transform _missionParent             │
+  │   [SerializeField] UIMissionController _missionPrefab   │
+  │   [SerializeField] UIMissionManagerViewController _panel│
+  │                                                         │
+  │   private List<UIMissionController> _missionControllers │
+  │                                                         │
+  │   Awake()                                               │
+  │     → _dayManager.OnDayStart.AddListener(HandleDayStart)│
+  │     → _dayManager.OnMissionAvailable.AddListener(...)   │
+  │     → _dayManager.OnTimeUpdated.AddListener(...)        │
+  │     → _dayManager.OnDayEnd.AddListener(HandleDayEnd)    │
+  │                                                         │
+  │   HandleDayStart(List<CharacterUnit>)                   │
+  │     → _missionControllers 초기화                        │
+  │                                                         │
+  │   HandleMissionAvailable(List<MissionUnit> missions)    │
+  │     → 각 mission마다 UIMissionController Instantiate    │
+  │     → instance.Init(mission, HandleMissionSelected,     │
+  │                      HandleDeleteMission)               │
+  │     → _missionControllers.Add(instance)                 │
+  │                                                         │
+  │   HandleTimeUpdated(float currentTime)                  │
+  │     → 각 controller.UpdateTime(currentTime)             │
+  │                                                         │
+  │   HandleMissionSelected(MissionUnit mission)            │
+  │     → _dayManager.PauseDay()                            │
+  │     → _panel.Open(mission, OnAccept, OnClose)           │
+  │                                                         │
+  │   OnAccept(MissionUnit mission)                         │
+  │     → _dayManager.AcceptMission(mission, new Team())    │
+  │     → _dayManager.StartMission(mission)                 │
+  │     → _dayManager.ResumeDay()                           │
+  │                                                         │
+  │   HandleDayEnd(DayReport report)                        │
+  │     → GameManager.Instance.CompleteDay(report)          │
+  │     → 결과 텍스트 표시                                   │
+  │                                                         │
+  │   HandleDeleteMission(UIMissionController controller)   │
+  │     → _missionControllers.Remove(controller)            │
+  │     → Destroy(controller.gameObject)                    │
+  │ }                                                       │
+  └─────────────────────────────────────────────────────────┘
+
+  ─────────────────────────────────────────────────────────────
+  [PHASE UI-1-②] UIMissionController.cs 신규 생성
+  ─────────────────────────────────────────────────────────────
+  경로: Assets/Scripts/StrategyGame/UI/UIMissionController.cs
+
+  역할: 임무 카드 프리팹. 클릭 시 콜백 발행, 타이머 진행률 표시.
+
+  주요 구조:
+  ┌─────────────────────────────────────────────────────────┐
+  │ public class UIMissionController : MonoBehaviour,       │
+  │                                    IPointerClickHandler │
+  │ {                                                       │
+  │   [SerializeField] TextMeshProUGUI _txtName             │
+  │   [SerializeField] Image _timerImage  ← fillAmount 사용 │
+  │   [SerializeField] GameObject _waitingView              │
+  │   [SerializeField] GameObject _completedView            │
+  │                                                         │
+  │   private MissionUnit _missionUnit                      │
+  │   private Action<MissionUnit> _onClickCallback          │
+  │                                                         │
+  │   Init(mission, onClickCallback, onDeleteCallback)      │
+  │     → _txtName.text = mission.Name                      │
+  │     → mission.OnMissioMiss → onDeleteCallback           │
+  │     → mission.OnMissionAccepted → SetAccepted()         │
+  │     → mission.OnMissionCompleted → SetCompleted()       │
+  │                                                         │
+  │   UpdateTime(float elapsedTime)                         │
+  │     → _timerImage.fillAmount =                          │
+  │         1 - mission.GetTimeLeftToMakeAction(elapsedTime)│
+  │                                                         │
+  │   OnPointerClick(PointerEventData)                      │
+  │     → _onClickCallback?.Invoke(_missionUnit)            │
+  │ }                                                       │
+  └─────────────────────────────────────────────────────────┘
+
+  ─────────────────────────────────────────────────────────────
+  [PHASE UI-1-③] UIMissionManagerViewController.cs 신규 생성
+  ─────────────────────────────────────────────────────────────
+  경로: Assets/Scripts/StrategyGame/UI/UIMissionManagerViewController.cs
+
+  역할: 임무 클릭 시 열리는 상세 패널. 수락/닫기 버튼 제공.
+
+  주요 구조:
+  ┌─────────────────────────────────────────────────────────┐
+  │ public class UIMissionManagerViewController : MonoBehaviour│
+  │ {                                                        │
+  │   [SerializeField] GameObject _view                      │
+  │   [SerializeField] TextMeshProUGUI _txtName              │
+  │   [SerializeField] TextMeshProUGUI _txtDescription       │
+  │   [SerializeField] TextMeshProUGUI _txtGold              │
+  │   [SerializeField] TextMeshProUGUI _txtExp               │
+  │   [SerializeField] Button _btnAccept                     │
+  │   [SerializeField] Button _btnClose                      │
+  │                                                          │
+  │   Open(MissionUnit mission,                              │
+  │        Action<MissionUnit> onAccept,                     │
+  │        Action onClose)                                   │
+  │     → _view.SetActive(true)                              │
+  │     → 텍스트 필드 채우기                                  │
+  │     → _btnAccept.onClick → onAccept(mission)             │
+  │     → _btnClose.onClick → onClose() + Close()            │
+  │                                                          │
+  │   Close() → _view.SetActive(false)                       │
+  │ }                                                        │
+  └─────────────────────────────────────────────────────────┘
+
+  ─────────────────────────────────────────────────────────────
+  [PHASE UI-2] Hierarchy 구성 (Unity Editor 수동 작업)
+  ─────────────────────────────────────────────────────────────
+
+  씬에 추가할 오브젝트 구조:
+
+  Canvas (UI Scale Mode: Scale With Screen Size, 1920×1080)
+  └── [DayScreen]                   ← UIDayManager.cs 부착
+      ├── [MissionParent]            ← 임무 카드들이 Instantiate될 부모
+      └── [MissionManagerPanel]      ← UIMissionManagerViewController.cs 부착
+          ├── Panel (배경 이미지)
+          ├── TxtName     (TextMeshProUGUI)
+          ├── TxtDescription (TextMeshProUGUI)
+          ├── TxtGold     (TextMeshProUGUI)
+          ├── TxtExp      (TextMeshProUGUI)
+          ├── BtnAccept   (Button + TextMeshProUGUI "수락")
+          └── BtnClose    (Button + TextMeshProUGUI "닫기")
+
+  [MissionCard 프리팹] (Assets/Prefabs/StrategyGame/UI/MissionCard.prefab)
+    └── MissionCard             ← UIMissionController.cs 부착
+        ├── TxtName  (TextMeshProUGUI)
+        └── TimerImage (Image, Image Type: Filled, Fill Method: Radial 360)
+
+  ─────────────────────────────────────────────────────────────
+  [PHASE UI-3] Inspector 연결
+  ─────────────────────────────────────────────────────────────
+
+  [DayScreen] → UIDayManager 컴포넌트:
+    _dayManager         → [DayManager] 오브젝트 드래그
+    _missionParent      → [MissionParent] 드래그
+    _missionPrefab      → MissionCard.prefab 드래그
+    _panel              → [MissionManagerPanel] 드래그
+
+  [MissionManagerPanel] → UIMissionManagerViewController 컴포넌트:
+    _view               → [MissionManagerPanel] 자기 자신
+    _txtName            → TxtName 드래그
+    _txtDescription     → TxtDescription 드래그
+    _txtGold            → TxtGold 드래그
+    _txtExp             → TxtExp 드래그
+    _btnAccept          → BtnAccept 드래그
+    _btnClose           → BtnClose 드래그
+
+================================================================
+h. 주의할 점
+================================================================
+
+  ① 테스트 단계에서 AcceptMission에 빈 Team 전달
+     → 현재 _runOnStart는 캐릭터 없이 StartDay(1, [])를 호출한다.
+     → AcceptMission(mission, new Team())으로 빈 팀을 넘기면
+       DayCharacterManager.HandleTeamAcceptMission()이 빈 Members를 순회하므로
+       NullReference 없이 통과한다. (Members가 null이 아닌 빈 List인지 Team 생성자 확인 필요)
+
+  ② IPointerClickHandler 동작 조건
+     → UIMissionController에 IPointerClickHandler를 구현할 경우
+       Canvas 하위에 EventSystem 오브젝트가 씬에 존재해야 클릭이 인식된다.
+     → Canvas 생성 시 Unity가 자동으로 EventSystem을 추가하므로 확인만 할 것.
+
+  ③ TimerImage fillAmount 방향
+     → Image Type: Filled, Fill Method: Radial 360, Fill Origin: Top으로 설정해야
+       시계처럼 줄어드는 타이머 표현이 가능하다.
+     → fillAmount = 1 - GetTimeLeftToMakeAction() (0이 가득 찬 상태)
+
+  ④ UIMissionManagerViewController.Open() 호출 시 이전 리스너 누적 방지
+     → _btnAccept.onClick.RemoveAllListeners() 후 AddListener()를 호출해야
+       카드를 여러 번 클릭해도 콜백이 중복 등록되지 않는다.
+
+  ⑤ WaitingToBeAccepted 상태가 아닌 임무 클릭 처리
+     → Completed 상태: ClaimMission() 호출로 즉시 처리
+     → InProgress/Accepted 상태: 패널을 열지 않거나 진행 상태만 표시
+     → 1단계에서는 WaitingToBeAccepted일 때만 패널을 열어도 충분.
+
+================================================================

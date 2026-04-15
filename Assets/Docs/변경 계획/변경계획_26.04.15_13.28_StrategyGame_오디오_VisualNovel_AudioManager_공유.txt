@@ -1,0 +1,371 @@
+================================================================
+변경계획_26.04.15_13.28_StrategyGame_오디오_VisualNovel_AudioManager_공유
+================================================================
+
+[ 작성일 ] 2026-04-15 21:30 KST
+[ 대상 씬 ] Assets/Scenes/Strategy game.unity
+[ 전제 문서 ] 변경계획_26.04.15_21.00_StrategyGame_B조합_PathFinder_SoundManager.txt
+[ 변경 범위 ] B 조합 오디오 파트만 변경 (PathFinder 계획은 그대로 유지)
+
+================================================================
+a. 목차
+================================================================
+
+  1. 요구한 기능
+  2. 현재 상황 및 코드
+  3. 구현 방식
+  4. 왜 이 방식인가
+  5. 진행 순서
+  6. 어디가 어떤 식으로 변경되는지
+  7. 주의할 점
+
+================================================================
+b. 요구한 기능
+================================================================
+
+  [ 요청 ]
+  B 조합의 오디오 파트에서 GameDispatchLike의 SoundManager를 복사하는 대신,
+  이미 프로젝트에 존재하는 VisualNovel의 AudioManager를 StrategyGame에서도
+  공유해서 사용한다.
+
+  [ 목표 ]
+  - SoundManager.cs / TriggerSFX.cs 를 복사하지 않는다
+  - VisualNovel 씬에서 이미 사용 중인 AudioManager를 Strategy game 씬에서도 호출 가능하게 한다
+  - BGM 재생, SFX 재생, 볼륨 제어 기능 모두 AudioManager.instance 하나로 통합
+
+================================================================
+c. 현재 상황 및 코드
+================================================================
+
+  [ VisualNovel AudioManager 구조 ]
+
+  위치: Assets/Scripts/VisualNovel/Core/Audio/AudioManager.cs
+  배치: Assets/Scenes/Main Menu.unity → [Manager] 하위 "Audio Manager" 오브젝트
+
+  핵심 설계:
+    - public static AudioManager instance { get; private set; }  ← 글로벌 싱글턴
+    - Awake()에서 DontDestroyOnLoad(gameObject)                  ← 씬 전환 후에도 유지
+    - 중복 방지: instance != null이면 DestroyImmediate(gameObject)
+
+  구성 요소:
+    ┌─────────────────────────────────────────────────────────┐
+    │  AudioManager (MonoBehaviour, DontDestroyOnLoad)        │
+    │    ├── AudioMixerGroup musicMixer   ← Main.mixer 연결   │
+    │    ├── AudioMixerGroup sfxMixer     ← Main.mixer 연결   │
+    │    ├── AudioMixerGroup voicesMixer  ← Main.mixer 연결   │
+    │    ├── Dictionary<int, AudioChannel> channels           │
+    │    └── Transform sfxRoot (자동 생성)                    │
+    │                                                         │
+    │  AudioChannel (일반 클래스)                             │
+    │    ├── activeTrack : AudioTrack                         │
+    │    └── VolumeLeveling() 코루틴 ← 트랙 간 페이드 처리   │
+    │                                                         │
+    │  AudioTrack (일반 클래스)                               │
+    │    └── AudioSource (런타임에 GameObject 동적 생성)      │
+    └─────────────────────────────────────────────────────────┘
+
+  AudioMixer 에셋:
+    Assets/Configuration/VisaulNovel/Main.mixer
+    - MusicVolume 파라미터
+    - SFXVolume 파라미터
+    - VoicesVolume 파라미터
+
+  주요 public API:
+  ─────────────────────────────────────────────────────────────
+  [ BGM 재생 ]
+  PlayTrack(string filePath, int Channel=0, bool loop=true,
+            float startingVolume=0f, float volumeCap=1f, float pitch=1f)
+  PlayTrack(AudioClip clip, ...)
+    → 채널 단위 관리, 채널 전환 시 자동 페이드 인/아웃
+
+  [ SFX 재생 ]
+  PlaySoundEffect(string filePath, AudioMixerGroup mixer=null,
+                  float volume=1, float pitch=1, bool loop=false)
+  PlaySoundEffect(AudioClip clip, ...)
+    → 동적으로 AudioSource 오브젝트 생성, 재생 완료 후 자동 Destroy
+
+  [ 보이스 재생 ]
+  PlayVoice(string filePath, float volume=1, float pitch=1, bool loop=false)
+    → sfxMixer 대신 voicesMixer 사용
+
+  [ 정지 ]
+  StopTrack(int channel) / StopTrack(string trackName)
+  StopAllTracks()
+  StopSoundEffect(AudioClip) / StopSoundEffect(string)
+  StopAllSoundEffects()
+
+  [ 볼륨 ]
+  SetMusicVolume(float volume, bool muted)
+  SetSFXVolume(float volume, bool muted)
+  SetVoicesVolume(float volume, bool muted)
+  ─────────────────────────────────────────────────────────────
+
+  [ GameDispatchLike SoundManager (사용 안 할 것) ]
+
+  위치: C:/Temp/GameDispatchLike/Assets/Scripts/Controllers/SoundManager.cs
+  구조: Singleton<SoundManager> + List<AudioSource> + 라운드로빈 SFX
+  결론: AudioManager와 비교해 기능이 적고, 중복됨 → 복사 불필요
+
+  [ 현재 Strategy game 씬 오디오 현황 ]
+  - AudioManager 오브젝트 없음
+  - 직접 플레이 시 AudioManager.instance == null
+
+  [ Main Menu → Strategy Game 씬 전환 시 흐름 ]
+  Main Menu.unity 로드
+    → [Manager] 하위 "Audio Manager" 오브젝트 Awake()
+    → DontDestroyOnLoad 적용, instance = this
+    → 씬 전환 (Strategy game.unity 로드)
+    → AudioManager.instance 유지됨 ✅
+
+  [ Strategy game.unity 직접 시작 시 흐름 (현재) ]
+  Strategy game.unity 로드
+    → Audio Manager 오브젝트 없음
+    → AudioManager.instance == null
+    → PlaySoundEffect 호출 시 NullReferenceException ❌
+
+================================================================
+d. 요구한 기능을 만들기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+================================================================
+
+  [ 방식: Strategy game 씬에 Audio Manager 오브젝트 추가 ]
+
+  AudioManager의 Awake()는 중복 방지를 자체 처리한다:
+    if (instance == null)  → 새로 생성: DontDestroyOnLoad, instance 설정
+    else                   → 이미 있음: DestroyImmediate(gameObject) 후 return
+
+  따라서 Strategy game 씬에 "Audio Manager" 오브젝트를 추가해도
+  Main Menu를 거쳐 진입하면 자동으로 중복이 제거된다.
+  Strategy game.unity를 직접 실행할 때만 이 오브젝트가 살아남는다.
+
+  ─────────────────────────────────────────────────────────────
+  추가할 것 1: Strategy game 씬에 "Audio Manager" 오브젝트 추가
+  ─────────────────────────────────────────────────────────────
+  위치: [Manager] 하위에 빈 GameObject "Audio Manager" 생성
+  컴포넌트: AudioManager.cs 부착
+  Inspector 연결 (필수):
+    musicMixer  → Main.mixer의 "Music" 그룹
+    sfxMixer    → Main.mixer의 "SFX" 그룹
+    voicesMixer → Main.mixer의 "Voices" 그룹
+    audioFalloffCurve → AnimationCurve 설정 (기본값: 선형 0→1)
+
+  ─────────────────────────────────────────────────────────────
+  추가할 것 2: StrategyGameAudioHelper.cs (선택 사항)
+  ─────────────────────────────────────────────────────────────
+  StrategyGame 전용 AudioManager 호출 래퍼 (없어도 됨).
+  다른 StrategyGame 스크립트가 AudioManager.instance를 직접 호출하면
+  충분하므로, 래퍼 클래스를 만들지 않는 것을 기본으로 한다.
+
+  ─────────────────────────────────────────────────────────────
+  복사하지 않을 것
+  ─────────────────────────────────────────────────────────────
+  SoundManager.cs  → 복사 안 함
+  TriggerSFX.cs    → 복사 안 함
+  (GameDispatchLike의 오디오 파트 전체 스킵)
+
+  ─────────────────────────────────────────────────────────────
+  StrategyGame에서 오디오 호출 예시
+  ─────────────────────────────────────────────────────────────
+
+  // BGM 재생
+  AudioManager.instance.PlayTrack("경로/BGM파일명", Channel: 0, loop: true);
+
+  // SFX 재생
+  AudioManager.instance.PlaySoundEffect("경로/SFX파일명", volume: 0.8f);
+  // 또는 AudioClip 직접 사용:
+  AudioManager.instance.PlaySoundEffect(myClip, volume: 1f);
+
+  // BGM 정지
+  AudioManager.instance.StopTrack(0);
+
+================================================================
+e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+================================================================
+
+  [ 검토한 방법들 ]
+
+  방법 A: GameDispatchLike의 SoundManager.cs 복사 (기존 계획)
+  ──────────────────────────────────────────────────────────────
+  - 라운드로빈 AudioSource 풀
+  - BGM/SFX 기본 기능 있음
+  단점:
+    ▸ 이미 프로젝트에 AudioManager가 있어 중복 관리 시스템이 생김
+    ▸ AudioMixer 미사용 → ConfigMenu의 볼륨 슬라이더(SetMusicVolume 등)가
+      SoundManager 재생 소리에는 적용되지 않음 (볼륨 설정 따로 관리해야 함)
+    ▸ 페이드 인/아웃 없음
+    ▸ 씬 전환 시 DontDestroyOnLoad 처리 없음 → BGM 끊김
+  → ❌ 채택 안 함
+
+  방법 B: AudioManager를 StrategyGame에서 공유 (채택) ✅
+  ──────────────────────────────────────────────────────────────
+  장점:
+    ▸ 새 파일 복사 없음, 기존 AudioManager.cs 그대로 사용
+    ▸ AudioMixer 공유 → ConfigMenu 볼륨 설정이 StrategyGame에도 동일 적용
+    ▸ DontDestroyOnLoad로 씬 전환 시 BGM 자연스럽게 유지/전환 가능
+    ▸ 페이드 트랜지션, 채널 관리, Voice 지원까지 무료로 포함
+    ▸ 코드 일관성: 전체 프로젝트에서 AudioManager.instance 하나로 통일
+  단점:
+    ▸ AudioManager가 VisualNovel 폴더에 있어 "공유 시스템"임이 덜 명확
+      (추후 Common 폴더로 이동을 고려할 수 있음)
+  → ✅ 채택
+
+  방법 C: AudioManager를 Common 폴더로 이동 후 공유
+  ──────────────────────────────────────────────────────────────
+  - AudioManager.cs를 Assets/Scripts/Common/ 로 이동
+  - VisualNovel, StrategyGame 모두에서 명시적으로 공유
+  단점:
+    ▸ 파일 이동 시 VisualNovel 씬의 컴포넌트 참조가 끊길 수 있음
+    ▸ AudioChannel.cs, AudioTrack.cs도 함께 이동 필요
+    ▸ 현재 작업에서 필요 이상의 리팩토링
+  → 추후 리팩토링 시 고려, 지금은 안 함
+
+================================================================
+f. 어떤 순서로 진행할 것인지
+================================================================
+
+  ══════════════════════════════════════════════════════
+  [ PHASE 7-3 수정 ] 씬 구성 - Audio Manager 오브젝트 추가
+  ══════════════════════════════════════════════════════
+
+  □ 7-3-1. Strategy game.unity 씬 열기
+
+  □ 7-3-2. [Manager] 하위에 빈 GameObject 생성
+           이름: "Audio Manager"
+           ※ Main Menu.unity의 오브젝트명과 동일하게 맞출 것
+              (혼동 방지, 디버깅 편의)
+
+  □ 7-3-3. AudioManager.cs 컴포넌트 부착
+
+  □ 7-3-4. AudioMixer 연결 (Inspector)
+           Assets/Configuration/VisaulNovel/Main.mixer 선택 후:
+           musicMixer  → Music 그룹 드래그
+           sfxMixer    → SFX 그룹 드래그
+           voicesMixer → Voices 그룹 드래그
+
+  □ 7-3-5. audioFalloffCurve 설정
+           기본 선형 커브 사용 (0,0) → (1,1)
+           ※ Main Menu.unity의 AudioManager와 동일하게 맞추는 것을 권장
+
+  □ 7-3-6. 플레이 테스트
+           Console에서 AudioManager.instance != null 확인
+           또는 직접 AudioManager.instance.PlaySoundEffect()
+           테스트 코드 한 줄 임시 작성 후 확인
+
+  ══════════════════════════════════════════════════════
+  [ 확인 ] SoundManager.cs / TriggerSFX.cs 복사 생략
+  ══════════════════════════════════════════════════════
+
+  □ 이전 계획(변경계획_26.04.15_21.00)의 PHASE 7-1 중
+    아래 두 항목을 건너뜀:
+    - 7-1-5. Audio/ 폴더 생성  → 생략
+    - 7-1-6. SoundManager.cs 복사 → 생략
+    - 7-1-7. TriggerSFX.cs 복사 → 생략
+
+  □ PathFinder 관련 항목(7-1-1 ~ 7-1-4, 7-4-*)은 그대로 진행
+
+================================================================
+g. 어디가 어떤 식으로 변경되는지
+================================================================
+
+  [ 새로 추가되는 파일 ]
+  없음 (스크립트 복사 없음)
+
+  [ 씬 변경 내용 (Assets/Scenes/Strategy game.unity) ]
+
+  변경 전 (C 조합 완료 상태):
+    [Manager]
+      ├── SGManager            (GameManager.cs)
+      ├── DayManager           (DayManager.cs)
+      ├── DayCharacterManager  (DayCharacterManager.cs)
+      ├── CharacterDatabase    (CharacterDatabase.cs)
+      └── CharacterLevelDatabase (CharacterLevelDatabase.cs)
+
+  변경 후:
+    [Manager]
+      ├── SGManager            (GameManager.cs)
+      ├── DayManager           (DayManager.cs)
+      ├── DayCharacterManager  (DayCharacterManager.cs)
+      ├── CharacterDatabase    (CharacterDatabase.cs)
+      ├── CharacterLevelDatabase (CharacterLevelDatabase.cs)
+      └── Audio Manager        (AudioManager.cs) ← 신규 (Inspector: Main.mixer 연결)
+
+  [ 변경되지 않는 것 ]
+  - AudioManager.cs 스크립트 파일 → 수정 없음
+  - AudioChannel.cs, AudioTrack.cs → 수정 없음
+  - Main Menu.unity의 Audio Manager 오브젝트 → 수정 없음
+  - VisualNovel.unity → 수정 없음
+  - C 조합 스크립트 전체 → 수정 없음
+  - Assets/Scripts/StrategyGame/Core/Audio/ 폴더 → 빈 채로 유지
+    (폴더만 있고 파일 없음. 나중에 필요 시 사용)
+
+  [ 씬별 AudioManager 동작 요약 ]
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │ 시작 방법                  │ AudioManager 동작              │
+  ├──────────────────────────────────────────────────────────────┤
+  │ Main Menu → Strategy game  │ Main Menu의 instance 유지      │
+  │                            │ Strategy game의 복사본 Destroy  │
+  ├──────────────────────────────────────────────────────────────┤
+  │ Strategy game 직접 실행    │ Strategy game의 instance 사용  │
+  │ (테스트 목적)              │ Main.mixer 연결 필요           │
+  ├──────────────────────────────────────────────────────────────┤
+  │ Main Menu → VisualNovel    │ Main Menu의 instance 유지      │
+  │ (기존 동작, 변화 없음)      │ VisualNovel 정상 동작         │
+  └──────────────────────────────────────────────────────────────┘
+
+================================================================
+h. 주의할 점
+================================================================
+
+  ① AudioMixer 3개 그룹 모두 연결 필수
+  ──────────────────────────────────────────────────────────────
+  AudioManager에서 SetMusicVolume() 등이 호출될 때
+  mixer가 null이면 NullReferenceException 발생.
+  Main Menu.unity의 AudioManager Inspector 설정을 그대로 복사할 것.
+  audioFalloffCurve도 동일한 커브로 맞추는 것을 권장.
+
+  ② audioFalloffCurve 비어있으면 SetXxxVolume() 에러
+  ──────────────────────────────────────────────────────────────
+  SetMusicVolume()이 audioFalloffCurve.Evaluate(volume)을 호출한다.
+  AnimationCurve가 기본값(키 없음)이면 Evaluate가 0을 반환하거나
+  예상과 다른 볼륨이 적용될 수 있다.
+  Main Menu.unity의 AudioManager의 audioFalloffCurve와 동일하게 설정.
+
+  ③ DontDestroyOnLoad로 인한 Audio Manager 중복 주의
+  ──────────────────────────────────────────────────────────────
+  AudioManager.Awake()가 중복 제거를 처리하므로 큰 문제는 없으나,
+  Play 버튼 누를 때마다 새 instance가 생성됐다 제거되는 로그가
+  Console에 출력될 수 있다. 이는 정상 동작이다.
+
+  ④ SoundManager.cs를 나중에 추가하지 않도록 주의
+  ──────────────────────────────────────────────────────────────
+  이 계획을 실행한 후에는 StrategyGame 오디오 = AudioManager로 확정.
+  나중에 SoundManager를 추가하면 두 싱글턴이 충돌하지는 않지만
+  관리 시스템이 둘로 나뉘어 혼란이 생긴다.
+  추후 A 조합이나 UI 조합에서 사운드가 필요하면
+  반드시 AudioManager.instance를 사용할 것.
+
+  ⑤ AudioManager는 VisualNovel 폴더에 있지만 공유 자산으로 취급
+  ──────────────────────────────────────────────────────────────
+  현재 AudioManager.cs는 Assets/Scripts/VisualNovel/Core/Audio/ 에 위치.
+  StrategyGame에서도 사용하므로 사실상 공유 자산이 됨.
+  스크립트 이동(→ Common 폴더)은 이 계획에서는 하지 않으며,
+  향후 리팩토링 시 고려할 사항으로 남겨둔다.
+
+================================================================
+[ 즉시 실행 가능한 첫 번째 액션 ]
+
+  1. Strategy game.unity 씬에서
+     [Manager] 우클릭 → Create Empty → 이름 "Audio Manager"
+
+  2. AudioManager.cs 컴포넌트 부착
+
+  3. Inspector에서 Main.mixer의 각 그룹 연결
+     (Project 창에서 Assets/Configuration/VisaulNovel/Main.mixer 선택)
+
+  4. 플레이 → Console 에러 없음 확인
+
+  ★ 이후 PathFinder 작업은
+     변경계획_26.04.15_21.00의 PHASE 7-1 ~ 7-5에서
+     오디오 관련 항목(7-1-5 ~ 7-1-7, 7-3-*)만 건너뛰고 그대로 진행.
+
+================================================================

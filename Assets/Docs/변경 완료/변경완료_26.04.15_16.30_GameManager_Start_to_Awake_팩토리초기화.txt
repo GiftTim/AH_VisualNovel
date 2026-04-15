@@ -1,0 +1,73 @@
+================================================================
+변경완료_26.04.15_16.30_GameManager_Start_to_Awake_팩토리초기화
+================================================================
+
+[ 작성일 ] 2026-04-15 16:30 KST
+[ 대상 파일 ] Assets/Scripts/StrategyGame/Core/GameState/GameManager.cs
+[ 참조 버그 ] 버그분석_26.04.15_16.30_GameManager_factoryGameState_NullReference.txt
+
+================================================================
+2. 변경 내용
+================================================================
+
+  경로: Assets/Scripts/StrategyGame/Core/GameState/GameManager.cs
+
+  [ 변경 전 ]
+    /// <summary>Start에서 팩토리들을 초기화한다. CharacterDatabase가 Awake에서 준비되므로 Start가 안전하다.</summary>
+    private void Start()
+    {
+        _factoryCharacterUnit = new FactoryCharacterUnit(CharacterDatabase.Instance);
+        _factoryGameState = new FactoryGameState(_factoryCharacterUnit);
+    }
+
+  [ 변경 후 ]
+    /// <summary>Awake에서 팩토리들을 초기화한다. FactoryCharacterUnit은 레퍼런스만 저장하므로 CharacterDatabase.Awake()와 순서 무관하게 안전하다.</summary>
+    private void Awake()
+    {
+        _factoryCharacterUnit = new FactoryCharacterUnit(CharacterDatabase.Instance);
+        _factoryGameState = new FactoryGameState(_factoryCharacterUnit);
+    }
+
+================================================================
+3. 동작 흐름
+================================================================
+
+  [ 변경 전 흐름 ]
+    Awake 단계:
+      CharacterDatabase.Awake()  → 딕셔너리 구성 완료
+      (GameManager 초기화 없음)
+
+    Start 단계 (순서 미보장):
+      GameManager.Start()  → _factoryGameState 초기화
+      DayManager.Start()   → NewGame() 호출
+      → DayManager가 먼저 실행되면 _factoryGameState가 null → NullReferenceException
+
+  [ 변경 후 흐름 ]
+    Awake 단계 (모든 Start보다 먼저 완료 보장):
+      CharacterDatabase.Awake()  → 딕셔너리 구성
+      GameManager.Awake()        → _factoryGameState 초기화 완료
+
+    Start 단계:
+      DayManager.Start()  → NewGame("TestGuild") 호출
+        → _factoryGameState 이미 초기화된 상태 → 정상 실행
+        → StartDay(1, []) → DayLoopCoroutine() 시작
+        → 임무 등장/소멸 로그 출력 → 하루 종료 로그 출력
+
+================================================================
+4. 주의할 점
+================================================================
+
+  ① CharacterDatabase.Instance 참조 시점
+     → GameManager.Awake()에서 CharacterDatabase.Instance를 참조하지만,
+       FactoryCharacterUnit 생성자는 레퍼런스만 저장한다.
+     → 실제 딕셔너리 조회(CreateCharacterUnit)는 StartDay() 호출 이후에 발생하므로
+       CharacterDatabase.Awake()가 아직 실행 전이어도 문제없다.
+
+  ② _runOnStart는 테스트 전용
+     → DayManager의 _runOnStart 블록은 임무 시스템 동작 확인 후 제거해야 한다.
+     → 실제 게임에서는 UI 등 외부 이벤트에서 StartDay()를 호출한다.
+
+  ③ GameManager에 Awake()가 추가되면 Singleton 기반 클래스와 충돌 여부 확인
+     → Singleton<T>는 Awake()를 정의하지 않으므로 충돌 없음.
+
+================================================================

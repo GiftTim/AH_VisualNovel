@@ -12,8 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 959127129372cda4b906787e9a7bf58e, type: 3}
   m_Name: Day_Default
   m_EditorClassIdentifier: Assembly-CSharp::DaySO
-  MissionSOs: []
-  UseAllMissions: 0
+  MissionSOs:
+  - {fileID: 11400000, guid: 29b7024c563bcd441ad9fb19f0f164c6, type: 2}
+  UseAllMissions: 1
   MissionAmount: 0
-  DayDurationInSeconds: 60
+  DayDurationInSeconds: 120
   Status: 0

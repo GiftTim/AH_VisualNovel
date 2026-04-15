@@ -30,8 +30,8 @@ public class GameManager : Singleton<GameManager>
     private FactoryCharacterUnit _factoryCharacterUnit;
     private FactoryGameState _factoryGameState;
 
-    /// <summary>Start에서 팩토리들을 초기화한다. CharacterDatabase가 Awake에서 준비되므로 Start가 안전하다.</summary>
-    private void Start()
+    /// <summary>Awake에서 팩토리들을 초기화한다. FactoryCharacterUnit은 레퍼런스만 저장하므로 CharacterDatabase.Awake()와 순서 무관하게 안전하다.</summary>
+    private void Awake()
     {
         _factoryCharacterUnit = new FactoryCharacterUnit(CharacterDatabase.Instance);
         _factoryGameState = new FactoryGameState(_factoryCharacterUnit);

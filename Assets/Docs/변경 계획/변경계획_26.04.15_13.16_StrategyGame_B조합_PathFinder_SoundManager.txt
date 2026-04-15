@@ -1,0 +1,458 @@
+================================================================
+변경계획_26.04.15_13.16_StrategyGame_B조합_PathFinder_SoundManager
+================================================================
+
+[ 작성일 ] 2026-04-15 13:16 KST
+[ 대상 씬 ] Assets/Scenes/Strategy game.unity
+[ 참조 레포 ] https://github.com/ViniciusChrisosthemos/GameDispatchLike.git
+[ 전제 문서 ] 변경계획_26.04.14_13.08_GameDispatchLike_ABC조합_C우선통합계획.txt
+[ 현재 상태 ] C 조합(③+⑤+⑦+⑧) 완료
+
+================================================================
+a. 목차
+================================================================
+
+  1. 요구한 기능
+  2. 현재 상황 및 코드
+  3. 구현 방식 (복사 + 수정 내용)
+  4. 왜 이 방식인가
+  5. 진행 순서
+  6. 어디가 어떤 식으로 변경되는지
+  7. 주의할 점
+
+================================================================
+b. 요구한 기능
+================================================================
+
+  [ B 조합 = ① 경로탐색(BFS) + ② 오디오 ]
+
+  ① PathFinder (경로탐색)
+     - 씬에 노드(Node)들을 배치하고 연결해
+       두 노드 사이의 최단 경로를 BFS로 계산한다
+     - 캐릭터/유닛의 맵 이동 경로 계산에 사용
+     - 노드 간 방향(단방향/양방향) 설정 가능
+
+  ② SoundManager (오디오)
+     - BGM(배경음악) 재생/정지/루프 제어
+     - SFX(효과음) 라운드로빈 방식으로 겹침 없이 재생
+     - TriggerSFX를 씬 오브젝트에 부착해 이벤트 기반 사운드 트리거 가능
+
+  [ 특징 ]
+  - B 조합의 두 시스템은 C 조합(GameManager, DayManager 등)에
+    전혀 의존하지 않는다 → 독립적으로 추가/테스트 가능
+
+================================================================
+c. 현재 상황 및 코드
+================================================================
+
+  [ 현재 프로젝트 상태 ]
+  - C 조합 완료: GameManager, DayManager, DayCharacterManager,
+                  CharacterDatabase, CharacterLevelDatabase 배치됨
+  - B 조합 스크립트: 아직 추가되지 않음
+
+  [ GameDispatchLike 원본 코드 분석 ]
+
+  ─────────────────────────────────────────────────────────────
+  ① PathFinder 시스템
+  ─────────────────────────────────────────────────────────────
+
+  [ PathFinderManager.cs ]
+  위치: Assets/Scripts/PathFinder/PathFinderManager.cs
+  부모: MonoBehaviour
+
+    [Header("Configurações do Grafo")]
+    public Transform nodesParent    // 노드들의 부모 Transform
+    public Color lineColor          // Gizmo 선 색상
+    public float lineWidth          // Gizmo 선 너비
+
+    [Header("Debug")]
+    private bool _debug             // 디버그 모드
+    private Node Origin             // 테스트 출발 노드
+    private Node Destiny            // 테스트 목적지 노드
+    private List<Node> _currentPath // 현재 계산된 경로
+
+    Update():  I 키 누르면 Origin→Destiny 경로 계산 (디버그용)
+    GetPath(Node origin, Node dest) → List<Node>  ← 핵심 public API
+    OnDrawGizmos(): 에디터에서 노드 연결선 시각화
+
+  [ Node.cs ]
+  위치: Assets/Scripts/PathFinder/Node.cs
+  부모: MonoBehaviour
+
+    public Transform Transform         // 이 노드의 위치
+    public List<Node> Neighbors        // 연결된 이웃 노드 목록
+    public bool _isBidirectional       // true면 Awake()에서 역방향 자동 등록
+
+    [Debug only]
+    private bool _debug                // 디버그 원 표시 여부
+    private TextMeshProUGUI _txtNumber // 노드 번호 표시 (TMP)
+    private GameObject _circle         // 디버그 원 오브젝트
+
+    Awake(): _isBidirectional = true면 이웃 노드들에 자신을 자동 등록
+    OnValidate(): 디버그 모드에서 노드 이름에서 번호 파싱해 TMP에 표시
+    OnDrawGizmos(): 이웃 노드들로 Gizmo 선 그림
+
+  ★ 발견된 문제점 (수정 필요):
+    Node.cs에 "using UnityEngine.Experimental.GlobalIllumination;" 포함
+    → Unity 6에서 deprecated, 실제 Node.cs 로직에서 사용하지 않음
+    → 복사 시 해당 using 문 제거 필요
+
+  ─────────────────────────────────────────────────────────────
+  ② 오디오 시스템
+  ─────────────────────────────────────────────────────────────
+
+  [ SoundManager.cs ]
+  위치: Assets/Scripts/Controllers/SoundManager.cs
+  부모: Singleton<SoundManager> (= Singleton<T> : MonoBehaviour)
+
+    [SerializeField] private List<AudioSource> _sfxAudioSources   // SFX용 AudioSource 목록
+    [SerializeField] private AudioSource _musicAudioSource        // BGM용 AudioSource
+    private int _currentSFXAudioSource                            // 라운드로빈 인덱스
+
+    PlaySFX(AudioClip clip, float volume)
+      → 현재 인덱스의 AudioSource로 효과음 재생 후 인덱스 증가
+      → 여러 SFX가 동시에 겹쳐 재생되도록 풀링
+
+    PlayMusic(AudioClip clip, float volume, bool loop)
+      → BGM AudioSource에 클립 세팅 후 재생
+
+  [ TriggerSFX.cs ]
+  위치: Assets/Scripts/General/TriggerSFX.cs
+  부모: MonoBehaviour
+
+    [Header("SFX")]
+    private float _volume                // 재생 볼륨
+    private List<AudioClip> _clip        // 재생 클립 목록 (랜덤 선택)
+
+    [Header("Music")]
+    private bool _playMusicInLoop        // BGM 루프 여부
+
+    PlaySFX()     → 랜덤 클립 골라 SoundManager.Instance.PlaySFX() 호출
+    PlayMusic()   → 랜덤 클립 골라 SoundManager.Instance.PlayMusic() 호출
+    PlayAudioClipAsSFX(AudioClip) → 특정 클립 직접 재생
+
+  [ 현재 프로젝트 폴더 구조 (B 조합 추가 전) ]
+  Assets/Scripts/StrategyGame/Core/
+    ├── Utils/          ← Singleton, ClassExtentions, StringUtils, PolygonIntersection, StrategyGamePaths
+    ├── Character/      ← CharacterUnit, StatManager, Team, LevelProgression, CharacterSO, ...
+    ├── GameState/      ← GameManager, GameState, Guild, GameStateSO, FactoryGameState
+    ├── Day/            ← DayManager, DayCharacterManager, DaySO, DayReport
+    ├── SaveSystem/     ← SaveSystem + Data/
+    └── Mission/        ← MissionSO, MissionUnit (A 조합용, 아직 미사용)
+
+================================================================
+d. 요구한 기능을 만들기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+================================================================
+
+  [ 통합 방식: 선택적 복사 + Unity 6 호환 수정 ]
+
+  ─────────────────────────────────────────────
+  STEP 1. PathFinder 스크립트 복사 및 수정
+  ─────────────────────────────────────────────
+  복사 원본:
+    C:/Temp/GameDispatchLike/Assets/Scripts/PathFinder/PathFinderManager.cs
+    C:/Temp/GameDispatchLike/Assets/Scripts/PathFinder/Node.cs
+
+  복사 대상:
+    Assets/Scripts/StrategyGame/Core/PathFinder/PathFinderManager.cs
+    Assets/Scripts/StrategyGame/Core/PathFinder/Node.cs
+
+  수정 내용 (Node.cs):
+    제거: using UnityEngine.Experimental.GlobalIllumination;
+    이유: Unity 6에서 deprecated, Node.cs 로직에서 미사용
+
+  수정 내용 (PathFinderManager.cs):
+    없음. 원본 그대로 사용 가능.
+
+  ─────────────────────────────────────────────
+  STEP 2. 오디오 스크립트 복사
+  ─────────────────────────────────────────────
+  복사 원본:
+    C:/Temp/GameDispatchLike/Assets/Scripts/Controllers/SoundManager.cs
+    C:/Temp/GameDispatchLike/Assets/Scripts/General/TriggerSFX.cs
+
+  복사 대상:
+    Assets/Scripts/StrategyGame/Core/Audio/SoundManager.cs
+    Assets/Scripts/StrategyGame/Core/Audio/TriggerSFX.cs
+
+  수정 내용:
+    없음. 원본 그대로 사용 가능.
+    (SoundManager는 이미 Singleton<T>를 상속, C 조합에서 복사한 Singleton.cs에 연결됨)
+
+  ─────────────────────────────────────────────
+  STEP 3. 씬 구성 - [SoundManager] 오브젝트
+  ─────────────────────────────────────────────
+  [Manager] 하위에 빈 GameObject "[SoundManager]" 생성 후:
+    - SoundManager.cs 컴포넌트 부착
+    - AudioSource 컴포넌트 3개 이상 추가 (SFX용 3개 + BGM용 1개)
+    - Inspector 연결:
+        _sfxAudioSources → SFX용 AudioSource 3개
+        _musicAudioSource → BGM용 AudioSource 1개
+
+  ─────────────────────────────────────────────
+  STEP 4. 씬 구성 - [PathFinder] 오브젝트
+  ─────────────────────────────────────────────
+  [Manager] 하위에 빈 GameObject "[PathFinder]" 생성 후:
+    - PathFinderManager.cs 컴포넌트 부착
+    - Inspector 연결:
+        nodesParent → 노드 컨테이너 Transform (아래 STEP 5 오브젝트)
+
+  ─────────────────────────────────────────────
+  STEP 5. 씬 구성 - 노드 컨테이너 및 테스트 노드
+  ─────────────────────────────────────────────
+  씬 루트에 빈 GameObject "[Nodes]" 생성 후,
+  그 하위에 Node 오브젝트 최소 3개 생성:
+
+  [Nodes]
+    ├── Node(0)   ← Node.cs 부착, Position: (0, 0, 0)
+    ├── Node(1)   ← Node.cs 부착, Position: (2, 0, 0)
+    └── Node(2)   ← Node.cs 부착, Position: (4, 0, 0)
+
+  각 Node의 Neighbors 연결 (Inspector에서 드래그):
+    Node(0).Neighbors → [Node(1)]
+    Node(1).Neighbors → [Node(0), Node(2)]  또는 _isBidirectional = true 활용
+    Node(2).Neighbors → [Node(1)]
+
+  [PathFinder].nodesParent → [Nodes] Transform 연결
+
+  ★ 참고: Node.cs의 _debug 필드는 false로 두면
+    _circle과 _txtNumber가 없어도 에러 없이 동작한다.
+    (_circle.gameObject.SetActive(false) 가 OnValidate에서 호출되는데
+    _debug = false면 _circle == null 체크 없이 접근해 NullRef 발생 가능 → h 주의점 참조)
+
+================================================================
+e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+================================================================
+
+  Q. Node 오브젝트를 프리팹으로 만들지 않는 이유?
+  ─────────────────────────────────────────────────
+  ✅ B 조합 단계에서는 "경로 계산이 동작하는지" 검증이 목적.
+     프리팹 제작은 실제 맵 설계 시(⑨ UI/View 조합)에 하는 것이 효율적.
+     지금은 Inspector 직결 구성으로 최소한의 테스트만 진행.
+
+  Q. SFX AudioSource를 별도 자식 오브젝트로 분리하지 않는 이유?
+  ──────────────────────────────────────────────────────────────
+  ✅ SoundManager가 List<AudioSource>를 Inspector에서 받으므로,
+     같은 GameObject에 여러 AudioSource를 추가해도 동작한다.
+     원본 GameDispatchLike 구성 방식을 그대로 따른다.
+
+  Q. TriggerSFX.cs를 General 폴더 대신 Audio 폴더에 넣는 이유?
+  ────────────────────────────────────────────────────────────────
+  ✅ TriggerSFX는 SoundManager를 직접 호출하는 오디오 전용 헬퍼이다.
+     기능 기준으로 Audio 폴더에 넣는 것이 프로젝트 폴더 구조와 일관성이 있다.
+
+  Q. Node.cs의 디버그 컴포넌트(_circle, _txtNumber)를 삭제하지 않는 이유?
+  ──────────────────────────────────────────────────────────────────────────
+  ✅ 나중에 맵 에디팅 시 디버그 시각화가 유용하다.
+     _debug = false로 두면 런타임 동작에 영향 없으므로 유지.
+     단, OnValidate의 NullRef 가능성은 수정 필요 (h 참조).
+
+================================================================
+f. 어떤 순서로 진행할 것인지
+================================================================
+
+  ══════════════════════════════════════════════════════
+  [ PHASE 7-1 ] 스크립트 복사 및 수정        (에디터 닫고 작업)
+  ══════════════════════════════════════════════════════
+
+  □ 7-1-1. Assets/Scripts/StrategyGame/Core/PathFinder/ 폴더 생성
+  □ 7-1-2. PathFinderManager.cs 복사
+           원본: C:/Temp/GameDispatchLike/Assets/Scripts/PathFinder/PathFinderManager.cs
+           대상: Assets/Scripts/StrategyGame/Core/PathFinder/PathFinderManager.cs
+
+  □ 7-1-3. Node.cs 복사
+           원본: C:/Temp/GameDispatchLike/Assets/Scripts/PathFinder/Node.cs
+           대상: Assets/Scripts/StrategyGame/Core/PathFinder/Node.cs
+
+  □ 7-1-4. Node.cs 수정 (필수)
+           제거할 줄:
+             using UnityEngine.Experimental.GlobalIllumination;
+           이유: Unity 6 deprecated, 코드 내 미사용
+
+  □ 7-1-5. Assets/Scripts/StrategyGame/Core/Audio/ 폴더 생성
+  □ 7-1-6. SoundManager.cs 복사
+           원본: C:/Temp/GameDispatchLike/Assets/Scripts/Controllers/SoundManager.cs
+           대상: Assets/Scripts/StrategyGame/Core/Audio/SoundManager.cs
+
+  □ 7-1-7. TriggerSFX.cs 복사
+           원본: C:/Temp/GameDispatchLike/Assets/Scripts/General/TriggerSFX.cs
+           대상: Assets/Scripts/StrategyGame/Core/Audio/TriggerSFX.cs
+
+  ══════════════════════════════════════════════════════
+  [ PHASE 7-2 ] Unity 컴파일 확인
+  ══════════════════════════════════════════════════════
+
+  □ 7-2-1. Unity Editor 열기 / 재컴파일 대기
+  □ 7-2-2. Console 에러 0 확인
+           에러가 있으면 원인 파악 후 수정, 다음 단계 진행 금지
+
+  ══════════════════════════════════════════════════════
+  [ PHASE 7-3 ] 씬 구성 - SoundManager
+  ══════════════════════════════════════════════════════
+
+  □ 7-3-1. Strategy game.unity 씬 열기
+  □ 7-3-2. [Manager] 하위에 빈 GameObject 생성 → 이름: "[SoundManager]"
+  □ 7-3-3. SoundManager.cs 컴포넌트 부착
+  □ 7-3-4. [SoundManager] 오브젝트에 AudioSource 4개 추가
+           Add Component → Audio → Audio Source × 4
+  □ 7-3-5. Inspector 연결
+           _sfxAudioSources (Size: 3) → AudioSource 1, 2, 3
+           _musicAudioSource → AudioSource 4
+  □ 7-3-6. AudioSource 설정 (선택)
+           BGM용: Loop = false (PlayMusic에서 제어), Play On Awake = false
+           SFX용: Play On Awake = false
+
+  ══════════════════════════════════════════════════════
+  [ PHASE 7-4 ] 씬 구성 - PathFinder + 테스트 노드
+  ══════════════════════════════════════════════════════
+
+  □ 7-4-1. [Manager] 하위에 빈 GameObject 생성 → 이름: "[PathFinder]"
+  □ 7-4-2. PathFinderManager.cs 컴포넌트 부착
+  □ 7-4-3. 씬 루트에 빈 GameObject 생성 → 이름: "[Nodes]"
+  □ 7-4-4. [Nodes] 하위에 자식 오브젝트 3개 생성
+           이름: "Node(0)", "Node(1)", "Node(2)"
+           Position: (-2,0,0), (0,0,0), (2,0,0)
+           각각 Node.cs 컴포넌트 부착
+  □ 7-4-5. Node 간 Neighbors 연결 (Inspector 드래그)
+           Node(0).Neighbors → Node(1)
+           Node(1)._isBidirectional = true, Neighbors → Node(0), Node(2)
+           Node(2).Neighbors → Node(1)
+  □ 7-4-6. [PathFinder] Inspector 연결
+           nodesParent → [Nodes] Transform
+  □ 7-4-7. _debug = true, Origin = Node(0), Destiny = Node(2) 설정 (테스트용)
+
+  ══════════════════════════════════════════════════════
+  [ PHASE 7-5 ] 동작 확인
+  ══════════════════════════════════════════════════════
+
+  □ 7-5-1. 플레이 버튼 누르기
+  □ 7-5-2. Console 에러 없음 확인
+  □ 7-5-3. PathFinder 동작 확인
+           Play 상태에서 I 키 → Console에 "Path 3" 출력되면 성공
+  □ 7-5-4. SoundManager 동작 확인 (선택)
+           테스트 AudioClip을 Inspector에서 TriggerSFX에 연결하거나
+           Console에서 SoundManager.Instance != null 확인
+
+================================================================
+g. 어디가 어떤 식으로 변경되는지
+================================================================
+
+  [ 새로 추가되는 파일 ]
+
+  Assets/Scripts/StrategyGame/Core/PathFinder/
+    PathFinderManager.cs   ← 원본 복사 (수정 없음)
+    Node.cs                ← 원본 복사 + using 1줄 제거
+
+  Assets/Scripts/StrategyGame/Core/Audio/
+    SoundManager.cs        ← 원본 복사 (수정 없음)
+    TriggerSFX.cs          ← 원본 복사 (수정 없음)
+
+  [ 씬 변경 내용 (Assets/Scenes/Strategy game.unity) ]
+
+  추가 전:
+    [Manager]
+      ├── SGManager
+      ├── DayManager
+      ├── DayCharacterManager
+      ├── CharacterDatabase
+      └── CharacterLevelDatabase
+
+  추가 후:
+    [Manager]
+      ├── SGManager
+      ├── DayManager
+      ├── DayCharacterManager
+      ├── CharacterDatabase
+      ├── CharacterLevelDatabase
+      ├── [SoundManager]          ← 신규 (AudioSource × 4 포함)
+      └── [PathFinder]            ← 신규 (nodesParent 연결)
+
+    [Nodes]                       ← 신규 (씬 루트)
+      ├── Node(0)                 ← Node.cs 부착
+      ├── Node(1)                 ← Node.cs 부착
+      └── Node(2)                 ← Node.cs 부착
+
+  [ 변경되지 않는 것 ]
+  - C 조합 스크립트 전체 → 수정 없음
+  - Assets/Scripts/VisualNovel/ → 건드리지 않음
+  - 다른 씬 파일 → 보존
+
+================================================================
+h. 주의할 점
+================================================================
+
+  ① Node.cs의 using UnityEngine.Experimental.GlobalIllumination 반드시 제거
+  ──────────────────────────────────────────────────────────────────────────
+  Unity 6에서 해당 네임스페이스는 deprecated되어 없거나 경고가 뜬다.
+  Node.cs 코드 어디에서도 이 네임스페이스를 실제로 사용하지 않으므로
+  복사 직후 즉시 제거한다.
+
+  ② Node.cs OnValidate의 _circle NullReference 가능성
+  ───────────────────────────────────────────────────────
+  Node.cs의 OnValidate()에서 _debug = false일 때
+    _circle.gameObject.SetActive(false)
+  를 호출한다. _circle이 Inspector에서 연결되지 않으면 NullRef 발생.
+
+  에디터에서 Node를 만들면 Inspector에 _circle 필드가 보이는데,
+  아무것도 연결하지 않으면 OnValidate에서 에러가 출력된다.
+  (런타임 에러는 아니지만 에디터에서 Console 에러로 표시됨)
+
+  두 가지 대응 방법:
+    방법 A: _circle을 null 체크하도록 Node.cs 수정
+            if (_circle != null) _circle.gameObject.SetActive(false);
+    방법 B: 각 Node 오브젝트 하위에 빈 오브젝트를 만들어 _circle에 연결
+
+  방법 A가 더 간단하다. 복사 시 함께 수정 권장.
+
+  ③ SoundManager _sfxAudioSources는 비어있으면 즉시 에러
+  ──────────────────────────────────────────────────────
+  PlaySFX() 호출 시 _sfxAudioSources[_currentSFXAudioSource]를 인덱스 접근한다.
+  List가 비어있으면 ArgumentOutOfRangeException.
+  씬 구성 후 반드시 Inspector에서 AudioSource 최소 1개 이상 연결할 것.
+  (Play 버튼만 누르고 PlaySFX를 직접 호출하지 않으면 에러 없음)
+
+  ④ PathFinderManager.nodesParent 미연결 시 Start()에서 에러 없음
+  ──────────────────────────────────────────────────────────────────
+  nodesParent == null이면 Start()에서 "if (nodesParent == null) nodesParent = transform;"
+  처리로 PathFinderManager 자신의 자식을 노드로 인식한다.
+  → nodesParent를 연결하지 않으면 [PathFinder] 하위에 Node가 있어야 동작한다.
+  → [Nodes]를 별도 오브젝트로 만들 경우 반드시 nodesParent를 연결할 것.
+
+  ⑤ B 조합은 C 조합과 완전 독립이지만 Singleton.cs를 공유함
+  ──────────────────────────────────────────────────────────
+  SoundManager는 Singleton<SoundManager>를 상속한다.
+  이 Singleton<T>는 C 조합에서 복사한 Utils/Singleton.cs를 사용한다.
+  → Singleton.cs가 없으면 SoundManager.cs 컴파일 에러 발생.
+  → C 조합이 완료된 현재 프로젝트에서는 문제 없음.
+
+  ⑥ 각 Phase 후 반드시 Console 에러 0 확인
+  ──────────────────────────────────────────
+  에러가 남은 상태에서 씬을 저장하거나 Unity를 종료하면 씬 파일이
+  손상될 수 있다. Phase 7-2 컴파일 확인을 반드시 통과 후 씬 작업 진행.
+
+================================================================
+[ 다음 즉시 실행 가능한 첫 번째 액션 ]
+
+  1. Assets/Scripts/StrategyGame/Core/ 하위에
+     "PathFinder" 폴더, "Audio" 폴더 생성
+
+  2. 탐색기에서 복사:
+     C:/Temp/GameDispatchLike/Assets/Scripts/PathFinder/PathFinderManager.cs
+       → Assets/Scripts/StrategyGame/Core/PathFinder/
+     C:/Temp/GameDispatchLike/Assets/Scripts/PathFinder/Node.cs
+       → Assets/Scripts/StrategyGame/Core/PathFinder/
+     C:/Temp/GameDispatchLike/Assets/Scripts/Controllers/SoundManager.cs
+       → Assets/Scripts/StrategyGame/Core/Audio/
+     C:/Temp/GameDispatchLike/Assets/Scripts/General/TriggerSFX.cs
+       → Assets/Scripts/StrategyGame/Core/Audio/
+
+  3. Node.cs에서 아래 두 줄 수정:
+     [제거]    using UnityEngine.Experimental.GlobalIllumination;
+     [추가/수정] OnValidate()의 _circle.gameObject.SetActive(false);
+               → if (_circle != null) _circle.gameObject.SetActive(false);
+
+  4. Unity Editor에서 컴파일 확인 (Console 에러 0)
+
+  5. PHASE 7-3 씬 구성 진행
+
+================================================================
