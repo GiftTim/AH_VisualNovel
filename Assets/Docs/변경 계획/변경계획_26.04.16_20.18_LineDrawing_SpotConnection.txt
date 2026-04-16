@@ -1,0 +1,283 @@
+================================================================
+변경계획_26.04.16_20.18_LineDrawing_SpotConnection
+================================================================
+
+[ 작성일 ] 2026-04-16 20:18 KST
+[ 대상 씬 ] Assets/Scenes/Strategy game.unity
+
+
+================================================================
+목차
+================================================================
+
+  1. 요구한 기능
+  2. 현재 상황 및 코드
+  3. 구현 방식 (d)
+  4. 왜 d 방식인가 (e)
+  5. 진행 순서 (f)
+  6. 변경 위치 (g)
+  7. 주의할 점 (h)
+
+
+================================================================
+1. 요구한 기능
+================================================================
+
+  - Strategy Game UI 위에서, Spot과 Spot 사이를 클릭으로 연결하는
+    "선 긋기" 기능 구현
+  - 동작 방식
+      ① 드로잉 모드 진입 (버튼 or 키 입력)
+      ② Spot A 클릭 → 선택 상태 강조 표시
+      ③ Spot B 클릭 → A-B 연결선 생성, 양쪽 _neighbors에 등록
+      ④ 이미 연결된 두 Spot을 다시 클릭 → 연결선 제거
+      ⑤ 드로잉 모드 종료
+  - 나중에 캐릭터가 이 연결선을 따라 이동하는 기능(임무 파트)에서
+    활용할 수 있도록 _neighbors 데이터를 실시간으로 갱신
+
+
+================================================================
+2. 현재 상황 및 코드
+================================================================
+
+  ─────────────────────────────────────────────────────────────
+  Spot.cs
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs
+  ─────────────────────────────────────────────────────────────
+  - SpotType enum, SpotVisualConfig 정의
+  - _neighbors: List<Spot> — Inspector에서 수동 등록
+  - Start()에서 ApplyVisual() 호출
+  - SetType(SpotType) 으로 비주얼 변경 가능
+  - 현재 런타임 중 _neighbors를 추가/제거하는 public 메서드 없음
+
+  ─────────────────────────────────────────────────────────────
+  PathFinderManager.cs
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/PathFinderManager.cs
+  ─────────────────────────────────────────────────────────────
+  - Start() 에서 모든 Spot의 _neighbors를 순회해 연결선(Image) 자동 생성
+  - CreateConnectionLine(a, b): RectTransform 중간점/거리/각도 계산 → Image 생성
+  - GetPath(from, to): BFS로 최단경로 반환
+  - HighlightPath / ClearHighlight: 경로 하이라이트
+  - 현재 런타임 중 새 선을 추가하거나 제거하는 기능 없음
+
+  ─────────────────────────────────────────────────────────────
+  LineRendererAtoB.cs
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/LineRendererAtoB.cs
+  ─────────────────────────────────────────────────────────────
+  - Unity LineRenderer 컴포넌트를 감싸는 유틸리티
+  - Play(from, to): 월드 좌표 두 점을 잇는 선 표시
+  - Stop(): 선 숨김
+  - 현재 어느 Spot 에도 연결되어 있지 않음 (미사용 상태)
+
+  ─────────────────────────────────────────────────────────────
+  공통 문제점
+  ─────────────────────────────────────────────────────────────
+  - Spot 클릭 이벤트 처리 없음 (IPointerClickHandler 미구현)
+  - PathFinderManager에 "드로잉 모드" 개념 없음
+  - 런타임에 연결선 추가/제거 API 없음
+
+
+================================================================
+3. 구현 방식 (d)
+================================================================
+
+  UI Image 기반의 인터랙티브 선 긋기 시스템을 구현한다.
+  PathFinderManager를 확장하고 Spot에 클릭 핸들러를 추가한다.
+  Unity LineRenderer(월드 공간)는 사용하지 않는다 (이유는 4절 참고).
+
+  ─────────────────────────────────────────────────────────────
+  [STEP A] Spot.cs 변경
+  ─────────────────────────────────────────────────────────────
+  추가할 내용:
+    - IPointerClickHandler 구현
+    - public void AddNeighbor(Spot s)
+    - public void RemoveNeighbor(Spot s)
+    - public bool HasNeighbor(Spot s)
+    - OnClick 이벤트 (Action<Spot>) → PathFinderManager가 구독
+
+  ─────────────────────────────────────────────────────────────
+  [STEP B] PathFinderManager.cs 변경
+  ─────────────────────────────────────────────────────────────
+  추가할 내용:
+    - bool _isDrawingMode
+    - Spot _pendingSpot (첫 번째로 클릭한 Spot 임시 저장)
+    - public void EnterDrawingMode() / ExitDrawingMode()
+    - void OnSpotClicked(Spot clicked)
+        ① _pendingSpot == null → _pendingSpot = clicked, 강조 표시
+        ② _pendingSpot != null && clicked != _pendingSpot
+            - 이미 연결됨 → RemoveConnection(a, b)
+            - 연결 없음  → AddConnection(a, b)
+            - _pendingSpot 초기화
+        ③ 같은 Spot 재클릭 → 선택 취소
+    - void AddConnection(Spot a, Spot b)
+        - a.AddNeighbor(b), b.AddNeighbor(a)  (양방향)
+        - CreateConnectionLine(a, b) 호출
+        - _connectionLines 에 저장
+    - void RemoveConnection(Spot a, Spot b)
+        - a.RemoveNeighbor(b), b.RemoveNeighbor(a)
+        - _connectionLines 에서 Image 제거(Destroy)
+    - 기존 Start()에서 Spot.OnClick 이벤트 구독
+
+  ─────────────────────────────────────────────────────────────
+  시각적 피드백
+  ─────────────────────────────────────────────────────────────
+  - _pendingSpot 선택 시 → Spot의 _icon 색상을 selectHighlight 색으로 변경
+  - 드로잉 모드가 아닐 때는 Spot 클릭 이벤트 무시
+  - 드로잉 모드 토글 버튼(UI Button)을 MapScreen에 추가
+
+
+================================================================
+4. 왜 d 방식인가 (e)
+================================================================
+
+  비교 대상:
+  ┌─────────────────────┬─────────────────────────────────────────────────┐
+  │ 방식                │ 특징 및 문제점                                  │
+  ├─────────────────────┼─────────────────────────────────────────────────┤
+  │ UI Image (채택)     │ - 기존 PathFinderManager와 완전 호환             │
+  │                     │ - RectTransform 좌표계 그대로 사용               │
+  │                     │ - 정렬(Sort Order) 문제 없음                     │
+  │                     │ - HighlightPath 등 기존 기능 그대로 재활용       │
+  ├─────────────────────┼─────────────────────────────────────────────────┤
+  │ LineRenderer        │ - 월드 좌표계 사용 → UI RectTransform와          │
+  │ (미채택)            │   좌표 변환 필요 (RectTransformUtility)          │
+  │                     │ - UI Canvas 위에 정확히 겹치려면                 │
+  │                     │   Screen Space - Camera 모드 필요                │
+  │                     │ - Z-depth 충돌로 Spot 아이콘에 가려질 위험       │
+  │                     │ - 기존 _connectionLines 구조와 호환 불가         │
+  │                     │ - LineRendererAtoB.cs도 월드 좌표 전용           │
+  ├─────────────────────┼─────────────────────────────────────────────────┤
+  │ GL.Lines            │ - 에디터 전용. 런타임 UI 사용 불가               │
+  └─────────────────────┴─────────────────────────────────────────────────┘
+
+  결론:
+  UI Image 방식이 현재 코드베이스와 가장 자연스럽게 통합되며,
+  좌표 변환 없이 RectTransform 위치를 그대로 사용할 수 있다.
+  LineRenderer(LineRendererAtoB.cs)는 캐릭터 이동 경로 시각화 등
+  월드 공간 효과가 필요할 때 별도로 활용한다.
+
+
+================================================================
+5. 진행 순서 (f)
+================================================================
+
+  [1] Spot.cs 수정
+      - IPointerClickHandler 추가
+      - AddNeighbor / RemoveNeighbor / HasNeighbor 메서드 추가
+      - public event Action<Spot> OnClick 추가
+
+  [2] PathFinderManager.cs 수정
+      - Start()에서 모든 Spot의 OnClick 구독
+      - _isDrawingMode, _pendingSpot 필드 추가
+      - EnterDrawingMode() / ExitDrawingMode() 추가
+      - OnSpotClicked() 로직 구현
+      - AddConnection() / RemoveConnection() 구현
+
+  [3] ConnectionLine Prefab 확인 / 생성
+      - 이미 있으면 재사용, 없으면
+        빈 오브젝트 → Image → Width:100, Height:4
+        → Assets/Prefabs/StrategyGame/UI/ConnectionLine.prefab
+
+  [4] Hierarchy 수동 작업 (Unity Editor)
+      - MapScreen(PathFinderManager) 아래에
+        [DrawingModeButton] UI Button 추가
+      - Button OnClick → PathFinderManager.EnterDrawingMode() 연결
+
+  [5] Inspector 설정 확인
+      - PathFinderManager: _linePrefab, _lineParent 슬롯 채워짐 확인
+      - Spot: GraphicRaycaster가 Canvas에 있는지 확인
+        (IPointerClickHandler 작동 필수 조건)
+
+  [6] 동작 테스트
+      - DrawingMode 진입 → Spot 클릭 → 선 생성 확인
+      - 같은 쌍 재클릭 → 선 제거 확인
+      - ExitDrawingMode → 클릭 이벤트 무시 확인
+      - GetPath() 로 BFS 경로 탐색 확인
+
+
+================================================================
+6. 변경 위치 (g)
+================================================================
+
+  ─────────────────────────────────────────────────────────────
+  Spot.cs
+  ─────────────────────────────────────────────────────────────
+  추가:
+    using System;
+    using UnityEngine.EventSystems;
+
+    public event Action<Spot> OnClick;          // PathFinderManager가 구독
+    public bool HasNeighbor(Spot s) => _neighbors.Contains(s);
+    public void AddNeighbor(Spot s) { if (!_neighbors.Contains(s)) _neighbors.Add(s); }
+    public void RemoveNeighbor(Spot s) => _neighbors.Remove(s);
+
+    public void OnPointerClick(PointerEventData _) => OnClick?.Invoke(this);
+    // 클래스 선언에 IPointerClickHandler 추가
+
+  변경 없는 기존 코드:
+    SpotType, SpotVisualConfig, _icon, _visualConfigs, Start(), SetType(), ApplyVisual()
+    → 그대로 유지
+
+  ─────────────────────────────────────────────────────────────
+  PathFinderManager.cs
+  ─────────────────────────────────────────────────────────────
+  추가 필드:
+    bool _isDrawingMode
+    Spot _pendingSpot
+    Color _selectHighlightColor (Inspector 노출)
+
+  추가 메서드:
+    public void EnterDrawingMode()
+    public void ExitDrawingMode()
+    void OnSpotClicked(Spot clicked)
+    void AddConnection(Spot a, Spot b)
+    void RemoveConnection(Spot a, Spot b)
+
+  수정:
+    Start() 마지막에 — 모든 Spot의 OnClick 이벤트 구독 추가
+
+  변경 없는 기존 코드:
+    CreateConnectionLine, GetPath, HighlightPath, ClearHighlight, MakeKey
+    → 그대로 유지 (AddConnection 내부에서 재사용)
+
+  ─────────────────────────────────────────────────────────────
+  신규 생성 없음
+  ─────────────────────────────────────────────────────────────
+  - LineRendererAtoB.cs 는 건드리지 않음 (임무 파트에서 활용 예정)
+  - 새 스크립트 파일 추가 없음
+
+
+================================================================
+7. 주의할 점 (h)
+================================================================
+
+  ① GraphicRaycaster 필수
+     IPointerClickHandler 가 작동하려면 Canvas에 GraphicRaycaster,
+     씬에 EventSystem이 있어야 한다.
+     없으면 클릭 이벤트가 전달되지 않음.
+
+  ② _lineParent 정렬 순서
+     LineParent는 Spot들보다 Hierarchy 상단(렌더링상 하단)에 배치해야
+     선이 Spot 아이콘 뒤에 그려진다.
+
+  ③ 양방향 등록
+     AddConnection에서 a→b, b→a 양쪽 모두 AddNeighbor 해야
+     BFS(GetPath)가 양방향 탐색 가능.
+
+  ④ _pendingSpot 시각 피드백
+     드로잉 모드에서 첫 번째 Spot을 클릭했을 때
+     어느 Spot이 선택됐는지 사용자가 알 수 있도록
+     색상 변경 등 명확한 강조 표시를 넣을 것.
+     ExitDrawingMode 시 강조 상태를 반드시 초기화.
+
+  ⑤ 데이터 영속성
+     런타임에 생성된 연결(_neighbors)은 씬 저장을 하지 않으면
+     Play 종료 시 사라진다.
+     나중에 임무 데이터로 저장이 필요하다면
+     ScriptableObject 또는 JSON 직렬화를 별도로 구현해야 한다.
+
+  ⑥ LineRendererAtoB.cs 혼동 주의
+     이 스크립트는 월드 공간용이며 현재 미사용 상태.
+     이번 작업에서 건드리지 않는다.
+     캐릭터 이동 경로 시각화(임무 파트)에서 활용 예정.
+
+================================================================

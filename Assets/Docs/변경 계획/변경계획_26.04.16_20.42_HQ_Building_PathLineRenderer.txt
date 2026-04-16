@@ -1,0 +1,439 @@
+================================================================
+변경계획_26.04.16_20.42_HQ_Building_PathLineRenderer
+================================================================
+
+[ 작성일 ] 2026-04-16 20:42 KST
+[ 대상 씬 ] Assets/Scenes/Strategy game.unity
+[ 참고 완료 ] 변경완료_26.04.16_17.05_Spots_PathFinderManager_건물시스템
+
+
+================================================================
+목차
+================================================================
+
+  1. 요구한 기능
+  2. 현재 상황 및 코드
+  3. 구현 방식 (d)
+  4. 왜 d 방식인가 (e)
+  5. 진행 순서 (f)
+  6. 변경 위치 (g)
+  7. 주의할 점 (h)
+
+
+================================================================
+1. 요구한 기능
+================================================================
+
+  [ 건물 구조 ]
+  ┌────────────────────────────────────────────────────────────┐
+  │ HQ        — 타입 고정. 모든 캐릭터 출발/귀환 거점         │
+  │ Building  — Idle에서 시작. 미션 사이클 진행               │
+  └────────────────────────────────────────────────────────────┘
+
+  [ Building 상태 흐름 ]
+  Idle ──[미션 발생]──► Incident ──[수락]──► Selected
+                                  └─[미수락/만료]──► Unselected
+  Selected ──[임무 완료]──► Completed ──► (Idle 또는 유지, 추후 결정)
+
+  [ 핵심 규칙 ]
+  - 모든 길은 HQ로 통한다
+    캐릭터 : HQ → 목표 Building → HQ
+  - HQ와 각 Building 사이에 정적 연결선(지도 UI) 항상 표시
+  - 미션 수락(Selected) 시 해당 경로를 LineRenderer로 강조 표시
+  - (나중에) 캐릭터 오브젝트가 LineRenderer 경로를 따라 이동
+
+  [ 이번 구현 범위 ]
+  ① HQ 타입 보호 (SetType 호출해도 변경 안 됨)
+  ② Idle→Incident→Selected/Unselected→Completed 흐름 정리
+  ③ HQ ↔ Building 정적 연결선: UI Image (PathFinderManager 기존 기능)
+  ④ Selected 시 HQ→Building 경로를 LineRenderer로 시각화
+  ⑤ 미션 종료(Completed or Unselected) 시 LineRenderer 숨김
+  ⑥ 캐릭터 이동은 이번 범위에 포함하지 않음 (나중에 별도 작업)
+
+
+================================================================
+2. 현재 상황 및 코드
+================================================================
+
+  ─────────────────────────────────────────────────────────────
+  Spot.cs
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs
+  ─────────────────────────────────────────────────────────────
+  public enum SpotType { HQ, Idle, Incident, Unselected, Selected, Completed }
+
+  public class Spot : MonoBehaviour
+  {
+      [SerializeField] SpotType _spotType;
+      [SerializeField] List<Spot> _neighbors;
+      [SerializeField] Image _icon;
+      [SerializeField] SpotVisualConfig[] _visualConfigs;
+
+      public SpotType SpotType => _spotType;
+      public List<Spot> Neighbors => _neighbors;
+
+      void Start() => ApplyVisual();
+      public void SetType(SpotType type) { _spotType = type; ApplyVisual(); }
+      void ApplyVisual() { /* _visualConfigs 색상 적용 */ }
+  }
+
+  문제점:
+    - SetType()에서 HQ를 다른 타입으로 바꿔도 막지 않음
+    - 상태 전이 유효성 검사 없음
+
+  ─────────────────────────────────────────────────────────────
+  PathFinderManager.cs
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/PathFinderManager.cs
+  ─────────────────────────────────────────────────────────────
+  public class PathFinderManager : MonoBehaviour
+  {
+      [SerializeField] Spot _hq;
+      [SerializeField] Image _linePrefab;
+      [SerializeField] Transform _lineParent;
+      [SerializeField] Color _defaultLineColor;
+      [SerializeField] Color _highlightLineColor;
+      Dictionary<(Spot,Spot), Image> _connectionLines;
+
+      void Start()           // 모든 Spot _neighbors 기반 UI Image 연결선 생성
+      Image CreateConnectionLine(Spot a, Spot b)   // RectTransform 중간점/거리/각도
+      public List<Spot> GetPath(Spot from, Spot to) // BFS
+      public void HighlightPath(List<Spot> path)    // Image 색상 변경
+      public void ClearHighlight()
+      (Spot,Spot) MakeKey(Spot a, Spot b)
+  }
+
+  문제점:
+    - LineRenderer 연동 없음
+    - 미션 수락/완료 이벤트와 연결되지 않음
+    - HQ→Building 전용 경로 API 없음
+
+  ─────────────────────────────────────────────────────────────
+  LineRendererAtoB.cs
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/LineRendererAtoB.cs
+  ─────────────────────────────────────────────────────────────
+  - Play(Vector3 from, Vector3 to): 2점 LineRenderer 표시
+  - Stop(): 숨김
+  - positionCount = 2 고정 → 중간 경유지 포함 다중 경로 불가
+  - 월드 좌표만 받음 → UI RectTransform 좌표 변환 없음
+  - 어느 시스템과도 연결되지 않은 미사용 상태
+
+
+================================================================
+3. 구현 방식 (d)
+================================================================
+
+  ─────────────────────────────────────────────────────────────
+  전체 구조
+  ─────────────────────────────────────────────────────────────
+  [정적 지도 UI]     PathFinderManager  →  UI Image 연결선 (항상 표시)
+  [동적 경로 표시]   PathLineRenderer   →  LineRenderer (미션 중에만 표시)
+  [미션 상태 관리]   MissionManager     →  Spot 타입 변경 + 경로 활성화
+                                           (이번에 뼈대만 작성, 추후 확장)
+
+  ─────────────────────────────────────────────────────────────
+  [PHASE 1] Spot.cs 수정
+  ─────────────────────────────────────────────────────────────
+  HQ 보호:
+    SetType()에서 현재 _spotType == HQ 이면 return
+
+  Building 식별 프로퍼티 추가:
+    public bool IsHQ => _spotType == SpotType.HQ;
+
+  ─────────────────────────────────────────────────────────────
+  [PHASE 2] PathLineRenderer.cs 신규 생성
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/PathLineRenderer.cs
+  ─────────────────────────────────────────────────────────────
+  LineRendererAtoB.cs 를 대체·확장하는 다중 경유지 지원 클래스.
+
+  역할:
+    - List<Spot> 를 받아 각 Spot의 위치를 월드 좌표로 변환
+    - LineRenderer의 positionCount = path.Count 로 동적 설정
+    - 경로 위에 선 표시 / 숨김
+
+  좌표 변환 방식 (UI RectTransform → 월드 좌표):
+    Vector3 worldPos = RectTransformUtility.PixelAdjustPoint(
+        spot.transform.position, spot.transform, canvas);
+    단, Canvas가 Screen Space - Overlay 일 경우:
+    → Camera.main.ScreenToWorldPoint(spot.transform.position)
+       z값을 Camera 앞 적절한 거리로 고정
+
+  public void ShowPath(List<Spot> path, Canvas canvas)
+  public void Hide()
+
+  ─────────────────────────────────────────────────────────────
+  [PHASE 3] PathFinderManager.cs 수정
+  ─────────────────────────────────────────────────────────────
+  추가 필드:
+    [SerializeField] PathLineRenderer _pathLineRenderer;
+
+  추가 메서드:
+    public void ActivateMissionPath(Spot targetBuilding)
+      → GetPath(_hq, targetBuilding) 호출
+      → _pathLineRenderer.ShowPath(path, canvas) 호출
+      → HighlightPath(path) 으로 UI Image도 함께 강조
+
+    public void DeactivateMissionPath()
+      → _pathLineRenderer.Hide()
+      → ClearHighlight()
+
+  ─────────────────────────────────────────────────────────────
+  [PHASE 4] MissionManager.cs 신규 생성 (뼈대)
+  경로: Assets/Scripts/StrategyGame/Core/MissionManager.cs
+  ─────────────────────────────────────────────────────────────
+  역할:
+    - 미션 발생: targetBuilding.SetType(Incident)
+    - 미션 수락: targetBuilding.SetType(Selected)
+               + pathFinderManager.ActivateMissionPath(targetBuilding)
+    - 미션 만료: targetBuilding.SetType(Unselected)
+               + pathFinderManager.DeactivateMissionPath()
+    - 미션 완료: targetBuilding.SetType(Completed)
+               + pathFinderManager.DeactivateMissionPath()
+
+  이번 구현:
+    - 각 메서드 시그니처와 위 로직만 작성
+    - 실제 미션 발생 트리거(타이머 등)는 추후 작업
+    - 캐릭터 이동 연동은 추후 작업
+
+
+================================================================
+4. 왜 d 방식인가 (e)
+================================================================
+
+  [ 정적 연결선: UI Image 유지 ]
+  ┌─────────────────────┬───────────────────────────────────────────────┐
+  │ 방식                │ 이유                                          │
+  ├─────────────────────┼───────────────────────────────────────────────┤
+  │ UI Image (채택)     │ Spot이 Canvas UI 기반 → 좌표계 일치            │
+  │                     │ PathFinderManager 기존 코드 재사용 가능        │
+  │                     │ 항상 표시되는 지도 선으로 Canvas UI가 적합     │
+  ├─────────────────────┼───────────────────────────────────────────────┤
+  │ LineRenderer로 교체 │ 월드/UI 좌표 변환 매 프레임 필요               │
+  │ (미채택)            │ Sorting Layer 충돌로 Spot 아이콘에 가려질 위험 │
+  │                     │ 기존 코드 대규모 수정 필요                     │
+  └─────────────────────┴───────────────────────────────────────────────┘
+
+  [ 동적 경로 시각화: LineRenderer 신규 ]
+  ┌─────────────────────┬───────────────────────────────────────────────┐
+  │ 방식                │ 이유                                          │
+  ├─────────────────────┼───────────────────────────────────────────────┤
+  │ LineRenderer (채택) │ 나중에 캐릭터 오브젝트가 이 경로를 따라       │
+  │                     │ Transform.position으로 이동 → 월드 좌표 필요  │
+  │                     │ 애니메이션(대시 패턴, 색상 흐름 등) 지원       │
+  │                     │ 기존 LineRendererAtoB.cs 확장이라 구조 일관   │
+  ├─────────────────────┼───────────────────────────────────────────────┤
+  │ UI Image 강조만     │ 캐릭터 이동 경로로 재활용 불가                 │
+  │ (미채택)            │ 월드 공간 이동 구현 시 추가 좌표 변환 필요     │
+  └─────────────────────┴───────────────────────────────────────────────┘
+
+  [ LineRendererAtoB 대신 PathLineRenderer 신규 생성 이유 ]
+  - LineRendererAtoB는 positionCount=2 고정 → 경유지 지원 불가
+  - HQ → 중간 Spot(경유) → Building 경로에 2개 초과 포인트 필요
+  - 기존 LineRendererAtoB는 단순 유틸로 보존, PathLineRenderer가 경로 전용
+
+
+================================================================
+5. 진행 순서 (f)
+================================================================
+
+  [1] Spot.cs 수정
+      - SetType()에 HQ 보호 로직 추가
+      - IsHQ 프로퍼티 추가
+
+  [2] PathLineRenderer.cs 생성
+      - LineRenderer 컴포넌트 참조
+      - ShowPath(List<Spot> path, Canvas canvas) 구현
+        (UI → 월드 좌표 변환 포함)
+      - Hide() 구현
+
+  [3] PathFinderManager.cs 수정
+      - [SerializeField] PathLineRenderer _pathLineRenderer 추가
+      - ActivateMissionPath(Spot target) 추가
+      - DeactivateMissionPath() 추가
+
+  [4] MissionManager.cs 생성 (뼈대)
+      - OnMissionOccurred(Spot target)
+      - OnMissionAccepted(Spot target)
+      - OnMissionExpired(Spot target)
+      - OnMissionCompleted(Spot target)
+
+  [5] Unity Editor 수동 작업
+      - PathLineRenderer 컴포넌트를 씬 내 빈 GameObject에 추가
+        또는 PathFinderManager와 같은 오브젝트에 추가
+      - PathFinderManager Inspector: _pathLineRenderer 슬롯 연결
+      - LineRenderer 컴포넌트 설정
+        Width: 0.05~0.1, Color: 활성 미션 색상(예: 노란색)
+        Sorting Layer: UI 위 또는 적절한 레이어 지정
+
+  [6] 좌표 변환 테스트
+      - MissionManager.OnMissionAccepted() 직접 호출 테스트
+      - LineRenderer가 Spot 위치 위에 정확히 렌더링되는지 확인
+      - Canvas 모드(Screen Space Overlay / Camera)에 따라
+        좌표 변환 코드 조정
+
+
+================================================================
+6. 변경 위치 (g)
+================================================================
+
+  ─────────────────────────────────────────────────────────────
+  Spot.cs  [수정]
+  ─────────────────────────────────────────────────────────────
+  변경 전:
+    public void SetType(SpotType type)
+    {
+        _spotType = type;
+        ApplyVisual();
+    }
+
+  변경 후:
+    public bool IsHQ => _spotType == SpotType.HQ;
+
+    public void SetType(SpotType type)
+    {
+        if (_spotType == SpotType.HQ) return;  // HQ 보호
+        _spotType = type;
+        ApplyVisual();
+    }
+
+  ─────────────────────────────────────────────────────────────
+  PathLineRenderer.cs  [신규 생성]
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/PathLineRenderer.cs
+  ─────────────────────────────────────────────────────────────
+  using System.Collections.Generic;
+  using UnityEngine;
+
+  public class PathLineRenderer : MonoBehaviour
+  {
+      [SerializeField] LineRenderer _lineRenderer;
+      [SerializeField] Camera _uiCamera;   // Screen Space - Camera 시 사용
+
+      void Awake()
+      {
+          if (_lineRenderer == null)
+              _lineRenderer = GetComponent<LineRenderer>();
+          _lineRenderer.enabled = false;
+      }
+
+      public void ShowPath(List<Spot> path)
+      {
+          _lineRenderer.positionCount = path.Count;
+          for (int i = 0; i < path.Count; i++)
+              _lineRenderer.SetPosition(i, GetWorldPos(path[i]));
+          _lineRenderer.enabled = true;
+      }
+
+      public void Hide()
+      {
+          _lineRenderer.enabled = false;
+      }
+
+      Vector3 GetWorldPos(Spot spot)
+      {
+          // Canvas가 Screen Space - Overlay 인 경우
+          var screenPos = RectTransformUtility.WorldToScreenPoint(
+              null, spot.transform.position);
+          float z = Mathf.Abs(_uiCamera != null
+              ? _uiCamera.nearClipPlane + 0.1f
+              : Camera.main.nearClipPlane + 0.1f);
+          var cam = _uiCamera != null ? _uiCamera : Camera.main;
+          return cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, z));
+      }
+  }
+
+  ─────────────────────────────────────────────────────────────
+  PathFinderManager.cs  [수정]
+  ─────────────────────────────────────────────────────────────
+  추가 필드:
+    [SerializeField] PathLineRenderer _pathLineRenderer;
+
+  추가 메서드:
+    public void ActivateMissionPath(Spot targetBuilding)
+    {
+        var path = GetPath(_hq, targetBuilding);
+        if (path.Count == 0) return;
+        HighlightPath(path);
+        _pathLineRenderer.ShowPath(path);
+    }
+
+    public void DeactivateMissionPath()
+    {
+        ClearHighlight();
+        _pathLineRenderer.Hide();
+    }
+
+  ─────────────────────────────────────────────────────────────
+  MissionManager.cs  [신규 생성]
+  경로: Assets/Scripts/StrategyGame/Core/MissionManager.cs
+  ─────────────────────────────────────────────────────────────
+  public class MissionManager : MonoBehaviour
+  {
+      [SerializeField] PathFinderManager _pathFinder;
+
+      public void OnMissionOccurred(Spot target)
+          => target.SetType(SpotType.Incident);
+
+      public void OnMissionAccepted(Spot target)
+      {
+          target.SetType(SpotType.Selected);
+          _pathFinder.ActivateMissionPath(target);
+      }
+
+      public void OnMissionExpired(Spot target)
+      {
+          target.SetType(SpotType.Unselected);
+          _pathFinder.DeactivateMissionPath();
+      }
+
+      public void OnMissionCompleted(Spot target)
+      {
+          target.SetType(SpotType.Completed);
+          _pathFinder.DeactivateMissionPath();
+      }
+  }
+
+  ─────────────────────────────────────────────────────────────
+  LineRendererAtoB.cs  [변경 없음]
+  ─────────────────────────────────────────────────────────────
+  - 그대로 보존
+  - 단순 A→B 2점 유틸로 다른 용도에 활용 가능
+
+
+================================================================
+7. 주의할 점 (h)
+================================================================
+
+  ① 좌표계 확인 필수 (가장 중요)
+     Canvas 모드에 따라 GetWorldPos() 내 좌표 변환 방식이 달라진다.
+     - Screen Space - Overlay:
+       RectTransformUtility.WorldToScreenPoint(null, spot.transform.position)
+       → Camera.main.ScreenToWorldPoint()
+     - Screen Space - Camera:
+       spot.transform.position 이 이미 월드 좌표이므로 변환 불필요
+     씬의 Canvas Inspector에서 Render Mode 확인 후 코드 분기 결정.
+
+  ② LineRenderer Sorting Layer
+     LineRenderer는 기본적으로 Default Layer 에 렌더링됨.
+     Canvas UI 위에 보이려면:
+     - LineRenderer의 sortingLayerName을 UI 레이어보다 높게 설정
+     - 또는 Canvas의 Canvas 컴포넌트 → Override Sorting 체크 후
+       Order In Layer 조정
+
+  ③ HQ의 _neighbors 설정
+     PathFinderManager.GetPath()는 BFS로 _neighbors를 탐색함.
+     HQ에서 각 Building까지 경로가 연결되려면
+     Inspector에서 HQ의 _neighbors에 인접 Spot들이 등록되어 있어야 한다.
+     (또는 Building의 _neighbors에 HQ 등록 — BFS는 방향 그래프)
+
+  ④ _hq 필드 반드시 연결
+     PathFinderManager의 _hq 슬롯에 HQ Spot을 반드시 연결해야
+     ActivateMissionPath()가 올바른 출발점에서 경로를 계산한다.
+
+  ⑤ 동시 미션 처리
+     현재 MissionManager는 단일 활성 경로만 지원.
+     동시에 여러 캐릭터가 다른 Building으로 이동하는 케이스는
+     _pathLineRenderer를 List로 확장하는 작업이 추후 필요.
+
+  ⑥ Completed 이후 상태
+     Completed → Idle 복귀 여부는 게임 디자인에 따라 결정 필요.
+     현재는 Completed에서 멈추도록 구현.
+
+================================================================

@@ -1,0 +1,337 @@
+================================================================
+변경완료_26.04.16_21.27_BuildingType_State_분리_PathLine
+================================================================
+
+[ 작성일 ] 2026-04-16 21:27 KST
+[ 참조 계획 ] 변경계획_26.04.16_21.05_BuildingType_State_분리_PathLine.txt
+[ 대상 씬 ] Assets/Scenes/Strategy game.unity
+
+================================================================
+목차
+================================================================
+
+  1. 변경 전 코드
+  2. 변경 후 코드
+  3. 작동 흐름
+  4. 주의할 점
+  5. Unity Editor 수동 작업
+
+
+================================================================
+1. 변경 전 코드
+================================================================
+
+  ─────────────────────────────────────────────────────────────
+  Spot.cs
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs
+  ─────────────────────────────────────────────────────────────
+
+  using UnityEngine;
+
+  public enum SpotType
+  {
+      HQ,
+      Idle,
+      Incident,
+      Unselected,
+      Selected,
+      Completed
+  }
+
+  [System.Serializable]
+  public class SpotVisualConfig
+  {
+      public SpotType type;
+      public Color color = Color.white;
+  }
+
+  public class Spot : MonoBehaviour
+  {
+      [SerializeField] SpotType _spotType;
+      public SpotType SpotType => _spotType;
+
+      public void SetType(SpotType type)
+      {
+          _spotType = type;
+      }
+  }
+
+  ─────────────────────────────────────────────────────────────
+  PathFinderManager.cs  → 파일 삭제된 상태 (없음)
+  PathLineRenderer.cs   → 없음
+  MissionManager.cs     → 없음
+  ─────────────────────────────────────────────────────────────
+
+
+================================================================
+2. 변경 후 코드
+================================================================
+
+  ─────────────────────────────────────────────────────────────
+  Spot.cs  [전면 수정]
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs
+  ─────────────────────────────────────────────────────────────
+
+  using System.Linq;
+  using UnityEngine;
+
+  public enum BuildingType
+  {
+      HQ,
+      Building
+  }
+
+  public enum BuildingState
+  {
+      Idle,
+      Incident,
+      Selected,
+      Unselected,
+      Completed
+  }
+
+  public class Spot : MonoBehaviour
+  {
+      [SerializeField] BuildingType _buildingType;
+      [SerializeField] BuildingState _buildingState;
+
+      public BuildingType BuildingType => _buildingType;
+      public BuildingState BuildingState => _buildingState;
+      public bool IsHQ => _buildingType == BuildingType.HQ;
+
+      void Awake()
+      {
+          if (!IsHQ) return;
+
+          var duplicates = FindObjectsByType<Spot>(FindObjectsSortMode.None)
+              .Where(s => s.IsHQ && s != this);
+
+          if (duplicates.Any())
+              Debug.LogError($"[Spot] HQ가 2개 이상 존재합니다! ({name})");
+      }
+
+      public void SetState(BuildingState state)
+      {
+          if (IsHQ)
+          {
+              Debug.LogWarning("[Spot] HQ는 상태를 변경할 수 없습니다.");
+              return;
+          }
+          _buildingState = state;
+      }
+  }
+
+  ─────────────────────────────────────────────────────────────
+  PathLineRenderer.cs  [신규 생성]
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/PathLineRenderer.cs
+  ─────────────────────────────────────────────────────────────
+
+  using UnityEngine;
+
+  [RequireComponent(typeof(LineRenderer))]
+  public class PathLineRenderer : MonoBehaviour
+  {
+      [SerializeField] Canvas _canvas;
+
+      LineRenderer _lineRenderer;
+
+      void Awake()
+      {
+          _lineRenderer = GetComponent<LineRenderer>();
+          _lineRenderer.positionCount = 2;
+          _lineRenderer.enabled = false;
+      }
+
+      public void ShowPath(Spot from, Spot to)
+      {
+          _lineRenderer.SetPosition(0, ToWorldPos(from));
+          _lineRenderer.SetPosition(1, ToWorldPos(to));
+          _lineRenderer.enabled = true;
+      }
+
+      public void Hide()
+      {
+          _lineRenderer.enabled = false;
+      }
+
+      Vector3 ToWorldPos(Spot spot)
+      {
+          if (_canvas == null || _canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+          {
+              Vector3 screenPos = spot.transform.position;
+              screenPos.z = Camera.main.nearClipPlane + 0.1f;
+              return Camera.main.ScreenToWorldPoint(screenPos);
+          }
+          return spot.transform.position;
+      }
+  }
+
+  ─────────────────────────────────────────────────────────────
+  PathFinderManager.cs  [신규 생성]
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/PathFinderManager.cs
+  ─────────────────────────────────────────────────────────────
+
+  using UnityEngine;
+
+  public class PathFinderManager : MonoBehaviour
+  {
+      [SerializeField] Spot _hq;
+      [SerializeField] PathLineRenderer _pathLineRenderer;
+
+      public void ShowMissionPath(Spot target)
+      {
+          if (_hq == null || target == null) return;
+          _pathLineRenderer.ShowPath(_hq, target);
+      }
+
+      public void ShowReturnPath(Spot from)
+      {
+          if (from == null || _hq == null) return;
+          _pathLineRenderer.ShowPath(from, _hq);
+      }
+
+      public void HidePath()
+      {
+          _pathLineRenderer.Hide();
+      }
+  }
+
+  ─────────────────────────────────────────────────────────────
+  MissionManager.cs  [신규 생성]
+  경로: Assets/Scripts/StrategyGame/Core/MissionManager.cs
+  ─────────────────────────────────────────────────────────────
+
+  using UnityEngine;
+
+  public class MissionManager : MonoBehaviour
+  {
+      [SerializeField] PathFinderManager _pathFinder;
+
+      public void OnMissionOccurred(Spot target)
+          => target.SetState(BuildingState.Incident);
+
+      public void OnMissionAccepted(Spot target)
+      {
+          target.SetState(BuildingState.Selected);
+          _pathFinder.ShowMissionPath(target);
+      }
+
+      public void OnMissionExpired(Spot target)
+      {
+          target.SetState(BuildingState.Unselected);
+          _pathFinder.HidePath();
+      }
+
+      public void OnMissionCompleted(Spot target)
+      {
+          target.SetState(BuildingState.Completed);
+          _pathFinder.ShowReturnPath(target);
+      }
+
+      public void OnCharacterReturned()
+          => _pathFinder.HidePath();
+  }
+
+
+================================================================
+3. 작동 흐름
+================================================================
+
+  [ 미션 발생 ]
+  MissionManager.OnMissionOccurred(target)
+    → target.SetState(BuildingState.Incident)
+    → Building 상태: Idle → Incident
+
+  [ 미션 수락 ]
+  MissionManager.OnMissionAccepted(target)
+    → target.SetState(BuildingState.Selected)
+    → PathFinderManager.ShowMissionPath(target)
+      → PathLineRenderer.ShowPath(HQ, target)
+        → LineRenderer 두 점 설정 (HQ위치, Building위치)
+        → LineRenderer.enabled = true   ← 선 표시
+
+  [ 미션 만료/미수락 ]
+  MissionManager.OnMissionExpired(target)
+    → target.SetState(BuildingState.Unselected)
+    → PathFinderManager.HidePath()
+      → LineRenderer.enabled = false    ← 선 숨김
+
+  [ 임무 완료 — 귀환 이동 ]
+  MissionManager.OnMissionCompleted(target)
+    → target.SetState(BuildingState.Completed)
+    → PathFinderManager.ShowReturnPath(target)
+      → PathLineRenderer.ShowPath(target, HQ)
+        → LineRenderer 두 점 설정 (Building위치, HQ위치)
+        → LineRenderer.enabled = true   ← 선 표시 (방향 반전)
+
+  [ 귀환 도착 ]
+  MissionManager.OnCharacterReturned()
+    → PathFinderManager.HidePath()
+      → LineRenderer.enabled = false    ← 선 숨김
+
+
+================================================================
+4. 주의할 점
+================================================================
+
+  ① Spot Inspector 재설정 필수
+     Spot.cs 구조가 바뀌었으므로 기존 SpotType 값은 모두 초기화됨.
+     씬 내 모든 Spot 오브젝트에서
+     BuildingType (HQ / Building) 과
+     BuildingState (Idle / Incident / ...) 를 다시 설정해야 함.
+
+  ② HQ 단일 존재 검증은 Runtime 전용
+     Awake()의 FindObjectsByType은 Play 모드에서만 동작.
+     씬 배치 시 HQ가 1개인지 직접 확인할 것.
+
+  ③ Canvas Render Mode 확인
+     PathLineRenderer의 _canvas 슬롯에 씬의 Canvas를 연결해야 함.
+     - ScreenSpaceOverlay → ScreenToWorldPoint 변환 사용
+     - ScreenSpaceCamera / WorldSpace → transform.position 그대로 사용
+     씬의 Canvas Render Mode에 맞게 _canvas 슬롯을 올바르게 연결할 것.
+
+  ④ LineRenderer가 UI 뒤에 가려지는 경우
+     LineRenderer는 기본 Default Sorting Layer 렌더링.
+     Spot 아이콘(UI) 위에 보이지 않으면
+     LineRenderer의 Sorting Layer / Order In Layer 를 올리거나
+     Camera Z값을 조정할 것.
+
+  ⑤ _pathLineRenderer null 참조
+     PathFinderManager의 _pathLineRenderer 슬롯이 비어 있으면
+     ShowMissionPath / ShowReturnPath 호출 시 NullReferenceException 발생.
+     Inspector에서 반드시 연결할 것.
+
+
+================================================================
+5. Unity Editor 수동 작업 (PHASE 5)
+================================================================
+
+  [ 오브젝트 준비 ]
+  1. 씬에 빈 오브젝트 생성 → 이름: "PathLineRenderer"
+     - PathLineRenderer 컴포넌트 추가 (LineRenderer 자동 추가됨)
+     - LineRenderer 설정: Width 0.05, Color 원하는 색
+     - _canvas 슬롯: 씬의 Canvas 연결
+
+  2. 씬에 빈 오브젝트 생성 → 이름: "PathFinderManager"
+     - PathFinderManager 컴포넌트 추가
+     - _hq 슬롯: HQ Spot 오브젝트 연결
+     - _pathLineRenderer 슬롯: 위의 PathLineRenderer 오브젝트 연결
+
+  3. 씬에 빈 오브젝트 생성 → 이름: "MissionManager"
+     - MissionManager 컴포넌트 추가
+     - _pathFinder 슬롯: PathFinderManager 오브젝트 연결
+
+  [ Spot 재설정 ]
+  4. 씬 내 모든 Spot 오브젝트 Inspector 열기
+     - BuildingType: HQ 오브젝트는 HQ 선택, 나머지는 Building 선택
+     - BuildingState: 초기값 Idle 설정
+
+  [ 테스트 ]
+  5. Play 모드 진입
+     MissionManager.OnMissionAccepted(targetSpot) 직접 호출
+     → LineRenderer 경로 표시 확인
+     MissionManager.OnCharacterReturned() 호출
+     → LineRenderer 숨김 확인
+     HQ 2개 배치 시 Console에 에러 로그 출력 확인
+
+================================================================
