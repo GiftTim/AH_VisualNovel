@@ -1,0 +1,512 @@
+================================================================
+변경계획_26.04.16_17.05_Spots_PathFinderManager_건물시스템
+================================================================
+
+[ 작성일 ] 2026-04-16 17:05 KST
+[ 대상 씬 ] Assets/Scenes/Strategy game.unity
+[ 현재 상태 ] 모든 StrategyGame 스크립트 삭제 후 재시작
+               PathFinderManager.cs, Spots.cs — 빈 템플릿만 존재
+               Node.cs — 삭제됨
+
+================================================================
+a. 목차
+================================================================
+
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 구현 방향 (선택한 방식)
+  e. 다른 방법들과 d를 선택한 이유
+  f. 진행 순서
+  g. 변경 위치 및 내용
+  h. 주의할 점
+
+================================================================
+b. 요구한 기능
+================================================================
+
+  ─────────────────────────────────────────────────────────────
+  ① Spots.cs
+  ─────────────────────────────────────────────────────────────
+  - UI 맵 위의 각 건물에 부착하는 컴포넌트
+  - 건물 종류(SpotType)를 Inspector에서 설정
+  - SpotType에 따라 시각적 상태(색상/스프라이트) 자동 변경
+
+  건물 타입 목록:
+    a. 본부           (HQ)           — 항상 존재하는 출발점
+    b. 사건 발생 건물  (Incident)     — 미션이 등장한 건물 (수락 대기)
+    c. 선택 안 된 건물 (Unselected)   — 미션 시간이 만료된 건물
+    d. 선택된 건물     (Selected)     — 미션을 수락한 건물 (진행 중)
+    e. 사건 완료 건물  (Completed)    — 미션이 끝난 건물
+
+  ─────────────────────────────────────────────────────────────
+  ② PathFinderManager.cs
+  ─────────────────────────────────────────────────────────────
+  - UI 맵 내에서 Spot 간의 연결선을 관리하는 매니저
+  - 각 Spot가 어떤 Spot와 연결되어 있는지 정의
+  - BFS로 두 Spot 사이의 최단 경로 계산
+  - 연결된 Spot 사이에 UI 선(Line)을 그려서 길을 표시
+  - 경로 하이라이트: 미션 파견 시 이동 경로를 강조 표시
+
+================================================================
+c. 현재 상황 및 코드
+================================================================
+
+  [ Spots.cs ] — 빈 Unity 템플릿 (클래스명 Spot, 내용 없음)
+    Assets/Scripts/StrategyGame/Core/PathFinder/Spots.cs
+
+  [ PathFinderManager.cs ] — 빈 Unity 템플릿 (내용 없음)
+    Assets/Scripts/StrategyGame/Core/PathFinder/PathFinderManager.cs
+
+  [ Node.cs ] — 삭제됨 (이전 BFS 3D 노드 시스템)
+
+  [ 씬 현재 상태 ]
+    모든 StrategyGame 스크립트 삭제 → 씬 컴포넌트 연결 없음
+    UI, Canvas, Spot 오브젝트 없음
+
+  [ 관련 예정 시스템 ]
+    MissionUnit — 미션 상태 (WaitingToBeAccepted / Accepted / Completed / Miss)
+    → Spot의 SpotType과 MissionUnit 상태가 1:1 대응될 예정
+
+================================================================
+d. 구현 방향 (선택한 방식)
+================================================================
+
+  ─────────────────────────────────────────────────────────────
+  Spots.cs 설계
+  ─────────────────────────────────────────────────────────────
+
+  SpotType 열거형 (enum):
+    HQ, Incident, Unselected, Selected, Completed
+
+  각 Spot 컴포넌트가 보유하는 것:
+    - SpotType _spotType            ← Inspector에서 설정
+    - List<Spot> _neighbors         ← 연결된 이웃 Spot 목록
+    - Image _icon                   ← 상태별 색상 변경용
+    - SpotVisualConfig[] _configs   ← 타입별 색상/스프라이트 설정
+
+  상태 변경 흐름:
+    SetType(SpotType) 호출 → _spotType 갱신 → 시각적 갱신 메서드 실행
+
+  이웃(Neighbors) 설계:
+    Spots.cs 자체에서 List<Spot> _neighbors를 보유
+    → PathFinderManager는 각 Spot의 _neighbors를 읽어서 그래프를 구성
+
+  ─────────────────────────────────────────────────────────────
+  PathFinderManager.cs 설계
+  ─────────────────────────────────────────────────────────────
+
+  역할 3가지:
+    1. 그래프 관리  — 씬 내 모든 Spot 수집 + 연결 정보 파악
+    2. BFS 경로 계산— GetPath(Spot from, Spot to) → List<Spot>
+    3. UI 선 그리기 — Spot 간 연결선을 RectTransform Image로 표시
+
+  UI 선 구현 방법:
+    - 얇은 Image(RectTransform)를 두 Spot 사이에 생성
+    - 위치: 두 Spot 중간점
+    - 너비: 두 Spot 사이의 거리
+    - 회전: 두 Spot를 잇는 각도
+    - 이 방식으로 Canvas 위에서 별도 라이브러리 없이 선 그리기 가능
+
+  경로 하이라이트:
+    HighlightPath(List<Spot> path) — 경로 위의 선만 색상 변경
+    ClearHighlight() — 전체 선 색상 기본값으로 복원
+
+================================================================
+e. 다른 방법들과 d를 선택한 이유
+================================================================
+
+  ─────────────────────────────────────────────────────────────
+  PathFinderManager UI 선 그리기 방식 비교
+  ─────────────────────────────────────────────────────────────
+
+  방법 A: 기존 PathFinderManager (3D Gizmo 선)
+  ──────────────────────────────────────────────
+  - 이전 GameDispatchLike의 PathFinderManager + Node.cs 방식
+  - Gizmo는 에디터에서만 보임 → 실제 UI에서 사용 불가
+  - 3D 좌표 기반 → UI Canvas 위에서 동작 안 함
+  → ❌ 채택 안 함
+
+  방법 B: Unity LineRenderer (3D)
+  ──────────────────────────────────────────────
+  - World Space Canvas 없이 UI 위에 그리기 복잡
+  - Sorting Layer, Camera 설정이 까다롭고 UI와 혼용 시 Z-fighting 발생
+  → ❌ 채택 안 함
+
+  방법 C: 외부 패키지 (UILineRenderer 등)
+  ──────────────────────────────────────────────
+  - 패키지 의존성 추가 필요
+  - 현재 프로젝트에 불필요한 의존 추가
+  → ❌ 채택 안 함
+
+  방법 D: Image(RectTransform)를 늘려서 선 표현 ✅ (채택)
+  ──────────────────────────────────────────────
+  - 추가 패키지 없음, 표준 Unity UI만 사용
+  - Canvas 위에서 완벽하게 동작 (UI 레이어 정상 처리)
+  - 두 Spot 중간점 배치 + 거리를 Width로 + 각도 회전으로 선 표현
+  - 색상 변경(경로 하이라이트)이 Image.color 한 줄로 처리 가능
+  → ✅ 채택
+
+  ─────────────────────────────────────────────────────────────
+  Spot 이웃 관리 위치 비교
+  ─────────────────────────────────────────────────────────────
+
+  방법 A: PathFinderManager에서 연결 정보 중앙 관리
+  - PathFinderManager Inspector에 연결 쌍(pair) 배열 직접 입력
+  - 장점: 연결 정보가 한 곳에 집중
+  - 단점: Spot가 많아지면 쌍 목록이 길어져 관리 어려움
+  → ❌ 채택 안 함
+
+  방법 B: 각 Spot가 자신의 이웃 목록 보유 ✅ (채택)
+  - 각 Spot Inspector에서 이웃 Spot 드래그
+  - 장점: 해당 Spot를 선택하면 연결 관계가 바로 보임
+  - 단점: 양방향 연결 시 양쪽 모두 수동 등록 필요
+  → ✅ 채택 (관리가 직관적)
+
+================================================================
+f. 진행 순서
+================================================================
+
+  ══════════════════════════════════════════════════════
+  [ PHASE 1 ] Spots.cs 작성
+  ══════════════════════════════════════════════════════
+
+  □ 1-1. SpotType enum 정의
+         HQ / Incident / Unselected / Selected / Completed
+
+  □ 1-2. SpotVisualConfig (내부 클래스) 정의
+         SpotType type, Color color, Sprite sprite (nullable)
+
+  □ 1-3. Spot 핵심 필드 추가
+         [SerializeField] SpotType _spotType
+         [SerializeField] List<Spot> _neighbors
+         [SerializeField] Image _icon
+         [SerializeField] SpotVisualConfig[] _visualConfigs
+
+  □ 1-4. SetType(SpotType) 메서드 구현
+         _spotType = type → ApplyVisual() 호출
+
+  □ 1-5. ApplyVisual() 구현
+         _visualConfigs에서 현재 타입에 맞는 설정 찾기
+         → _icon.color / _icon.sprite 적용
+
+  □ 1-6. GetNeighbors() 메서드 추가
+         return _neighbors (PathFinderManager에서 읽기용)
+
+  ══════════════════════════════════════════════════════
+  [ PHASE 2 ] PathFinderManager.cs 작성
+  ══════════════════════════════════════════════════════
+
+  □ 2-1. 필드 정의
+         [SerializeField] Spot _hq              ← 본부 Spot
+         [SerializeField] Image _linePrefab     ← 선 프리팹
+         [SerializeField] Transform _lineParent ← 선들의 부모 Transform
+         [SerializeField] Color _defaultLineColor
+         [SerializeField] Color _highlightLineColor
+
+  □ 2-2. Start(): 씬 내 모든 Spot 수집 및 연결선 생성
+         FindObjectsByType<Spot>() → _allSpots
+         모든 Spot의 neighbors를 순회하며 선 생성 (중복 방지)
+
+  □ 2-3. CreateConnectionLine(Spot a, Spot b)
+         두 RectTransform 사이에 Image를 생성하여 선 표시
+         위치: (a.pos + b.pos) / 2
+         너비: Vector2.Distance(a.pos, b.pos)
+         높이: lineThickness (고정값)
+         회전: Mathf.Atan2(delta.y, delta.x) * Rad2Deg
+
+  □ 2-4. GetPath(Spot from, Spot to) → List<Spot>
+         BFS 구현 (Queue<Spot> 사용)
+         경로 없으면 빈 리스트 반환
+
+  □ 2-5. HighlightPath(List<Spot> path)
+         경로 위의 선(ConnectionLine)만 _highlightLineColor로 변경
+
+  □ 2-6. ClearHighlight()
+         모든 선을 _defaultLineColor로 복원
+
+  ══════════════════════════════════════════════════════
+  [ PHASE 3 ] Hierarchy 구성 (Unity Editor 수동)
+  ══════════════════════════════════════════════════════
+
+  □ 3-1. Canvas 하위에 [MapScreen] 오브젝트 생성
+         PathFinderManager.cs 부착
+
+  □ 3-2. [MapScreen] 하위에 [LineParent] 빈 오브젝트 생성
+         선들이 Instantiate될 부모 (Spots 뒤에 배치되도록 정렬)
+
+  □ 3-3. 건물 Spot 오브젝트 3개 이상 생성 (테스트용)
+         각각 Spot.cs 부착, SpotType 설정, Image 연결
+
+  □ 3-4. 각 Spot의 _neighbors에 이웃 Spot 드래그 연결
+
+  □ 3-5. PathFinderManager Inspector 연결
+         _hq → 본부 Spot 드래그
+         _linePrefab → 선 Image 프리팹 드래그
+         _lineParent → [LineParent] 드래그
+
+  ══════════════════════════════════════════════════════
+  [ PHASE 4 ] 선 프리팹 생성 (Unity Editor 수동)
+  ══════════════════════════════════════════════════════
+
+  □ 4-1. 빈 오브젝트 생성 → Image 컴포넌트 추가
+         Width: 100, Height: 4 (두께 기본값)
+         Pivot: (0.5, 0.5), Anchor: Center
+
+  □ 4-2. Assets/Prefabs/StrategyGame/UI/ConnectionLine.prefab 으로 저장
+
+  ══════════════════════════════════════════════════════
+  [ PHASE 5 ] 동작 확인
+  ══════════════════════════════════════════════════════
+
+  □ 5-1. Play → Spot 간 연결선이 Canvas에 표시되는지 확인
+
+  □ 5-2. Spot.SetType() 호출 → 색상/스프라이트 변경 확인
+
+  □ 5-3. PathFinderManager.GetPath() 결과 Console 출력 확인
+
+================================================================
+g. 변경 위치 및 내용
+================================================================
+
+  ─────────────────────────────────────────────────────────────
+  [PHASE 1] Spots.cs 전체 구조
+  ─────────────────────────────────────────────────────────────
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/Spots.cs
+
+  ┌─────────────────────────────────────────────────────────┐
+  │ public enum SpotType                                    │
+  │ {                                                       │
+  │     HQ,          // 본부                                │
+  │     Incident,    // 사건 발생 건물                      │
+  │     Unselected,  // 선택 안 된 건물 (미션 만료)         │
+  │     Selected,    // 선택된 건물 (미션 진행 중)          │
+  │     Completed    // 사건 완료 건물                      │
+  │ }                                                       │
+  │                                                         │
+  │ [System.Serializable]                                   │
+  │ public class SpotVisualConfig                           │
+  │ {                                                       │
+  │     public SpotType type;                               │
+  │     public Color color = Color.white;                   │
+  │     public Sprite sprite;   // null이면 스프라이트 유지 │
+  │ }                                                       │
+  │                                                         │
+  │ public class Spot : MonoBehaviour                       │
+  │ {                                                       │
+  │     [SerializeField] SpotType _spotType;                │
+  │     [SerializeField] List<Spot> _neighbors;             │
+  │     [SerializeField] Image _icon;                       │
+  │     [SerializeField] SpotVisualConfig[] _visualConfigs; │
+  │                                                         │
+  │     public SpotType SpotType => _spotType;              │
+  │     public List<Spot> Neighbors => _neighbors;          │
+  │                                                         │
+  │     void Start() => ApplyVisual();                      │
+  │                                                         │
+  │     public void SetType(SpotType type)                  │
+  │     {                                                   │
+  │         _spotType = type;                               │
+  │         ApplyVisual();                                  │
+  │     }                                                   │
+  │                                                         │
+  │     void ApplyVisual()                                  │
+  │     {                                                   │
+  │         foreach (var config in _visualConfigs)          │
+  │         {                                               │
+  │             if (config.type != _spotType) continue;     │
+  │             _icon.color = config.color;                 │
+  │             if (config.sprite != null)                  │
+  │                 _icon.sprite = config.sprite;           │
+  │             return;                                     │
+  │         }                                               │
+  │     }                                                   │
+  │ }                                                       │
+  └─────────────────────────────────────────────────────────┘
+
+  ─────────────────────────────────────────────────────────────
+  [PHASE 2] PathFinderManager.cs 전체 구조
+  ─────────────────────────────────────────────────────────────
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/PathFinderManager.cs
+
+  ┌─────────────────────────────────────────────────────────┐
+  │ public class PathFinderManager : MonoBehaviour          │
+  │ {                                                       │
+  │     [SerializeField] Spot _hq;                          │
+  │     [SerializeField] Image _linePrefab;                 │
+  │     [SerializeField] Transform _lineParent;             │
+  │     [SerializeField] Color _defaultLineColor            │
+  │                          = new Color(1,1,1,0.3f);       │
+  │     [SerializeField] Color _highlightLineColor          │
+  │                          = Color.yellow;                │
+  │                                                         │
+  │     // 연결선 데이터: 두 Spot 쌍 → Image                │
+  │     Dictionary<(Spot,Spot), Image> _connectionLines;    │
+  │                                                         │
+  │     void Start()                                        │
+  │     {                                                   │
+  │         _connectionLines = new();                       │
+  │         var allSpots = FindObjectsByType<Spot>(...);    │
+  │         HashSet<(Spot,Spot)> created = new();           │
+  │         foreach (var spot in allSpots)                  │
+  │             foreach (var neighbor in spot.Neighbors)    │
+  │             {                                           │
+  │                 var key = MakeKey(spot, neighbor);      │
+  │                 if (created.Contains(key)) continue;    │
+  │                 created.Add(key);                       │
+  │                 var line = CreateConnectionLine(spot, neighbor);  │
+  │                 _connectionLines[key] = line;           │
+  │             }                                           │
+  │     }                                                   │
+  │                                                         │
+  │     Image CreateConnectionLine(Spot a, Spot b)          │
+  │     {                                                   │
+  │         var ra = a.GetComponent<RectTransform>();       │
+  │         var rb = b.GetComponent<RectTransform>();       │
+  │         Vector2 posA = ra.anchoredPosition;             │
+  │         Vector2 posB = rb.anchoredPosition;             │
+  │         Vector2 mid  = (posA + posB) * 0.5f;           │
+  │         float dist   = Vector2.Distance(posA, posB);   │
+  │         float angle  = Mathf.Atan2(posB.y - posA.y,   │
+  │                                    posB.x - posA.x)    │
+  │                        * Mathf.Rad2Deg;                 │
+  │                                                         │
+  │         var line = Instantiate(_linePrefab, _lineParent);│
+  │         var rt   = line.GetComponent<RectTransform>(); │
+  │         rt.anchoredPosition = mid;                      │
+  │         rt.sizeDelta = new Vector2(dist, rt.sizeDelta.y);│
+  │         rt.localEulerAngles = new Vector3(0, 0, angle); │
+  │         line.color = _defaultLineColor;                 │
+  │         return line;                                    │
+  │     }                                                   │
+  │                                                         │
+  │     public List<Spot> GetPath(Spot from, Spot to)       │
+  │     {                                                   │
+  │         // BFS                                          │
+  │         var prev = new Dictionary<Spot, Spot>();        │
+  │         var queue = new Queue<Spot>();                  │
+  │         queue.Enqueue(from);                            │
+  │         prev[from] = null;                              │
+  │                                                         │
+  │         while (queue.Count > 0)                         │
+  │         {                                               │
+  │             var cur = queue.Dequeue();                  │
+  │             if (cur == to) break;                       │
+  │             foreach (var nb in cur.Neighbors)           │
+  │                 if (!prev.ContainsKey(nb))              │
+  │                 { prev[nb] = cur; queue.Enqueue(nb); }  │
+  │         }                                               │
+  │                                                         │
+  │         if (!prev.ContainsKey(to)) return new();       │
+  │                                                         │
+  │         var path = new List<Spot>();                    │
+  │         for (var n = to; n != null; n = prev[n])        │
+  │             path.Insert(0, n);                          │
+  │         return path;                                    │
+  │     }                                                   │
+  │                                                         │
+  │     public void HighlightPath(List<Spot> path)          │
+  │     {                                                   │
+  │         ClearHighlight();                               │
+  │         for (int i = 0; i < path.Count - 1; i++)        │
+  │         {                                               │
+  │             var key = MakeKey(path[i], path[i+1]);      │
+  │             if (_connectionLines.TryGetValue(key, out var img))│
+  │                 img.color = _highlightLineColor;        │
+  │         }                                               │
+  │     }                                                   │
+  │                                                         │
+  │     public void ClearHighlight()                        │
+  │     {                                                   │
+  │         foreach (var img in _connectionLines.Values)    │
+  │             img.color = _defaultLineColor;              │
+  │     }                                                   │
+  │                                                         │
+  │     (Spot, Spot) MakeKey(Spot a, Spot b)                │
+  │         => a.GetInstanceID() < b.GetInstanceID()        │
+  │            ? (a, b) : (b, a);                           │
+  │ }                                                       │
+  └─────────────────────────────────────────────────────────┘
+
+  ─────────────────────────────────────────────────────────────
+  [PHASE 3] Hierarchy 구성
+  ─────────────────────────────────────────────────────────────
+
+  Canvas (Screen Space - Overlay)
+  └── [MapScreen]                  ← PathFinderManager.cs 부착
+      ├── [LineParent]             ← 선 Image들의 부모 (Spots보다 먼저 렌더)
+      ├── Spot_HQ                  ← Spot.cs, SpotType = HQ
+      ├── Spot_Building_A          ← Spot.cs, SpotType = Incident (테스트)
+      └── Spot_Building_B          ← Spot.cs, SpotType = Unselected (테스트)
+
+  Inspector 연결 (PathFinderManager):
+    _hq             → Spot_HQ 드래그
+    _linePrefab     → ConnectionLine.prefab 드래그
+    _lineParent     → [LineParent] 드래그
+
+  Inspector 연결 (각 Spot):
+    _icon           → 자신의 Image 컴포넌트
+    _neighbors      → 연결할 다른 Spot들 드래그
+    _visualConfigs  → 5개 설정 (각 SpotType별 색상)
+
+  ─────────────────────────────────────────────────────────────
+  SpotVisualConfig 기본 색상 제안
+  ─────────────────────────────────────────────────────────────
+    HQ         → 파란색  (0.2, 0.4, 1.0, 1.0)
+    Incident   → 빨간색  (1.0, 0.2, 0.2, 1.0)
+    Unselected → 회색    (0.5, 0.5, 0.5, 1.0)
+    Selected   → 초록색  (0.2, 1.0, 0.3, 1.0)
+    Completed  → 노란색  (1.0, 0.9, 0.2, 1.0)
+
+================================================================
+h. 주의할 점
+================================================================
+
+  ① Spots.cs 파일명과 클래스명
+  ──────────────────────────────────────────────────────────────
+  현재 Spots.cs의 클래스명이 "Spot"으로 되어 있음.
+  Unity에서 파일명과 클래스명이 다르면 컴파일 에러 발생.
+  → 파일명: Spots.cs  /  클래스명: Spot  중 하나로 통일해야 함.
+  → 권장: 파일명을 Spot.cs로 변경하거나 클래스명을 Spots로 변경.
+  ★ 이 계획에서는 클래스명 "Spot"을 사용하고 파일명도 Spot.cs로 변경 권장.
+
+  ② 연결선 중복 생성 방지 (MakeKey)
+  ──────────────────────────────────────────────────────────────
+  A→B, B→A가 모두 _neighbors에 등록되어 있으면
+  같은 선이 2개 생성될 수 있음.
+  MakeKey()에서 InstanceID 기준으로 정렬된 쌍을 키로 사용하면 방지 가능.
+
+  ③ FindObjectsByType 호출 시점
+  ──────────────────────────────────────────────────────────────
+  Start()에서 호출하므로 모든 Spot가 Awake()를 마쳤음이 보장됨.
+  PathFinderManager를 Script Execution Order에서 Spot보다 늦게 실행되도록
+  설정하거나, Start()에서만 호출하면 순서 문제 없음.
+
+  ④ [LineParent]를 Spots보다 앞에 배치해야 선이 뒤에 그려짐
+  ──────────────────────────────────────────────────────────────
+  Unity UI는 Hierarchy 위에서 아래 순서로 렌더링.
+  선이 건물 아이콘 뒤에 보이려면 [LineParent]가 Spot 오브젝트들보다
+  Hierarchy에서 위에 위치해야 함.
+
+  ⑤ RectTransform 기반임을 주의 (anchoredPosition 사용)
+  ──────────────────────────────────────────────────────────────
+  CreateConnectionLine에서 WorldSpace Position이 아닌
+  anchoredPosition을 사용해야 Canvas 내 올바른 좌표 계산 가능.
+  Spot 오브젝트들의 Anchor와 Pivot을 일관되게 설정해 둘 것.
+  (권장: Anchor = 중앙, Pivot = 0.5, 0.5)
+
+  ⑥ BFS는 양방향 연결을 전제함
+  ──────────────────────────────────────────────────────────────
+  GetPath()의 BFS는 각 Spot의 _neighbors를 따라가므로
+  단방향 연결(A→B는 있지만 B→A는 없음)이면 한쪽 방향만 경로 계산됨.
+  전략 게임 맵에서 모든 길이 양방향이라면 양쪽 Spot 모두에 상대방 등록 필요.
+
+  ⑦ 향후 MissionUnit 연동 방향
+  ──────────────────────────────────────────────────────────────
+  나중에 미션 시스템과 연결할 때:
+    MissionUnit.OnMissionAvailable → 해당 Spot.SetType(Incident)
+    MissionUnit.OnMissionAccepted  → 해당 Spot.SetType(Selected)
+    MissionUnit.OnMissioMiss       → 해당 Spot.SetType(Unselected)
+    MissionUnit.OnMissionCompleted → 해당 Spot.SetType(Completed)
+  위 연결은 별도 UI 매니저(예: UIMapManager)에서 처리 예정.
+
+================================================================

@@ -1,0 +1,190 @@
+================================================================
+변경완료_26.04.16_17.05_Spots_PathFinderManager_건물시스템
+================================================================
+
+[ 완료일 ] 2026-04-16 KST
+[ 원본 계획 ] 변경계획_26.04.16_17.05_Spots_PathFinderManager_건물시스템.txt
+[ 대상 씬 ] Assets/Scenes/Strategy game.unity
+
+================================================================
+1. 현재 상태와 c 섹션 비교 결과
+================================================================
+
+  현재 상태가 계획 c 섹션과 정확히 일치 → 변경 진행
+
+  확인 항목:
+    ✅ Spots.cs — 빈 Unity 템플릿, 클래스명 Spot
+    ✅ PathFinderManager.cs — 빈 Unity 템플릿
+    ✅ Node.cs — 삭제됨
+
+================================================================
+2. 변경 내용
+================================================================
+
+  ─────────────────────────────────────────────────────────────
+  파일명 변경
+  ─────────────────────────────────────────────────────────────
+  Spots.cs → Spot.cs  (클래스명 Spot과 파일명 일치, 주의사항 ① 반영)
+
+  ─────────────────────────────────────────────────────────────
+  [PHASE 1] Spot.cs
+  ─────────────────────────────────────────────────────────────
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs
+
+  [ 변경 전 ]
+  ──────────────────────────────────────────────────────────────
+  using UnityEngine;
+
+  public class Spot : MonoBehaviour
+  {
+      void Start() { }
+      void Update() { }
+  }
+
+  [ 변경 후 ]
+  ──────────────────────────────────────────────────────────────
+  using System.Collections.Generic;
+  using UnityEngine;
+  using UnityEngine.UI;
+
+  public enum SpotType
+  {
+      HQ, Incident, Unselected, Selected, Completed
+  }
+
+  [System.Serializable]
+  public class SpotVisualConfig
+  {
+      public SpotType type;
+      public Color color = Color.white;
+      public Sprite sprite;
+  }
+
+  public class Spot : MonoBehaviour
+  {
+      [SerializeField] SpotType _spotType;
+      [SerializeField] List<Spot> _neighbors;
+      [SerializeField] Image _icon;
+      [SerializeField] SpotVisualConfig[] _visualConfigs;
+
+      public SpotType SpotType => _spotType;
+      public List<Spot> Neighbors => _neighbors;
+
+      void Start() => ApplyVisual();
+
+      public void SetType(SpotType type) { _spotType = type; ApplyVisual(); }
+
+      void ApplyVisual()
+      {
+          foreach (var config in _visualConfigs)
+          {
+              if (config.type != _spotType) continue;
+              _icon.color = config.color;
+              if (config.sprite != null) _icon.sprite = config.sprite;
+              return;
+          }
+      }
+  }
+
+  ─────────────────────────────────────────────────────────────
+  [PHASE 2] PathFinderManager.cs
+  ─────────────────────────────────────────────────────────────
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/PathFinderManager.cs
+
+  [ 변경 전 ]
+  ──────────────────────────────────────────────────────────────
+  using UnityEngine;
+
+  public class PathFinderManager : MonoBehaviour
+  {
+      void Start() { }
+      void Update() { }
+  }
+
+  [ 변경 후 ]
+  ──────────────────────────────────────────────────────────────
+  using System.Collections.Generic;
+  using UnityEngine;
+  using UnityEngine.UI;
+
+  public class PathFinderManager : MonoBehaviour
+  {
+      [SerializeField] Spot _hq;
+      [SerializeField] Image _linePrefab;
+      [SerializeField] Transform _lineParent;
+      [SerializeField] Color _defaultLineColor = new Color(1f,1f,1f,0.3f);
+      [SerializeField] Color _highlightLineColor = Color.yellow;
+
+      Dictionary<(Spot,Spot), Image> _connectionLines;
+
+      void Start() { ... 모든 Spot 수집 → 연결선 생성 ... }
+      Image CreateConnectionLine(Spot a, Spot b) { ... RectTransform 기반 선 생성 ... }
+      public List<Spot> GetPath(Spot from, Spot to) { ... BFS ... }
+      public void HighlightPath(List<Spot> path) { ... }
+      public void ClearHighlight() { ... }
+      (Spot,Spot) MakeKey(Spot a, Spot b) { ... InstanceID 기준 정렬 ... }
+  }
+
+================================================================
+3. 작동 흐름
+================================================================
+
+  [ 씬 시작 시 ]
+    1. PathFinderManager.Start() 실행
+    2. FindObjectsByType<Spot>() 로 씬 내 모든 Spot 수집
+    3. 각 Spot의 _neighbors를 순회
+    4. MakeKey()로 중복 체크 → 처음 보는 쌍만 CreateConnectionLine() 호출
+    5. 두 Spot의 anchoredPosition 중간점에 Image 생성, 거리=너비, 각도=회전
+    6. _connectionLines 딕셔너리에 (SpotA, SpotB) → Image 저장
+
+  [ 각 Spot 시작 시 ]
+    1. Spot.Start() → ApplyVisual() 실행
+    2. _visualConfigs 에서 현재 _spotType 에 맞는 설정 검색
+    3. _icon.color, _icon.sprite 적용
+
+  [ 상태 변경 시 ]
+    SetType(SpotType) 호출 → _spotType 갱신 → ApplyVisual() 재실행
+
+  [ 경로 계산 시 ]
+    GetPath(from, to) → BFS 탐색 → List<Spot> 반환
+    경로 없으면 빈 리스트 반환
+
+  [ 경로 하이라이트 시 ]
+    HighlightPath(path) → ClearHighlight() 먼저 실행 → 경로 위 선만 _highlightLineColor
+
+================================================================
+4. 주의할 점 (향후 작업 시)
+================================================================
+
+  ① [PHASE 3] Hierarchy 구성은 Unity Editor에서 수동 작업 필요
+     Canvas → [MapScreen](PathFinderManager 부착)
+              ├── [LineParent] ← 선이 Spot보다 위에 오도록 Hierarchy 상단에 배치
+              ├── Spot_HQ
+              ├── Spot_Building_A
+              └── Spot_Building_B
+
+  ② [PHASE 4] ConnectionLine 프리팹 생성 필요
+     빈 오브젝트 → Image 추가 → Width:100, Height:4
+     → Assets/Prefabs/StrategyGame/UI/ConnectionLine.prefab 저장
+
+  ③ 각 Spot Inspector 설정 필요
+     _icon: 자신의 Image 컴포넌트
+     _neighbors: 연결할 Spot들 드래그
+     _visualConfigs: 5개 설정 (SpotType별 색상)
+       HQ        → (0.2, 0.4, 1.0, 1.0) 파란색
+       Incident  → (1.0, 0.2, 0.2, 1.0) 빨간색
+       Unselected→ (0.5, 0.5, 0.5, 1.0) 회색
+       Selected  → (0.2, 1.0, 0.3, 1.0) 초록색
+       Completed → (1.0, 0.9, 0.2, 1.0) 노란색
+
+  ④ 양방향 연결 시 양쪽 Spot 모두에 상대방 등록 필요
+     (BFS는 _neighbors 방향만 따라가므로)
+
+  ⑤ 향후 MissionUnit 연동 예정
+     OnMissionAvailable → Spot.SetType(Incident)
+     OnMissionAccepted  → Spot.SetType(Selected)
+     OnMissionMiss      → Spot.SetType(Unselected)
+     OnMissionCompleted → Spot.SetType(Completed)
+     → 별도 UIMapManager 에서 처리 예정
+
+================================================================
