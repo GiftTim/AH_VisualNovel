@@ -1,0 +1,331 @@
+================================================================
+  변경계획_26.04.17_15.15
+  StrategyGame - Canvas/Panel 구성 및 HQ-Building 간 LineRenderer 연결
+================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  목차
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 구현 방식 (선택된 방법)
+  e. 해당 방식을 선택한 이유
+  f. 진행 순서
+  g. 변경/생성 대상 상세
+  h. 주의할 점
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  b. 요구한 기능
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. Canvas 설정
+     - Render Mode : Screen Space - Camera
+     - Render Camera : Render Type이 Base인 카메라 사용
+
+  2. 패널 구성 (레이어 순서 위에서 아래로 렌더)
+     - Panel_1_Background : 배경 이미지용
+     - Panel_2_Building   : 건물 배치용
+     - Panel_3_Character  : 캐릭터 배치용 (추후 사용)
+
+  3. Panel_2_Building 내부 구성
+     - Image HQ    : 한 개만 존재하는 본부 건물 이미지 (사각형)
+     - Image Building (복수) : 나머지 일반 건물 이미지들 (사각형)
+
+  4. LineRenderer 연결
+     - HQ의 RectTransform 중심점 ↔ 각 Building의 RectTransform 중심점
+     - 각 연결마다 LineRenderer 오브젝트 1개 생성
+     - 총 선 개수 = 일반 Building 수 (N개)
+
+  5. 미구현 (이번 범위 제외)
+     - 선 위로 Character가 이동하는 기능
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  c. 현재 상황 및 코드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [씬]
+  - StrategyGame.unity 씬 존재
+  - Main Menu.unity, VisualNovel.unity 와 분리된 독립 씬
+
+  [스크립트]
+  - Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs (유일한 StrategyGame 스크립트)
+
+  [Spot.cs 현재 코드]
+  -------------------------------------------------------
+  using Microsoft.Unity.VisualStudio.Editor;
+  using UnityEngine;
+
+  public enum BuildingType
+  {
+      HQ,      // 본부건물
+      Normal,  // 기본 건물
+  }
+
+  public enum BuildingState
+  {
+      Idle,        // 대기 중인 건물
+      Incident,    // 사건 발생 건물
+      Unselected,  // 선택 안 된 건물 (미션 만료)
+      Selected,    // 선택된 건물 (미션 진행 중)
+      Completed    // 사건 완료 건물
+  }
+
+  [System.Serializable]
+  public class SpotVisualConfig
+  {
+      public BuildingType _buildingType;
+      public BuildingState _buildingState;
+      public Image _icon;
+      public Color color = Color.white;
+      public Sprite sprite;
+  }
+
+  public class Spot : MonoBehaviour
+  {
+      [SerializeField] BuildingType _spotType;
+      public BuildingType SpotType => _spotType;
+
+      public void SetType(BuildingType type)
+      {
+          _spotType = type;
+      }
+  }
+  -------------------------------------------------------
+
+  [문제점]
+  - SpotVisualConfig 내 Image 타입이 UnityEngine.UI.Image가 아닌
+    Microsoft.Unity.VisualStudio.Editor.Image를 참조 중
+    → using 구문 충돌로 컴파일 에러 가능성 있음
+
+  [LineRenderer 연결 스크립트]
+  - 아직 없음 (신규 생성 필요)
+
+  [Canvas / Panel]
+  - 아직 없음 (신규 생성 필요)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  d. 구현 방식 (선택된 방법)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [Unity 계층 구조]
+
+  Camera (Base, Render Camera)
+  Canvas (Screen Space - Camera, Render Camera = 위 카메라)
+  ├── Panel_1_Background
+  ├── Panel_2_Building
+  │   ├── Image_HQ           (BuildingType.HQ, Spot 컴포넌트)
+  │   ├── Image_Building_01  (BuildingType.Normal, Spot 컴포넌트)
+  │   ├── Image_Building_02
+  │   └── ...
+  └── Panel_3_Character
+
+  LineContainer (Canvas 밖 또는 Panel_2_Building 아래, LineRenderer들의 부모)
+  ├── Line_HQ_to_Building_01  (LineRenderer, 씬에 미리 배치)
+  ├── Line_HQ_to_Building_02  (LineRenderer, 씬에 미리 배치)
+  └── ...  (건물 수만큼 미리 생성)
+
+  [LineRenderer 방식]
+
+  - BuildingLineConnector.cs 스크립트를 신규 생성
+  - 건물 수는 사전에 고정 설정 (씬에 미리 배치)
+  - Start() 또는 Awake()에서
+      1. Inspector에 미리 할당된 HQ Spot과 Normal Spot 목록을 참조
+      2. 각 Spot의 월드 위치를 RectTransform.position (또는
+         RectTransformUtility.LocalPointToWorldPoint) 으로 가져옴
+      3. 씬에 미리 배치된 LineRenderer 오브젝트 목록을 Inspector에서 할당
+      4. LineRenderer.SetPosition(0, hqWorldPos), SetPosition(1, buildingWorldPos)
+      5. LineRenderer.useWorldSpace = true
+
+  - Spot.cs : using Microsoft.Unity.VisualStudio.Editor 제거,
+              UnityEngine.UI 명시적 추가로 Image 참조 수정
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  e. 해당 방식을 선택한 이유
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [LineRenderer vs UI Line (Canvas DrawLine)]
+  - LineRenderer
+    * 장점 : 두께·색상·텍스처를 Material로 자유롭게 제어 가능
+             AnimationCurve로 선 폭 변화 연출 가능
+             추후 캐릭터 이동 경로 시각화에 자연스럽게 연동 가능
+    * 단점 : ScreenSpace-Camera Canvas와 좌표계가 달라
+             월드 좌표 변환이 필요 (RectTransformUtility 사용)
+
+  - UI Image (Sliced/Tiled) 로 선을 흉내내는 방식
+    * 장점 : UI 좌표계 안에서 단순
+    * 단점 : 각도 계산이 번거롭고, 두께 제어 불편,
+             추후 캐릭터 이동 연동 시 LineRenderer로 교체 필요성 높음
+
+  → 추후 캐릭터 이동 연동을 고려할 때 LineRenderer가 더 확장성 있으므로 선택
+
+  [동적 생성 vs 씬에 미리 배치]
+  - 동적 생성
+    * Building 수가 달라질 때 코드 수정 없이 자동 대응
+    * Inspector에서 Building 오브젝트만 배치하면 됨
+    * 단점 : 씬 구조가 런타임에 결정되어 디버깅·확인이 어려움
+  - 씬 미리 배치 (채택)
+    * 건물 수를 기획 단계에서 고정하여 씬에 직접 배치
+    * LineRenderer 오브젝트도 씬에 미리 생성해 Inspector에서 연결
+    * 씬 계층 구조를 에디터에서 바로 확인·수정 가능
+    * Building 수 변경 시 씬에서 오브젝트와 Inspector 연결만 추가/삭제하면 됨
+
+  → 건물 수가 고정되어 있으므로 씬 미리 배치 방식 채택
+
+  [Screen Space - Camera vs Screen Space - Overlay vs World Space]
+  - Screen Space - Camera
+    * 카메라 기준 렌더링으로 Post-Processing 효과 적용 가능
+    * LineRenderer(월드 공간)와 동일 카메라를 공유하므로 좌표 변환 일관성 확보
+  - Screen Space - Overlay
+    * 가장 단순하나 LineRenderer와 깊이 정렬이 분리됨
+  - World Space
+    * 해상도 독립적이지만 UI 배치가 까다로움
+
+  → Screen Space - Camera 선택
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  f. 진행 순서
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  STEP 1. Spot.cs 수정
+          - using Microsoft.Unity.VisualStudio.Editor 제거
+          - using UnityEngine.UI 추가
+          → Image 타입 참조 충돌 해소
+
+  STEP 2. StrategyGame 씬 열기
+          - Camera 오브젝트 확인/생성
+            · Render Type → Base 로 설정
+
+  STEP 3. Canvas 생성
+          - Render Mode → Screen Space - Camera
+          - Render Camera → STEP 2의 카메라 할당
+          - Sorting Layer, Order in Layer 확인
+
+  STEP 4. 패널 3개 생성 (Canvas 자식)
+          - Panel_1_Background  (맨 아래 SiblingIndex)
+          - Panel_2_Building
+          - Panel_3_Character   (맨 위 SiblingIndex)
+          - 각 패널 : Anchor = Stretch/Stretch, Offset = 0
+
+  STEP 5. Panel_2_Building 내부 오브젝트 배치
+          - Image_HQ 생성 → Spot 컴포넌트 부착, SpotType = HQ
+          - Image_Building_XX 생성 → Spot 컴포넌트 부착, SpotType = Normal
+          - 각 Image 위치를 원하는 좌표에 배치
+
+  STEP 6. LineContainer 및 LineRenderer 오브젝트 씬에 미리 배치
+          - 씬 루트에 LineContainer 빈 오브젝트 생성
+          - 건물 수만큼 LineRenderer 오브젝트를 LineContainer 아래 생성
+            예) Line_HQ_to_Building_01, Line_HQ_to_Building_02 ...
+          - 각 LineRenderer : useWorldSpace = true, Points Count = 2
+
+  STEP 7. BuildingLineConnector.cs 신규 작성
+          - 역할 : Inspector에서 할당된 HQ·Building·LineRenderer를 연결
+          - 주요 필드 (Inspector에서 직접 할당)
+              [SerializeField] Spot hqSpot                   // HQ 오브젝트
+              [SerializeField] Spot[] buildingSpots          // Normal Building 배열
+              [SerializeField] LineRenderer[] lineRenderers  // 선 배열 (건물 수와 동일)
+          - 주요 로직
+              Start : buildingSpots[i] 월드 위치 → lineRenderers[i].SetPosition(0/1)
+          - 배열 길이 불일치 시 Debug.LogError 출력 후 중단
+
+  STEP 8. 씬에 BuildingLineConnector 오브젝트 배치 및 Inspector 연결
+          - hqSpot, buildingSpots 배열, lineRenderers 배열을 Inspector에서 모두 할당
+
+  STEP 8. 플레이 모드 테스트
+          - HQ 중심 ↔ 각 Building 중심 사이 선 확인
+          - 선 굵기·색상 Material로 조정
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  g. 어디가 어떤 식으로 변경되는지
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [수정]
+  ┌─────────────────────────────────────────────────────────┐
+  │ 파일                                                    │
+  │   Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs   │
+  │ 변경 내용                                               │
+  │   - using Microsoft.Unity.VisualStudio.Editor  →  제거  │
+  │   - using UnityEngine.UI                       →  추가  │
+  └─────────────────────────────────────────────────────────┘
+
+  [신규 생성 - 스크립트]
+  ┌─────────────────────────────────────────────────────────┐
+  │ 파일                                                    │
+  │   Assets/Scripts/StrategyGame/Core/                     │
+  │       BuildingLineConnector.cs                          │
+  │ 역할                                                    │
+  │   Spot(HQ) 과 Spot(Normal) 목록을 읽어                  │
+  │   각 Normal 건물마다 LineRenderer 오브젝트를 동적 생성,  │
+  │   HQ 중심 ↔ Building 중심 좌표를 월드 좌표로 변환 후 설정│
+  └─────────────────────────────────────────────────────────┘
+
+  [신규 생성 - Unity 씬 오브젝트]
+  ┌─────────────────────────────────────────────────────────────┐
+  │ 오브젝트명             │ 타입/컴포넌트          │ 위치       │
+  ├────────────────────────┼────────────────────────┼───────────┤
+  │ Main Camera            │ Camera (Base)          │ 씬 루트    │
+  │ Canvas                 │ Canvas (SSC)           │ 씬 루트    │
+  │  ├ Panel_1_Background  │ RectTransform, Image   │ Canvas 자식│
+  │  ├ Panel_2_Building    │ RectTransform          │ Canvas 자식│
+  │  │  ├ Image_HQ         │ Image, Spot(HQ)        │ Building 자식│
+  │  │  ├ Image_Building_01│ Image, Spot(Normal)    │ Building 자식│
+  │  │  └ ...              │                        │            │
+  │  └ Panel_3_Character   │ RectTransform          │ Canvas 자식│
+  │ LineContainer               │ Transform              │ 씬 루트       │
+  │  ├ Line_HQ_to_Building_01  │ LineRenderer (미리배치) │ 씬 편집 시 생성│
+  │  ├ Line_HQ_to_Building_02  │ LineRenderer (미리배치) │ 씬 편집 시 생성│
+  │  └ ... (건물 수만큼)        │                        │               │
+  │ BuildingLineConnector       │ BuildingLineConnector  │ 씬 루트       │
+  └────────────────────────┴────────────────────────┴───────────┘
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  h. 주의할 점
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. [좌표계 변환]
+     LineRenderer는 월드 공간(World Space)에서 동작하고,
+     Canvas(Screen Space - Camera)의 RectTransform은 캔버스 로컬 좌표계를 사용한다.
+     → RectTransformUtility.LocalPointToWorldPoint 또는
+       RectTransform.position (월드 좌표 직접 접근) 을 사용해야 한다.
+     → RectTransform.anchoredPosition 을 그대로 쓰면 선이 엉뚱한 위치에 그려진다.
+
+  2. [Canvas의 Render Camera 미할당 시 오작동]
+     Screen Space - Camera 모드에서 Render Camera를 비워두면
+     Canvas가 Screen Space - Overlay처럼 동작하여
+     LineRenderer와 렌더 순서가 어긋날 수 있다.
+     → 반드시 Camera 오브젝트를 할당할 것.
+
+  3. [LineRenderer의 Sorting Layer / Order]
+     LineRenderer는 기본적으로 Default Sorting Layer에 배치된다.
+     Canvas UI 위에 그릴지 아래에 그릴지에 따라
+     LineRenderer의 Sorting Layer와 Order in Layer를 조정해야 한다.
+     → Panel_2_Building 위, Panel_3_Character 아래에 표시하려면
+       Canvas의 Order in Layer 값 사이에 LineRenderer Order를 맞출 것.
+
+  4. [SpotVisualConfig 내 Image 타입 충돌]
+     현재 Spot.cs에 using Microsoft.Unity.VisualStudio.Editor 가 있어
+     Image가 UnityEngine.UI.Image가 아닌 에디터 전용 타입을 참조할 수 있음.
+     → Spot.cs 수정이 반드시 선행되어야 한다.
+
+  5. [HQ가 반드시 1개여야 하는 제약]
+     BuildingLineConnector는 HQ가 1개임을 가정하고 구현한다.
+     씬에 HQ가 0개이거나 2개 이상이면 Debug.LogError로 알리고 중단할 것.
+
+  6. [Building 수 변경 시 씬 편집 필요]
+     건물 수를 고정·미리 배치하는 방식이므로,
+     Building을 추가/삭제할 경우 씬에서 직접 오브젝트를 추가하고
+     BuildingLineConnector의 Inspector 배열도 함께 갱신해야 한다.
+     → buildingSpots 배열과 lineRenderers 배열의 길이를 항상 동일하게 유지할 것.
+
+  7. [Panel_3_Character는 이번에 기능 없음]
+     Panel_3_Character는 계층 구조만 생성하고 기능 스크립트는 붙이지 않는다.
+
+================================================================

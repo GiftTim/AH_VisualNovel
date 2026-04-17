@@ -1,0 +1,178 @@
+================================================================
+  변경완료_26.04.17_21.46
+  StrategyGame - BuildingLineConnector ExecuteAlways 적용
+  (Edit 모드에서 Waypoint 이동 시 LineRenderer 실시간 반영)
+================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  변경 파일
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Assets/Scripts/StrategyGame/Core/PathFinder/BuildingLineConnector.cs
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  변경 전 코드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  using UnityEngine;
+
+  [System.Serializable]
+  public class RoadPath
+  {
+      public Spot buildingSpot;
+      public LineRenderer lineRenderer;
+      public Transform[] waypoints;
+  }
+
+  public class BuildingLineConnector : MonoBehaviour
+  {
+      [SerializeField] private Spot _hqSpot;
+      [SerializeField] private RoadPath[] _roads;
+      [SerializeField] private float _lineZ = -1f;
+
+      private void Start()
+      {
+          Vector3 hqPos = _hqSpot.transform.position;
+          hqPos.z = _lineZ;
+
+          foreach (RoadPath road in _roads)
+          {
+              int count = 2 + road.waypoints.Length;
+              road.lineRenderer.useWorldSpace = true;
+              road.lineRenderer.positionCount = count;
+
+              road.lineRenderer.SetPosition(0, hqPos);
+
+              for (int i = 0; i < road.waypoints.Length; i++)
+              {
+                  Vector3 wp = road.waypoints[i].position;
+                  wp.z = _lineZ;
+                  road.lineRenderer.SetPosition(i + 1, wp);
+              }
+
+              Vector3 buildingPos = road.buildingSpot.transform.position;
+              buildingPos.z = _lineZ;
+              road.lineRenderer.SetPosition(count - 1, buildingPos);
+          }
+      }
+  }
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  변경 후 코드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  using UnityEngine;
+
+  [System.Serializable]
+  public class RoadPath
+  {
+      public Spot buildingSpot;
+      public LineRenderer lineRenderer;
+      public Transform[] waypoints;
+  }
+
+  [ExecuteAlways]
+  public class BuildingLineConnector : MonoBehaviour
+  {
+      [SerializeField] private Spot _hqSpot;
+      [SerializeField] private RoadPath[] _roads;
+      [SerializeField] private float _lineZ = -1f;
+
+      private void Update()
+      {
+          ApplyLines();
+      }
+
+      private void ApplyLines()
+      {
+          if (_hqSpot == null || _roads == null) return;
+
+          Vector3 hqPos = _hqSpot.transform.position;
+          hqPos.z = _lineZ;
+
+          foreach (RoadPath road in _roads)
+          {
+              if (road.lineRenderer == null || road.buildingSpot == null) continue;
+              if (road.waypoints == null) continue;
+
+              int count = 2 + road.waypoints.Length;
+              road.lineRenderer.useWorldSpace = true;
+              road.lineRenderer.positionCount = count;
+
+              road.lineRenderer.SetPosition(0, hqPos);
+
+              for (int i = 0; i < road.waypoints.Length; i++)
+              {
+                  if (road.waypoints[i] == null) continue;
+                  Vector3 wp = road.waypoints[i].position;
+                  wp.z = _lineZ;
+                  road.lineRenderer.SetPosition(i + 1, wp);
+              }
+
+              Vector3 buildingPos = road.buildingSpot.transform.position;
+              buildingPos.z = _lineZ;
+              road.lineRenderer.SetPosition(count - 1, buildingPos);
+          }
+      }
+  }
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  변경 내용 요약
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. [ExecuteAlways] 어트리뷰트 추가
+     - Edit 모드 + Play 모드 모두에서 Update() 실행되도록 변경
+
+  2. Start() 제거 → Update() + ApplyLines() 로 분리
+     - Update() : 매 프레임 ApplyLines() 호출
+     - ApplyLines() : 기존 Start() 로직 포함
+
+  3. null 체크 추가
+     - _hqSpot, _roads : 상단에서 먼저 체크
+     - road.lineRenderer, road.buildingSpot, road.waypoints : foreach 내 체크
+     - road.waypoints[i] : 개별 원소 체크
+     → Inspector 미연결 상태에서 에디터 NullReference 에러 방지
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  작동 흐름
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [Edit 모드]
+  1. Unity Editor가 열려 있는 동안 [ExecuteAlways]로 인해 Update() 매 프레임 실행
+  2. Scene 뷰에서 Waypoint 오브젝트 드래그
+  3. Update() → ApplyLines() 호출 → LineRenderer.SetPosition() 갱신
+  4. LineRenderer가 즉시 새 경로를 그림 (Play 불필요)
+  5. 경로 확정 후 씬 저장(Ctrl+S)
+
+  [Play 모드]
+  1. Play 진입 후에도 동일하게 Update() 실행
+  2. 경로가 실시간으로 유지됨
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  주의할 점
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. [Update() 성능]
+     매 프레임 LineRenderer 위치를 갱신하지만,
+     road 수가 적고(2개) 연산량이 매우 작아 실질적 성능 영향 없음.
+     경로 확정 후 최적화가 필요하다면 [ExecuteAlways] 제거하고
+     Start()만 남기면 됨.
+
+  2. [씬 저장 필수]
+     Edit 모드에서 경로 확정 후 반드시 씬 저장(Ctrl+S).
+     저장 전 Unity 종료 시 LineRenderer 위치 초기화될 수 있음.
+
+  3. [Inspector 재연결 불필요]
+     RoadPath 구조 및 필드가 변경되지 않아 기존 Inspector 연결 유지됨.
+
+  4. [경로 확정 후 컴포넌트 제거 가능]
+     경로를 완전히 고정하고 스크립트가 더 이상 필요 없으면
+     BuildingLineConnector 컴포넌트를 Remove해도 됨.
+     LineRenderer Positions 값은 씬에 저장되어 유지됨.
+
+================================================================

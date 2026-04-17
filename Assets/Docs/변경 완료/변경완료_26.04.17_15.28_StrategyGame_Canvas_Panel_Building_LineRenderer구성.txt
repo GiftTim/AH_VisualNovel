@@ -1,0 +1,252 @@
+================================================================
+  변경완료_26.04.17_15.28
+  StrategyGame - Canvas/Panel 구성 및 HQ-Building 간 LineRenderer 연결
+================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. 변경 전/후 비교 확인 (계획 c섹션 vs 실제 상태)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [확인 항목]
+  ┌──────────────────────────────────────────────┬────────┐
+  │ 항목                                         │ 결과   │
+  ├──────────────────────────────────────────────┼────────┤
+  │ Spot.cs 가 계획의 c섹션 코드와 동일          │ 일치 ✓ │
+  │ BuildingLineConnector.cs 미존재              │ 일치 ✓ │
+  │ StrategyGame 스크립트가 Spot.cs 하나뿐       │ 일치 ✓ │
+  └──────────────────────────────────────────────┴────────┘
+
+  → 차이점 없음. 계획대로 변경 진행.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  2. 변경 기록
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ──────────────────────────────────────────────────────────
+  [STEP 1] Spot.cs 수정
+  ──────────────────────────────────────────────────────────
+
+  파일 : Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs
+
+  [변경 전]
+  ---------------------------------------------------------
+  using Microsoft.Unity.VisualStudio.Editor;
+  using UnityEngine;
+
+  public enum BuildingType
+  {
+      HQ,
+      Normal,
+  }
+
+  public enum BuildingState
+  {
+      Idle,
+      Incident,
+      Unselected,
+      Selected,
+      Completed
+  }
+
+  [System.Serializable]
+  public class SpotVisualConfig
+  {
+      public BuildingType _buildingType;
+      public BuildingState _buildingState;
+      public Image _icon;       // ← Microsoft.Unity.VisualStudio.Editor.Image
+      public Color color = Color.white;
+      public Sprite sprite;
+  }
+
+  public class Spot : MonoBehaviour
+  {
+      [SerializeField] BuildingType _spotType;
+      public BuildingType SpotType => _spotType;
+
+      public void SetType(BuildingType type)
+      {
+          _spotType = type;
+      }
+  }
+  ---------------------------------------------------------
+
+  [변경 후]
+  ---------------------------------------------------------
+  using UnityEngine;
+  using UnityEngine.UI;
+
+  public enum BuildingType
+  {
+      HQ,
+      Normal,
+  }
+
+  public enum BuildingState
+  {
+      Idle,
+      Incident,
+      Unselected,
+      Selected,
+      Completed
+  }
+
+  [System.Serializable]
+  public class SpotVisualConfig
+  {
+      public BuildingType _buildingType;
+      public BuildingState _buildingState;
+      public Image _icon;       // ← UnityEngine.UI.Image (정상)
+      public Color color = Color.white;
+      public Sprite sprite;
+  }
+
+  public class Spot : MonoBehaviour
+  {
+      [SerializeField] BuildingType _spotType;
+      public BuildingType SpotType => _spotType;
+
+      public void SetType(BuildingType type)
+      {
+          _spotType = type;
+      }
+  }
+  ---------------------------------------------------------
+
+  변경 요약 :
+    - using Microsoft.Unity.VisualStudio.Editor  →  제거
+    - using UnityEngine.UI                       →  추가
+    SpotVisualConfig.Image _icon 이 이제 UnityEngine.UI.Image 를 올바르게 참조
+
+
+  ──────────────────────────────────────────────────────────
+  [STEP 7] BuildingLineConnector.cs 신규 생성
+  ──────────────────────────────────────────────────────────
+
+  파일 : Assets/Scripts/StrategyGame/Core/BuildingLineConnector.cs
+
+  [변경 전]
+  - 파일 없음
+
+  [변경 후]
+  ---------------------------------------------------------
+  using UnityEngine;
+
+  public class BuildingLineConnector : MonoBehaviour
+  {
+      [SerializeField] private Spot _hqSpot;
+      [SerializeField] private Spot[] _buildingSpots;
+      [SerializeField] private LineRenderer[] _lineRenderers;
+
+      private void Start()
+      {
+          if (_buildingSpots.Length != _lineRenderers.Length)
+          {
+              Debug.LogError(
+                  $"[BuildingLineConnector] buildingSpots({_buildingSpots.Length})와 " +
+                  $"lineRenderers({_lineRenderers.Length})의 수가 다릅니다. Inspector를 확인하세요.");
+              return;
+          }
+
+          Vector3 hqWorldPos = _hqSpot.transform.position;
+
+          for (int i = 0; i < _buildingSpots.Length; i++)
+          {
+              Vector3 buildingWorldPos = _buildingSpots[i].transform.position;
+
+              _lineRenderers[i].useWorldSpace = true;
+              _lineRenderers[i].positionCount = 2;
+              _lineRenderers[i].SetPosition(0, hqWorldPos);
+              _lineRenderers[i].SetPosition(1, buildingWorldPos);
+          }
+      }
+  }
+  ---------------------------------------------------------
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  3. 작동 흐름
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [Play Mode 진입 시]
+
+  1. BuildingLineConnector.Start() 호출
+  2. _buildingSpots.Length != _lineRenderers.Length 이면
+     → Debug.LogError 출력 후 처리 중단
+  3. _hqSpot.transform.position 으로 HQ 월드 좌표 취득
+  4. i = 0 ~ (_buildingSpots.Length - 1) 반복 :
+       a. _buildingSpots[i].transform.position 으로 해당 건물 월드 좌표 취득
+       b. _lineRenderers[i].useWorldSpace = true  설정
+       c. _lineRenderers[i].positionCount = 2     설정
+       d. SetPosition(0, hqWorldPos)    → 선의 시작점 = HQ 중심
+       e. SetPosition(1, buildingWorldPos) → 선의 끝점 = Building 중심
+  5. 결과 : 각 Building마다 HQ 중심점으로부터 선이 그어짐
+
+  [좌표계 흐름]
+  RectTransform.position (Screen Space-Camera Canvas의 UI 오브젝트)
+  → Unity 내부에서 월드 좌표로 자동 변환되어 있음
+  → LineRenderer(useWorldSpace=true)와 동일 좌표계 사용 가능
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  4. 남은 작업 (Unity Editor에서 직접 진행 필요)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  STEP 2. StrategyGame.unity 씬 열기
+          → Camera : Render Type = Base 확인/설정
+
+  STEP 3. Canvas 생성
+          → Render Mode : Screen Space - Camera
+          → Render Camera : 위 카메라 할당
+
+  STEP 4. 패널 3개 생성 (Canvas 자식)
+          → Panel_1_Background / Panel_2_Building / Panel_3_Character
+          → 각 Anchor = Stretch/Stretch, Offset = 0
+
+  STEP 5. Panel_2_Building 내부 오브젝트 배치
+          → Image_HQ : Spot 컴포넌트 부착, SpotType = HQ
+          → Image_Building_XX : Spot 컴포넌트 부착, SpotType = Normal
+
+  STEP 6. LineContainer + LineRenderer 씬 배치
+          → 씬 루트에 LineContainer 빈 오브젝트 생성
+          → 건물 수만큼 LineRenderer 자식 생성
+             예) Line_HQ_to_Building_01, Line_HQ_to_Building_02 ...
+
+  STEP 8. BuildingLineConnector 오브젝트 씬에 배치 + Inspector 연결
+          → _hqSpot         : Image_HQ 오브젝트 드래그
+          → _buildingSpots  : Image_Building_XX 배열 할당
+          → _lineRenderers  : Line_HQ_to_Building_XX 배열 할당
+            ※ 두 배열의 길이가 반드시 동일해야 함
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  5. 주의할 점
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. [좌표계]
+     transform.position 은 Screen Space-Camera Canvas 아래 UI 오브젝트의
+     경우 월드 좌표로 반환된다.
+     RectTransform.anchoredPosition 을 사용하면 캔버스 로컬 좌표가 되어
+     LineRenderer와 좌표계가 달라지므로 사용하지 말 것.
+
+  2. [배열 길이 불일치]
+     _buildingSpots 와 _lineRenderers 의 Element 수가 다르면
+     Start() 에서 에러 로그를 출력하고 선이 그려지지 않는다.
+     Building을 추가/삭제할 때 두 배열을 항상 동시에 수정할 것.
+
+  3. [LineRenderer Sorting]
+     LineRenderer 는 기본 Default Sorting Layer 에 배치된다.
+     Canvas의 Order in Layer 보다 높게 설정하면 UI 위에 그려진다.
+     패널 순서에 맞춰 Sorting Layer / Order를 조정할 것.
+
+  4. [Canvas Render Camera 미할당]
+     Screen Space - Camera 모드에서 카메라를 할당하지 않으면
+     Overlay처럼 동작하여 LineRenderer와 렌더 순서가 어긋난다.
+     반드시 카메라를 할당할 것.
+
+  5. [Spot.cs 컴파일 후 확인]
+     using 변경 후 Unity가 재컴파일할 때 기존에 Microsoft.Unity 타입으로
+     직렬화된 _icon 필드 값이 누락될 수 있다.
+     SpotVisualConfig._icon 이 Inspector에서 사라지면 재할당 필요.
+
+================================================================

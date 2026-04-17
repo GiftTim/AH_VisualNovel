@@ -1,0 +1,206 @@
+================================================================
+  변경완료_26.04.17_20.27
+  StrategyGame - LineRenderer Waypoint 경유점 추가 (경로 꺾기)
+================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. 변경 전/후 비교 확인 (계획 c섹션 vs 실제 상태)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [확인 항목]
+  ┌──────────────────────────────────────────────────────┬────────┐
+  │ 항목                                                 │ 결과   │
+  ├──────────────────────────────────────────────────────┼────────┤
+  │ _hqSpot, _buildingSpots[], _lineRenderers[], _lineZ  │ 일치 ✓ │
+  │ positionCount = 2 고정                               │ 일치 ✓ │
+  │ RoadPath 클래스 없음                                 │ 일치 ✓ │
+  └──────────────────────────────────────────────────────┴────────┘
+
+  → 차이점 없음. 계획대로 변경 진행.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  2. 변경 기록
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  파일 : Assets/Scripts/StrategyGame/Core/PathFinder/BuildingLineConnector.cs
+
+  ──────────────────────────────────────────────────────────
+  [변경 전]
+  ──────────────────────────────────────────────────────────
+  using UnityEngine;
+
+  public class BuildingLineConnector : MonoBehaviour
+  {
+      [SerializeField] private Spot _hqSpot;
+      [SerializeField] private Spot[] _buildingSpots;
+      [SerializeField] private LineRenderer[] _lineRenderers;
+      [SerializeField] private float _lineZ = -1f;
+
+      private void Start()
+      {
+          if (_buildingSpots.Length != _lineRenderers.Length)
+          {
+              Debug.LogError(
+                  $"[BuildingLineConnector] buildingSpots({_buildingSpots.Length})와 " +
+                  $"lineRenderers({_lineRenderers.Length})의 수가 다릅니다. Inspector를 확인하세요.");
+              return;
+          }
+
+          Vector3 hqWorldPos = _hqSpot.transform.position;
+          hqWorldPos.z = _lineZ;
+
+          for (int i = 0; i < _buildingSpots.Length; i++)
+          {
+              Vector3 buildingWorldPos = _buildingSpots[i].transform.position;
+              buildingWorldPos.z = _lineZ;
+
+              _lineRenderers[i].useWorldSpace = true;
+              _lineRenderers[i].positionCount = 2;
+              _lineRenderers[i].SetPosition(0, hqWorldPos);
+              _lineRenderers[i].SetPosition(1, buildingWorldPos);
+          }
+      }
+  }
+
+  ──────────────────────────────────────────────────────────
+  [변경 후]
+  ──────────────────────────────────────────────────────────
+  using UnityEngine;
+
+  [System.Serializable]
+  public class RoadPath
+  {
+      public Spot buildingSpot;
+      public LineRenderer lineRenderer;
+      public Transform[] waypoints;
+  }
+
+  public class BuildingLineConnector : MonoBehaviour
+  {
+      [SerializeField] private Spot _hqSpot;
+      [SerializeField] private RoadPath[] _roads;
+      [SerializeField] private float _lineZ = -1f;
+
+      private void Start()
+      {
+          Vector3 hqPos = _hqSpot.transform.position;
+          hqPos.z = _lineZ;
+
+          foreach (RoadPath road in _roads)
+          {
+              int count = 2 + road.waypoints.Length;
+              road.lineRenderer.useWorldSpace = true;
+              road.lineRenderer.positionCount = count;
+
+              road.lineRenderer.SetPosition(0, hqPos);
+
+              for (int i = 0; i < road.waypoints.Length; i++)
+              {
+                  Vector3 wp = road.waypoints[i].position;
+                  wp.z = _lineZ;
+                  road.lineRenderer.SetPosition(i + 1, wp);
+              }
+
+              Vector3 buildingPos = road.buildingSpot.transform.position;
+              buildingPos.z = _lineZ;
+              road.lineRenderer.SetPosition(count - 1, buildingPos);
+          }
+      }
+  }
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  3. 작동 흐름
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [Play Mode 진입 시]
+
+  1. Start() 호출
+  2. HQ 월드 위치를 가져와 Z = _lineZ(-1)로 고정
+  3. _roads 배열을 순서대로 순회 (foreach)
+     각 RoadPath(road)에 대해:
+       a. positionCount = 2 + waypoints 수 로 설정
+          예) waypoint 2개 → positionCount = 4
+       b. Position[0] = HQ 위치
+       c. Position[1 ~ N-1] = waypoints 순서대로 위치
+       d. Position[N] = Building 위치
+       e. 모든 Z값 = _lineZ 로 강제 고정
+  4. LineRenderer가 점들을 순서대로 연결하여 꺾인 경로를 그림
+
+  [경로 예시 - waypoint 2개인 경우]
+    Position[0] : HQ
+    Position[1] : WP_01_01  ← 첫 번째 꺾임
+    Position[2] : WP_01_02  ← 두 번째 꺾임
+    Position[3] : Building
+
+  [waypoint 0개인 경우]
+    Position[0] : HQ
+    Position[1] : Building
+    → 기존과 동일한 직선
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  4. Unity Editor에서 직접 해야 할 작업
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  STEP 1. Waypoint 오브젝트 씬에 배치
+          - road(1) 자식으로 빈 오브젝트 생성
+            예) WP_01_01, WP_01_02
+          - road(2) 자식으로 빈 오브젝트 생성
+            예) WP_02_01
+          - Scene 뷰에서 원하는 꺾임 위치로 드래그
+
+  STEP 2. BuildingLineConnector Inspector 재연결
+          ※ 기존 _buildingSpots, _lineRenderers 배열이 사라지고
+             _roads 배열로 바뀌었으므로 반드시 재연결 필요
+
+          Roads > Size = 2 (road 수)
+
+          Element 0 :
+            Building Spot  : building(1) 드래그
+            Line Renderer  : road(1) 드래그
+            Waypoints Size : WP 개수 입력
+              Element 0    : WP_01_01 드래그
+              Element 1    : WP_01_02 드래그 (있다면)
+
+          Element 1 :
+            Building Spot  : building(2) 드래그
+            Line Renderer  : road(2) 드래그
+            Waypoints Size : WP 개수 입력
+              Element 0    : WP_02_01 드래그 (있다면)
+
+  STEP 3. Play 모드 테스트
+          - 꺾인 경로가 의도대로 그려지는지 확인
+          - WP 오브젝트 위치를 Scene 뷰에서 드래그하며 경로 다듬기
+            (Edit 모드에서 위치 조정 후 Play로 확인)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  5. 주의할 점
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. [Inspector 재연결 필수]
+     _buildingSpots[], _lineRenderers[] 필드가 _roads[]로 바뀌어
+     기존 Inspector 연결이 초기화된다.
+     반드시 STEP 2에서 재연결해야 한다.
+
+  2. [Waypoint 순서]
+     Waypoints 배열 순서 = 경로 순서.
+     HQ에서 Building 방향으로 순서대로 배열에 넣을 것.
+     순서가 바뀌면 선이 교차하거나 꼬임.
+
+  3. [Waypoint Z값]
+     Waypoint 오브젝트의 Z는 코드에서 _lineZ로 자동 덮어씀.
+     씬에서 Z를 신경 쓰지 않아도 됨.
+
+  4. [Waypoints 없는 road]
+     Waypoints Size = 0 으로 두면 기존처럼 직선으로 그려짐.
+     road마다 waypoint 수를 다르게 해도 됨.
+
+  5. [추후 캐릭터 이동 연동]
+     캐릭터가 경로를 따라 이동할 때
+     road.waypoints[] 배열을 그대로 이동 경로로 전달 가능.
+     [HQ → waypoints → Building] 순서를 유지하면 됨.
+
+================================================================

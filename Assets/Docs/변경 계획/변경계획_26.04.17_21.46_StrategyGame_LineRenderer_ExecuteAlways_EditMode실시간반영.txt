@@ -1,0 +1,261 @@
+================================================================
+  변경계획_26.04.17_21.46
+  StrategyGame - BuildingLineConnector ExecuteAlways 적용
+  (Edit 모드에서 Waypoint 이동 시 LineRenderer 실시간 반영)
+================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  목차
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 구현 방식 (선택된 방법)
+  e. 해당 방식을 선택한 이유
+  f. 진행 순서
+  g. 어디가 어떤 식으로 변경되는지
+  h. 주의할 점
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  b. 요구한 기능
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  - Waypoint 오브젝트를 Scene 뷰에서 드래그하여 시각적으로 경로 배치
+  - Play 없이 Edit 모드에서도 LineRenderer가 Waypoint 위치를 즉시 반영
+  - 경로를 다 잡은 뒤에는 스크립트 없이도 LineRenderer 위치가 유지됨
+  - 런타임 스크립트 의존도를 낮추고 경로를 씬에 직접 고정
+
+  [원하는 작업 흐름]
+  1. Scene 뷰에서 Waypoint 오브젝트 드래그
+  2. → LineRenderer가 즉시 경로를 그려줌 (Play 불필요)
+  3. 경로가 마음에 들면 완료
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  c. 현재 상황 및 코드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [파일]
+  Assets/Scripts/StrategyGame/Core/PathFinder/BuildingLineConnector.cs
+
+  [현재 코드]
+  -------------------------------------------------------
+  using UnityEngine;
+
+  [System.Serializable]
+  public class RoadPath
+  {
+      public Spot buildingSpot;
+      public LineRenderer lineRenderer;
+      public Transform[] waypoints;
+  }
+
+  public class BuildingLineConnector : MonoBehaviour
+  {
+      [SerializeField] private Spot _hqSpot;
+      [SerializeField] private RoadPath[] _roads;
+      [SerializeField] private float _lineZ = -1f;
+
+      private void Start()
+      {
+          Vector3 hqPos = _hqSpot.transform.position;
+          hqPos.z = _lineZ;
+
+          foreach (RoadPath road in _roads)
+          {
+              int count = 2 + road.waypoints.Length;
+              road.lineRenderer.useWorldSpace = true;
+              road.lineRenderer.positionCount = count;
+
+              road.lineRenderer.SetPosition(0, hqPos);
+
+              for (int i = 0; i < road.waypoints.Length; i++)
+              {
+                  Vector3 wp = road.waypoints[i].position;
+                  wp.z = _lineZ;
+                  road.lineRenderer.SetPosition(i + 1, wp);
+              }
+
+              Vector3 buildingPos = road.buildingSpot.transform.position;
+              buildingPos.z = _lineZ;
+              road.lineRenderer.SetPosition(count - 1, buildingPos);
+          }
+      }
+  }
+  -------------------------------------------------------
+
+  [현재 문제]
+  - Start()는 Play 진입 시에만 실행됨
+  - Edit 모드에서 Waypoint를 움직여도 LineRenderer가 반응하지 않음
+  - 경로 편집 시 매번 Play → 확인 → Stop → 수정 반복이 필요
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  d. 구현 방식 (선택된 방법)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [ExecuteAlways] 어트리뷰트를 클래스에 추가하고
+  Update()에서 LineRenderer 위치를 매 프레임 갱신한다.
+
+  - [ExecuteAlways] : Edit 모드 + Play 모드 모두에서 Update() 실행
+  - Update()에서 ApplyLines() 호출 → Waypoint 이동 즉시 LineRenderer 반영
+  - null 체크 추가 : Inspector 미연결 상태에서 에디터 에러 방지
+
+  [변경 후 코드 구조]
+  -------------------------------------------------------
+  [ExecuteAlways]
+  public class BuildingLineConnector : MonoBehaviour
+  {
+      [SerializeField] private Spot _hqSpot;
+      [SerializeField] private RoadPath[] _roads;
+      [SerializeField] private float _lineZ = -1f;
+
+      private void Update()
+      {
+          ApplyLines();
+      }
+
+      private void ApplyLines()
+      {
+          if (_hqSpot == null || _roads == null) return;
+
+          Vector3 hqPos = _hqSpot.transform.position;
+          hqPos.z = _lineZ;
+
+          foreach (RoadPath road in _roads)
+          {
+              if (road.lineRenderer == null || road.buildingSpot == null) continue;
+              if (road.waypoints == null) continue;
+
+              int count = 2 + road.waypoints.Length;
+              road.lineRenderer.useWorldSpace = true;
+              road.lineRenderer.positionCount = count;
+
+              road.lineRenderer.SetPosition(0, hqPos);
+
+              for (int i = 0; i < road.waypoints.Length; i++)
+              {
+                  if (road.waypoints[i] == null) continue;
+                  Vector3 wp = road.waypoints[i].position;
+                  wp.z = _lineZ;
+                  road.lineRenderer.SetPosition(i + 1, wp);
+              }
+
+              Vector3 buildingPos = road.buildingSpot.transform.position;
+              buildingPos.z = _lineZ;
+              road.lineRenderer.SetPosition(count - 1, buildingPos);
+          }
+      }
+  }
+  -------------------------------------------------------
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  e. 해당 방식을 선택한 이유
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [비교한 방법들]
+
+  방법 1. 현행 유지 (Start()만 사용)
+    * Edit 모드 반영 안 됨
+    * 매번 Play → 확인 → Stop 반복 필요
+    → ❌ 불편함
+
+  방법 2. [ExecuteAlways] + Update() (채택)
+    * Edit 모드에서 Waypoint 드래그 즉시 LineRenderer 반영
+    * 별도 Editor 스크립트 없이 단일 파일로 해결
+    * 경로 편집이 직관적
+    → ✅ 채택
+
+  방법 3. Editor 전용 스크립트 (CustomEditor + OnSceneGUI)
+    * 더 세밀한 에디터 제어 가능
+    * 파일이 Editor 폴더와 Runtime 폴더로 분리되어 복잡도 증가
+    * 현재 요구사항보다 과도한 구현
+    → ❌ 과도함
+
+  방법 4. OnValidate() 사용
+    * Inspector 값 변경 시에만 실행
+    * Waypoint Transform을 Scene 뷰에서 드래그할 때는 호출 안 됨
+    → ❌ 목적에 맞지 않음
+
+  → 방법 2 선택 :
+    단일 파일, 최소 변경, Edit/Play 모두 동작,
+    Waypoint 드래그 즉시 반영이라는 요구를 가장 단순하게 충족
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  f. 진행 순서
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  STEP 1. BuildingLineConnector.cs 수정
+          - [ExecuteAlways] 어트리뷰트 추가
+          - Start() → Update() + ApplyLines() 로 분리
+          - null 체크 추가
+
+  STEP 2. Unity Editor에서 Inspector 연결 확인
+          - _hqSpot, _roads 배열이 이미 연결되어 있으면 즉시 반영
+          - 미연결이면 재연결
+
+  STEP 3. Edit 모드에서 Waypoint 드래그 테스트
+          - Scene 뷰에서 WP 오브젝트를 이동
+          - LineRenderer가 즉시 따라오는지 확인
+
+  STEP 4. 경로 확정
+          - 원하는 형태로 경로가 잡히면 완료
+          - 별도 "저장" 작업 불필요 (씬 저장만 하면 됨)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  g. 어디가 어떤 식으로 변경되는지
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [수정]
+  ┌──────────────────────────────────────────────────────────┐
+  │ 파일                                                     │
+  │   Assets/Scripts/StrategyGame/Core/PathFinder/           │
+  │       BuildingLineConnector.cs                           │
+  │                                                          │
+  │ 변경 내용                                                │
+  │   - 클래스 위에 [ExecuteAlways] 추가                     │
+  │   - private void Start() → 제거                          │
+  │   - private void Update() 추가 → ApplyLines() 호출       │
+  │   - private void ApplyLines() 추가                       │
+  │       (기존 Start() 로직 + null 체크 포함)               │
+  └──────────────────────────────────────────────────────────┘
+
+  [변경되지 않는 것]
+  - RoadPath 클래스 구조 : 그대로 유지
+  - _hqSpot, _roads, _lineZ 필드 : 그대로 유지
+  - Inspector 연결 : 재연결 불필요
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  h. 주의할 점
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. [Update() 성능]
+     Update()에서 매 프레임 LineRenderer 위치를 갱신한다.
+     경로가 고정된 상태에서는 불필요한 연산이지만,
+     road 수가 적고(2개) 연산량이 매우 작으므로 실질적 성능 영향 없음.
+     추후 최적화가 필요하다면 경로 확정 후 [ExecuteAlways] 제거하고
+     Start()만 남기면 됨.
+
+  2. [null 체크 필수]
+     [ExecuteAlways]는 Inspector 연결 전에도 Update()가 실행됨.
+     _hqSpot, road.lineRenderer, road.buildingSpot, road.waypoints[i]
+     모두 null 체크가 없으면 에디터 Console에 NullReference 에러 도배됨.
+     → ApplyLines() 내 null 체크로 처리
+
+  3. [Edit 모드 씬 저장]
+     [ExecuteAlways]로 LineRenderer 위치가 잡혔어도
+     씬을 저장(Ctrl+S)해야 유지됨.
+     저장 전 Unity 종료 시 LineRenderer 위치가 초기화될 수 있음.
+
+  4. [경로 확정 후 스크립트 제거 시]
+     경로를 완전히 고정하고 스크립트가 더 이상 필요 없으면
+     BuildingLineConnector 컴포넌트를 Remove해도 됨.
+     LineRenderer Positions 값은 씬에 저장되어 유지됨.
+
+================================================================

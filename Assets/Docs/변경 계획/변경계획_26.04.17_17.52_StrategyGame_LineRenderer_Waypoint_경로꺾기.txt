@@ -1,0 +1,323 @@
+================================================================
+  변경계획_26.04.17_17.52
+  StrategyGame - LineRenderer Waypoint 경유점 추가 (경로 꺾기)
+================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [확인 결과 - 26.04.17] 변경 중지
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  현재 코드와 계획서 c(현재 상황)를 비교한 결과 차이점 발견 → 변경 중지
+
+  [차이점]
+  계획서 c 기술 내용 :
+    - _buildingSpots[] + _lineRenderers[] 배열 방식
+    - positionCount = 2 고정 (직선만 가능)
+    - RoadPath 클래스 없음
+
+  실제 파일 상태 :
+    - 이미 RoadPath 클래스가 구현되어 있음
+    - _roads[] (RoadPath[]) 방식으로 이미 변경되어 있음
+    - HQ → waypoints[] → Building 경로 로직이 이미 구현됨
+    - 계획서 d의 목표 코드와 완전히 일치
+
+  [결론]
+    BuildingLineConnector.cs는 이미 이 계획서의 목표 상태로
+    구현 완료된 신규 파일임 (git untracked 상태)
+    코드 변경 없이 STEP 2~3(씬 오브젝트 배치 및 Inspector 재연결)만
+    남은 작업으로 확인됨
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  목차
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 구현 방식 (선택된 방법)
+  e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+  f. 진행 순서
+  g. 어디가 어떤 식으로 변경되는지
+  h. 주의할 점
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  b. 요구한 기능
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  - HQ ↔ Building 사이의 선을 직선이 아닌 꺾인 경로로 만들기
+  - 꺾임점(Waypoint)을 자유롭게 씬에서 배치하고 싶음
+  - 각 road마다 꺾임 횟수가 다를 수 있음
+
+  [시각적 목표]
+  현재 :
+    HQ ─────────────────── Building
+
+  변경 후 :
+    HQ ──┐
+         │
+         └──────┐
+                │
+                └── Building
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  c. 현재 상황 및 코드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [씬 구조]
+  - LineContainer
+      ├ road(1)  (LineRenderer, positionCount=2)
+      └ road(2)  (LineRenderer, positionCount=2)
+  - BuildingLineConnector 오브젝트 (BuildingLineConnector.cs)
+
+  [BuildingLineConnector.cs 현재 코드]
+  -------------------------------------------------------
+  using UnityEngine;
+
+  public class BuildingLineConnector : MonoBehaviour
+  {
+      [SerializeField] private Spot _hqSpot;
+      [SerializeField] private Spot[] _buildingSpots;
+      [SerializeField] private LineRenderer[] _lineRenderers;
+      [SerializeField] private float _lineZ = -1f;
+
+      private void Start()
+      {
+          if (_buildingSpots.Length != _lineRenderers.Length)
+          {
+              Debug.LogError(...);
+              return;
+          }
+
+          Vector3 hqWorldPos = _hqSpot.transform.position;
+          hqWorldPos.z = _lineZ;
+
+          for (int i = 0; i < _buildingSpots.Length; i++)
+          {
+              Vector3 buildingWorldPos = _buildingSpots[i].transform.position;
+              buildingWorldPos.z = _lineZ;
+
+              _lineRenderers[i].useWorldSpace = true;
+              _lineRenderers[i].positionCount = 2;
+              _lineRenderers[i].SetPosition(0, hqWorldPos);
+              _lineRenderers[i].SetPosition(1, buildingWorldPos);
+          }
+      }
+  }
+  -------------------------------------------------------
+
+  [현재 문제]
+  - positionCount = 2 로 고정 → 시작점(HQ)과 끝점(Building)만 존재
+  - 중간 경유점이 없어 항상 직선으로만 그려짐
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  d. 구현 방식 (선택된 방법)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [핵심 구조 변경]
+
+  BuildingLineConnector가 HQ와 Building 외에
+  각 road마다 Waypoint(경유점) Transform 배열을 추가로 받아
+  LineRenderer에 순서대로 위치를 설정한다.
+
+  [경로 설정 순서]
+    0번 : HQ 위치
+    1번 : Waypoint[0] 위치
+    2번 : Waypoint[1] 위치
+    ...
+    N번 : Building 위치
+
+  [씬 구조 변경]
+  LineContainer
+  ├ road(1)
+  │   ├ WP_01_01   (빈 오브젝트, 첫 번째 경유점)
+  │   └ WP_01_02   (빈 오브젝트, 두 번째 경유점)
+  └ road(2)
+      └ WP_02_01   (빈 오브젝트, 첫 번째 경유점)
+
+  [코드 구조 변경]
+
+  RoadPath 클래스 (Serializable) 를 새로 만든다.
+  - 하나의 road에 대한 Building 참조 + Waypoint 목록을 묶음
+
+  -------------------------------------------------------
+  [System.Serializable]
+  public class RoadPath
+  {
+      public Spot buildingSpot;           // 연결할 Building
+      public LineRenderer lineRenderer;   // 해당 LineRenderer
+      public Transform[] waypoints;       // 중간 경유점 배열 (순서대로)
+  }
+  -------------------------------------------------------
+
+  BuildingLineConnector는 RoadPath 배열을 받아
+  각 road마다 [HQ → waypoints → Building] 순서로 위치를 설정한다.
+
+  -------------------------------------------------------
+  public class BuildingLineConnector : MonoBehaviour
+  {
+      [SerializeField] private Spot _hqSpot;
+      [SerializeField] private RoadPath[] _roads;
+      [SerializeField] private float _lineZ = -1f;
+
+      private void Start()
+      {
+          Vector3 hqPos = _hqSpot.transform.position;
+          hqPos.z = _lineZ;
+
+          foreach (RoadPath road in _roads)
+          {
+              int count = 2 + road.waypoints.Length;
+              road.lineRenderer.positionCount = count;
+              road.lineRenderer.useWorldSpace = true;
+
+              // 0번 : HQ
+              road.lineRenderer.SetPosition(0, hqPos);
+
+              // 중간 : Waypoint 순서대로
+              for (int i = 0; i < road.waypoints.Length; i++)
+              {
+                  Vector3 wp = road.waypoints[i].position;
+                  wp.z = _lineZ;
+                  road.lineRenderer.SetPosition(i + 1, wp);
+              }
+
+              // 마지막 : Building
+              Vector3 buildingPos = road.buildingSpot.transform.position;
+              buildingPos.z = _lineZ;
+              road.lineRenderer.SetPosition(count - 1, buildingPos);
+          }
+      }
+  }
+  -------------------------------------------------------
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  e. 해당 방식을 선택한 이유
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [비교한 방법들]
+
+  방법 1. LineRenderer Positions를 Inspector에서 직접 수동 입력
+    * 장점 : 코드 변경 없음
+    * 단점 : 숫자 입력이라 직관적이지 않음
+              Scene 뷰에서 시각적으로 위치 조정 불가
+              road마다 Positions 수가 달라지면 관리 어려움
+
+  방법 2. Waypoint Transform 오브젝트를 씬에 배치 (채택)
+    * 장점 : Scene 뷰에서 빈 오브젝트를 드래그하여 직관적으로 경로 편집 가능
+              road마다 waypoint 수를 자유롭게 다르게 설정 가능
+              추후 캐릭터 이동 경로로 그대로 재활용 가능
+    * 단점 : 씬 오브젝트가 늘어남
+
+  방법 3. Bezier Curve (부드러운 곡선)
+    * 장점 : 곡선이라 자연스러운 도로 표현
+    * 단점 : 구현 복잡, 추가 라이브러리 필요
+              캐릭터 이동 연동 시 별도 경로 계산 필요
+
+  → 방법 2 선택 :
+    씬에서 직관적으로 편집 가능하고,
+    추후 캐릭터 이동 경로로 waypoints를 그대로 재사용할 수 있어
+    확장성이 가장 좋음
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  f. 진행 순서
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  STEP 1. BuildingLineConnector.cs 수정
+          - RoadPath 클래스 추가 (Serializable)
+          - BuildingLineConnector 필드 변경
+              기존 : Spot[] _buildingSpots + LineRenderer[] _lineRenderers
+              변경 : RoadPath[] _roads
+          - Start() 로직 변경
+              기존 : HQ → Building 2점
+              변경 : HQ → waypoints[] → Building N점
+
+  STEP 2. 씬에서 Waypoint 오브젝트 배치
+          - road(1) 자식으로 빈 오브젝트 생성
+            예) WP_01_01, WP_01_02
+          - road(2) 자식으로 빈 오브젝트 생성
+            예) WP_02_01
+          - Scene 뷰에서 원하는 꺾임 위치로 드래그
+
+  STEP 3. BuildingLineConnector Inspector 재연결
+          - 기존 배열 방식에서 RoadPath 배열 방식으로 변경됨
+          - Roads > Size 설정 (road 수)
+          - 각 Element에
+              Building Spot : 해당 Building 드래그
+              Line Renderer : 해당 road 오브젝트 드래그
+              Waypoints     : WP 오브젝트들 순서대로 드래그
+
+  STEP 4. Play 모드 테스트
+          - 꺾인 경로가 의도대로 그려지는지 확인
+          - Waypoint 오브젝트 위치를 조정하며 경로 다듬기
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  g. 어디가 어떤 식으로 변경되는지
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [수정]
+  ┌──────────────────────────────────────────────────────────┐
+  │ 파일                                                     │
+  │   Assets/Scripts/StrategyGame/Core/PathFinder/           │
+  │       BuildingLineConnector.cs                           │
+  │ 변경 내용                                                │
+  │   - RoadPath 클래스 신규 추가 (같은 파일 내)             │
+  │   - _buildingSpots[], _lineRenderers[] 제거              │
+  │   - _roads[] (RoadPath[]) 추가                           │
+  │   - Start() : positionCount를 waypoint 수에 맞게 동적 설정│
+  └──────────────────────────────────────────────────────────┘
+
+  [신규 생성 - Unity 씬 오브젝트]
+  ┌──────────────────────────────────────────────────────────┐
+  │ 오브젝트              │ 위치              │ 역할         │
+  ├───────────────────────┼───────────────────┼─────────────┤
+  │ WP_01_01              │ road(1) 자식      │ 경유점 1    │
+  │ WP_01_02 (필요 시)    │ road(1) 자식      │ 경유점 2    │
+  │ WP_02_01              │ road(2) 자식      │ 경유점 1    │
+  └───────────────────────┴───────────────────┴─────────────┘
+
+  [Inspector 재연결]
+  BuildingLineConnector 오브젝트
+  - Hq Spot    : 기존 유지
+  - Roads[]    : (기존 분리된 두 배열 → 하나의 RoadPath 배열로 통합)
+    Element 0  : Building Spot = building(1), Line Renderer = road(1),
+                 Waypoints = [WP_01_01, WP_01_02, ...]
+    Element 1  : Building Spot = building(2), Line Renderer = road(2),
+                 Waypoints = [WP_02_01, ...]
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  h. 주의할 점
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. [Inspector 재연결 필수]
+     기존의 _buildingSpots, _lineRenderers 배열이 _roads 로 바뀌므로
+     기존 Inspector 연결이 초기화된다.
+     STEP 3에서 반드시 재연결해야 함.
+
+  2. [Waypoint 순서]
+     Waypoints 배열의 순서가 경로 순서가 된다.
+     HQ에서 Building 방향으로 순서대로 배열에 넣을 것.
+     순서가 바뀌면 경로가 교차하거나 꼬임.
+
+  3. [Waypoint Z값]
+     Waypoint 오브젝트의 Z는 코드에서 _lineZ로 자동 덮어씀.
+     Scene에서 Z를 신경 쓰지 않아도 됨.
+
+  4. [Waypoint 없는 road]
+     Waypoints 배열 Size를 0으로 두면 기존과 동일하게 직선으로 그려짐.
+     road마다 waypoint 수를 다르게 해도 됨.
+
+  5. [추후 캐릭터 이동 연동]
+     캐릭터가 이 경로를 따라 이동할 때
+     [HQ → waypoints[] → Building] 순서의 Transform 배열을 그대로 사용 가능.
+     RoadPath.waypoints 를 캐릭터 이동 시스템에 전달하면 됨.
+
+================================================================

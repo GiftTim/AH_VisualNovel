@@ -1,0 +1,245 @@
+================================================================
+  변경계획_26.04.17_17.40
+  StrategyGame - LineRenderer 선 외형 변경 방법
+================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  목차
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 구현 방식 (선택된 방법)
+  e. 해당 방식을 선택한 이유
+  f. 진행 순서
+  g. 어디가 어떤 식으로 변경되는지
+  h. 주의할 점
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  b. 요구한 기능
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  - HQ ↔ Building 사이의 LineRenderer 선 외형을 자유롭게 변경
+  - 변경 가능한 항목 :
+      · 선 굵기 (Width)
+      · 선 색상 (Color)
+      · 선 텍스처 (Texture / Material)
+      · 선 굵기 곡선 (Width Curve)
+      · 선 끝 처리 방식 (Line Cap)
+      · 점선 / 실선 여부 (Texture Mode)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  c. 현재 상황 및 코드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [씬]
+  - Assets/Scenes/Strategy game.unity
+  - Orthographic Camera 사용
+  - Canvas (Screen Space - Camera)
+    └ Panel_2_Building
+        ├ Image_HQ     (Spot, BuildingType.HQ)
+        └ Image_Building_XX (Spot, BuildingType.Normal)
+  - LineContainer
+    ├ road(1)  (LineRenderer)
+    └ road(2)  (LineRenderer)
+  - BuildingLineConnector 오브젝트 (BuildingLineConnector.cs)
+
+  [BuildingLineConnector.cs 현재 코드]
+  -------------------------------------------------------
+  using UnityEngine;
+
+  public class BuildingLineConnector : MonoBehaviour
+  {
+      [SerializeField] private Spot _hqSpot;
+      [SerializeField] private Spot[] _buildingSpots;
+      [SerializeField] private LineRenderer[] _lineRenderers;
+      [SerializeField] private float _lineZ = -1f;
+
+      private void Start()
+      {
+          if (_buildingSpots.Length != _lineRenderers.Length)
+          {
+              Debug.LogError(...);
+              return;
+          }
+
+          Vector3 hqWorldPos = _hqSpot.transform.position;
+          hqWorldPos.z = _lineZ;
+
+          for (int i = 0; i < _buildingSpots.Length; i++)
+          {
+              Vector3 buildingWorldPos = _buildingSpots[i].transform.position;
+              buildingWorldPos.z = _lineZ;
+
+              _lineRenderers[i].useWorldSpace = true;
+              _lineRenderers[i].positionCount = 2;
+              _lineRenderers[i].SetPosition(0, hqWorldPos);
+              _lineRenderers[i].SetPosition(1, buildingWorldPos);
+          }
+      }
+  }
+  -------------------------------------------------------
+
+  [현재 선 상태]
+  - 위치 : 정상 (HQ 중심 ↔ Building 중심 일직선)
+  - 굵기 : Unity 기본값 (흰색 단색 실선)
+  - Material : 기본 Material (Mat_Road)
+  - 외형 변경 : 아직 없음
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  d. 구현 방식 (선택된 방법)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  LineRenderer의 외형은 두 가지 방법으로 변경할 수 있다.
+
+  ┌──────────────────┬───────────────────────────────────────┐
+  │ 방법             │ 변경 항목                             │
+  ├──────────────────┼───────────────────────────────────────┤
+  │ A. Inspector     │ 굵기, 색상, Material을 에디터에서     │
+  │    직접 설정     │ 실시간으로 수정 가능                  │
+  │                  │ 코드 변경 불필요                      │
+  ├──────────────────┼───────────────────────────────────────┤
+  │ B. 코드에서      │ 런타임 중 상태에 따라 동적으로 변경   │
+  │    SetXXX()      │ 예) 건물 상태에 따라 색상 변경        │
+  │    로 설정       │ BuildingLineConnector에 코드 추가     │
+  └──────────────────┴───────────────────────────────────────┘
+
+  → 현재는 고정된 외형이므로 A(Inspector) 방식을 기본으로 사용
+  → 추후 건물 상태(BuildingState)에 따라 선 색상을 바꾸려면 B 방식 추가
+
+
+  [Inspector에서 변경 가능한 항목 상세]
+
+  1. Width (굵기)
+     - Start Width : 선 시작점 굵기
+     - End Width   : 선 끝점 굵기
+     - Width Curve : 시작~끝 굵기를 곡선으로 세밀하게 조정
+
+  2. Color (색상)
+     - 그라디언트로 시작색 → 끝색 설정 가능
+     - 단색 : 양쪽 같은 색 설정
+
+  3. Material (질감/텍스처)
+     - Shader : Sprites/Default → 단색/투명도 가능
+     - Texture : 선에 이미지 타일링 가능 (점선, 패턴 등)
+     - Texture Mode
+         · Stretch : 텍스처를 선 전체에 늘림
+         · Tile    : 텍스처를 일정 간격으로 반복 (점선 효과)
+         · RepeatPerSegment : 구간마다 반복
+
+  4. Line Cap (끝 처리)
+     - None  : 끝이 뭉툭하게 잘림
+     - Round : 끝이 둥글게 처리됨 (권장)
+
+  5. Alignment
+     - View  : 항상 카메라를 향해 회전 (2D에서 권장)
+     - Local : 오브젝트 로컬 방향 기준
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  e. 해당 방식을 선택한 이유
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [Inspector 방식 우선 채택 이유]
+  - 코드를 건드리지 않고 실시간으로 결과를 확인하며 수정 가능
+  - 굵기·색상·텍스처를 시각적으로 조정하기에 에디터가 직관적
+  - 고정된 외형에는 코드보다 Inspector가 더 빠르고 안전
+
+  [코드 방식을 쓸 때]
+  - BuildingState(Idle/Incident/Selected 등)에 따라
+    선 색상을 런타임 중 동적으로 바꿔야 할 때
+  - 애니메이션처럼 굵기가 변하는 효과가 필요할 때
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  f. 진행 순서
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  STEP 1. Material 설정
+          - Mat_Road 선택 → Shader : Sprites/Default
+          - 텍스처를 쓰려면 : 원하는 이미지를 Texture 슬롯에 할당
+          - 점선 효과 : Texture Mode → Tile 설정
+
+  STEP 2. road(1), road(2) LineRenderer Inspector 설정
+          ① Width
+             - Start Width / End Width 값 조정
+             - 예) 0.1 ~ 0.3 (화면 크기에 따라 다름)
+          ② Color
+             - 그라디언트 에디터에서 원하는 색 설정
+          ③ Line Cap → Round 권장
+          ④ Alignment → View 권장 (Orthographic 카메라에서 올바르게 보임)
+          ⑤ Texture Mode (텍스처 사용 시) → Tile 또는 Stretch 선택
+
+  STEP 3. (선택) 코드로 동적 색상 변경이 필요한 경우
+          - BuildingLineConnector.cs 에 아래 메서드 추가
+              public void SetLineColor(int index, Color color)
+              {
+                  _lineRenderers[index].startColor = color;
+                  _lineRenderers[index].endColor   = color;
+              }
+
+  STEP 4. Play 모드에서 확인
+          - 선 외형이 의도대로 보이는지 확인
+          - 필요 시 Width / Color 재조정
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  g. 어디가 어떤 식으로 변경되는지
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [Inspector 설정 - 코드 변경 없음]
+  ┌──────────────────────────────────────────────────────────┐
+  │ 대상 오브젝트   road(1), road(2)                         │
+  │ 대상 컴포넌트   LineRenderer                             │
+  │                                                          │
+  │ 변경 항목                                                │
+  │   Width       → Start/End Width 수치 조정               │
+  │   Color       → 그라디언트 에디터에서 색상 설정         │
+  │   Materials   → Mat_Road (Sprites/Default Shader)        │
+  │   Line Cap    → Round                                    │
+  │   Alignment   → View                                     │
+  │   Texture Mode→ Tile (점선) / Stretch (실선)             │
+  └──────────────────────────────────────────────────────────┘
+
+  [코드 변경 - 동적 색상이 필요한 경우]
+  ┌──────────────────────────────────────────────────────────┐
+  │ 파일   Assets/Scripts/StrategyGame/Core/PathFinder/      │
+  │            BuildingLineConnector.cs                      │
+  │ 추가   public void SetLineColor(int index, Color color)  │
+  │        → 외부에서 인덱스와 색상을 전달해 선 색 변경      │
+  └──────────────────────────────────────────────────────────┘
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  h. 주의할 점
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. [Width 단위]
+     LineRenderer의 Width는 월드 유닛 기준입니다.
+     Canvas나 화면 픽셀과 단위가 달라서 0.1도 굵어 보일 수 있습니다.
+     Play 모드에서 Game 뷰를 보며 조정하세요.
+
+  2. [Alignment : View vs Local]
+     - Orthographic 카메라에서는 View 권장
+     - Local로 설정하면 카메라 각도에 따라 선이 납작하게 보일 수 있음
+
+  3. [텍스처 점선 효과]
+     - 점선 텍스처 이미지(PNG)를 만들어 Material에 할당
+     - Texture Mode : Tile + Tiling X 값 조정으로 간격 제어
+     - 이미지 없이 점선 흉내 내기는 어려움
+
+  4. [Material 변경 시 모든 road에 적용]
+     - Mat_Road 하나를 road(1), road(2)가 공유하면
+       Material 수정이 두 선 모두에 반영됨
+     - 선마다 다른 외형을 원하면 Material을 별도로 만들어야 함
+
+  5. [코드로 색상 변경 시 주의]
+     - startColor / endColor 는 Vertex Color로 적용됨
+     - Material의 Shader가 Vertex Color를 지원해야 보임
+       (Sprites/Default는 지원함)
+
+================================================================
