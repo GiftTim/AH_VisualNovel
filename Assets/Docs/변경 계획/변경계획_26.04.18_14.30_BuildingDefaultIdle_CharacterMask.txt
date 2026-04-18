@@ -1,0 +1,217 @@
+================================================================
+변경계획_26.04.18_14.30 - Building 기본 상태 Idle / 캐릭터 마스크 표시
+================================================================
+
+[목차]
+  1. 요구한 기능
+  2. 현재 상황 및 코드
+  3. 구현 방향 (d)
+  4. 방식 선택 근거 (e)
+  5. 진행 순서 (f)
+  6. 변경 위치 및 내용 (g)
+  7. 주의할 점 (h)
+
+================================================================
+1. 요구한 기능
+================================================================
+
+[기능 A] Spot.cs - Building 기본 상태를 Idle로 명시
+  - Spot 컴포넌트가 처음 생성될 때 _buildingState의 기본값이
+    명시적으로 BuildingState.Idle임을 코드에서 보장한다.
+
+[기능 B] 캐릭터를 특정 틀(프레임) 안에서만 표시
+  - 캐릭터 스프라이트(또는 UI 이미지)가 지정한 영역 밖으로 나가면
+    잘려서 보이지 않게 한다.
+  - 전형적인 비주얼 노벨 "캐릭터 창" 연출에 해당.
+
+================================================================
+2. 현재 상황 및 코드
+================================================================
+
+[Spot.cs] - Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs
+
+  현재 코드:
+    [SerializeField] BuildingState _buildingState;
+
+  문제:
+    - C# enum 필드는 초기화하지 않으면 암묵적으로 0(= Idle)으로 설정됨.
+    - 그러나 [SerializeField] 필드는 Unity 씬/프리팹 파일에 직렬화된 값이
+      코드 기본값보다 우선하기 때문에, 기존에 저장된 씬에서는
+      Inspector에서 수동으로 바꾼 값이 그대로 유지될 수 있음.
+    - 코드만 보면 "기본이 Idle이다"라는 의도가 명확하게 드러나지 않음.
+
+[캐릭터 마스크]
+  - 현재 프로젝트에서 캐릭터 오브젝트가 어떻게 구현되어 있는지에 따라
+    사용하는 Unity 기능이 달라짐.
+  - 대상 씬(Strategy game.unity)에서 캐릭터 표시 방식 확인 필요:
+      · UI Canvas 위의 Image 컴포넌트인가?
+      · 월드 공간의 SpriteRenderer인가?
+  - 현재 씬에 캐릭터 마스크 관련 구현 없음.
+
+================================================================
+3. 구현 방향 (d)
+================================================================
+
+[기능 A] Spot.cs 필드 기본값 명시
+  - _buildingState 필드에 = BuildingState.Idle 기본값을 명시적으로 추가.
+    [SerializeField] BuildingState _buildingState = BuildingState.Idle;
+  - 새로 생성되는 Spot 인스턴스에는 Idle이 기본값으로 적용됨.
+  - 기존에 씬/프리팹에 저장된 값은 직렬화 데이터가 우선되므로
+    영향 없음 (의도된 동작).
+
+[기능 B] 캐릭터 마스크 - 두 가지 경우로 나뉨
+
+  ── 경우 1: 캐릭터가 UI Canvas 위의 Image인 경우 ──
+    방법: Rect Mask 2D 컴포넌트 사용
+    구조:
+      [Canvas]
+        └ [MaskFrame] (Image 또는 빈 RectTransform) ← Rect Mask 2D 추가
+              └ [CharacterImage] (Image 컴포넌트) ← 이 자식만 잘림
+
+    - MaskFrame의 RectTransform 크기가 곧 표시 가능 영역.
+    - CharacterImage가 MaskFrame 밖으로 나가면 자동으로 잘림.
+    - 별도 머티리얼·셰이더 불필요.
+
+  ── 경우 2: 캐릭터가 월드 공간의 SpriteRenderer인 경우 ──
+    방법: SpriteMask 컴포넌트 사용
+    구조:
+      [MaskSprite] (SpriteRenderer 없이 SpriteMask만 있는 오브젝트)
+            ← Source 스프라이트를 마스크 형태로 지정 (보통 흰 사각형)
+      [Character] (SpriteRenderer) ← Mask Interaction을 "Visible Inside Mask"로 설정
+
+    - SpriteMask 오브젝트의 크기/위치가 곧 가시 영역.
+    - 캐릭터 SpriteRenderer의 Sort Order가 SpriteMask와 같은 레이어 범위에 있어야 함.
+
+  ★ 현재 프로젝트 구조상 비주얼 노벨 연출(캐릭터 창)이라면
+    UI Canvas 위 Image + Rect Mask 2D 방식을 기본으로 검토.
+
+================================================================
+4. 방식 선택 근거 (e)
+================================================================
+
+[기능 A - 필드 기본값 명시]
+
+  대안 1: 현재 유지 (암묵적 0 = Idle)
+    → 동작은 같지만 코드만 보면 의도가 불분명.
+    → 팀원이 enum 순서를 바꾸면 기본값이 의도치 않게 변경될 위험.
+    → 채택 안 함.
+
+  대안 2: Awake()에서 _buildingState = BuildingState.Idle 설정 (채택 보류)
+    → 씬 시작 시 무조건 Idle로 리셋 → 저장된 상태가 무시됨.
+    → 이미 Incident 상태로 저장된 Building도 플레이 시작 시 Idle이 되어버림.
+    → 채택 안 함 (별도로 "리셋" 기능이 필요한 경우에만 고려).
+
+  대안 3: 필드 선언 시 = BuildingState.Idle 명시 (채택)
+    → 코드 의도가 명확. 새 인스턴스는 Idle로 시작.
+    → 기존 저장 데이터에 영향 없음. 가장 안전하고 명시적인 방법.
+
+[기능 B - 캐릭터 마스크]
+
+  대안 1: Rect Mask 2D (UI 캐릭터에 채택)
+    → 별도 셰이더 불필요. Canvas 기반 UI에 최적화.
+    → 부모-자식 구조만 맞추면 즉시 동작. 러닝 비용 낮음.
+    → UI Canvas를 사용하는 경우 최우선 선택.
+
+  대안 2: SpriteMask (월드 공간 스프라이트에 채택)
+    → SpriteRenderer 사용 시 자연스러운 선택.
+    → Sorting Layer/Order 범위 설정으로 세밀한 제어 가능.
+
+  대안 3: Custom Shader / Stencil Buffer
+    → 복잡한 비정형 마스크가 필요할 때 사용.
+    → 현재 단순 사각형 프레임 용도에는 오버엔지니어링.
+    → 채택 안 함.
+
+  대안 4: Camera Render Texture
+    → 캐릭터를 별도 카메라로 찍어 RenderTexture에 담아 표시.
+    → 가장 강력하지만 설정 복잡도가 높음.
+    → 현재 단계에는 불필요.
+    → 채택 안 함.
+
+================================================================
+5. 진행 순서 (f)
+================================================================
+
+  Step 1. [기능 A] Spot.cs 수정
+    - _buildingState 필드에 = BuildingState.Idle 추가.
+
+  Step 2. [기능 B] 씬에서 캐릭터 구현 방식 확인
+    - Strategy game.unity 씬에서 캐릭터 오브젝트 확인.
+    - UI Image인지 SpriteRenderer인지 판단.
+
+  Step 3. [기능 B - UI인 경우] Rect Mask 2D 적용
+    - Canvas 하위에 MaskFrame 오브젝트 생성 (RectTransform 크기 = 원하는 표시 영역).
+    - MaskFrame에 Rect Mask 2D 컴포넌트 추가.
+    - 캐릭터 Image를 MaskFrame의 자식으로 이동.
+
+  Step 3'. [기능 B - SpriteRenderer인 경우] SpriteMask 적용
+    - 마스크 역할을 할 오브젝트 생성 → SpriteMask 컴포넌트 추가 → Source 스프라이트 지정.
+    - 캐릭터 SpriteRenderer의 Mask Interaction = "Visible Inside Mask" 설정.
+    - SpriteMask의 Front/Back Sorting Layer 범위를 캐릭터 레이어에 맞게 설정.
+
+  Step 4. Unity Editor에서 동작 확인
+    - [기능 A] 새 Spot 오브젝트 생성 시 Inspector에서 _buildingState가 Idle인지 확인.
+    - [기능 B] 캐릭터를 프레임 밖으로 이동시켜 잘림 동작 확인.
+
+================================================================
+6. 변경 위치 및 내용 (g)
+================================================================
+
+[파일: Spot.cs] - Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs
+
+  변경 전:
+    [SerializeField] BuildingState _buildingState;
+
+  변경 후:
+    [SerializeField] BuildingState _buildingState = BuildingState.Idle;
+
+────────────────────────────────────────────────────────────────
+
+[씬: Strategy game.unity] - 캐릭터 마스크 (UI 기준 예시)
+
+  변경 전 계층 구조 (예시):
+    Canvas
+      └ CharacterImage   ← 마스크 없음, 화면 전체에 표시됨
+
+  변경 후 계층 구조:
+    Canvas
+      └ MaskFrame  [RectTransform: 원하는 표시 영역 크기]
+                   [Rect Mask 2D 컴포넌트 추가]
+            └ CharacterImage   ← MaskFrame 영역 밖은 자동으로 잘림
+
+  추가 컴포넌트:
+    - MaskFrame 오브젝트: Rect Mask 2D (UnityEngine.UI)
+      · Padding: 0,0,0,0 (기본값, 필요 시 조정)
+      · Softness: 0,0 (경계를 부드럽게 할 경우 값 조정)
+
+================================================================
+7. 주의할 점 (h)
+================================================================
+
+  [기능 A]
+  1. = BuildingState.Idle 추가는 새로 생성되는 Spot에만 영향.
+     기존 씬/프리팹에 저장된 Spot의 _buildingState 값은 직렬화 데이터가 우선.
+     → 기존 오브젝트를 Idle로 리셋하고 싶다면 씬에서 직접 Inspector 수정 필요.
+
+  2. enum의 첫 번째 항목(index 0)이 Idle이므로 현재도 암묵적 기본값은 Idle.
+     이번 변경은 동작보다 "의도 명시"에 의미가 있음.
+
+  [기능 B - Rect Mask 2D]
+  3. Rect Mask 2D는 Canvas 내 UI 요소(Image, RawImage 등)에만 작동.
+     월드 공간 SpriteRenderer에는 효과 없음 → SpriteMask를 사용해야 함.
+
+  4. MaskFrame 자체에 Image 컴포넌트가 없어도 Rect Mask 2D는 동작함.
+     단, Image가 없으면 씬에서 영역이 시각적으로 보이지 않으므로
+     개발 중에는 반투명 배경 Image를 임시로 추가해두면 편함.
+
+  5. Rect Mask 2D와 일반 Mask(스텐실 기반)는 함께 중첩 사용 시 주의.
+     같은 Canvas 계층에서 두 방식을 혼용하면 렌더링 순서 문제 발생 가능.
+
+  [기능 B - SpriteMask]
+  6. SpriteMask의 Sorting Layer 범위(Front/Back Sorting Layer)를
+     캐릭터 SpriteRenderer의 Sorting Layer와 정확히 맞춰야 마스크가 적용됨.
+     범위가 맞지 않으면 캐릭터가 마스크 없이 전부 보이거나 전혀 안 보일 수 있음.
+
+  7. SpriteRenderer의 Mask Interaction 기본값은 "None".
+     반드시 "Visible Inside Mask" 또는 "Visible Outside Mask" 중 하나로 설정해야 함.
+
+================================================================

@@ -1,0 +1,330 @@
+================================================================
+변경계획_26.04.18_15.00 - 캐릭터 노드 이동 시스템 구현
+================================================================
+참조 레포: https://github.com/ViniciusChrisosthemos/GameDispatchLike.git
+
+[목차]
+  1. 요구한 기능
+  2. 현재 상황 및 코드
+  3. 구현 방향 (d)
+  4. 방식 선택 근거 (e)
+  5. 진행 순서 (f)
+  6. 변경 위치 및 내용 (g)
+  7. 주의할 점 (h)
+
+================================================================
+1. 요구한 기능
+================================================================
+
+  - 캐릭터(Agent)가 씬의 노드(Spot) 사이를 이동한다.
+  - 시작 Spot에서 목표 Spot까지 연결된 경로를 자동으로 탐색한다.
+  - 탐색된 경로를 따라 캐릭터가 부드럽게 이동한다.
+  - 이동 중 / 도착 상태를 외부에서 감지할 수 있다.
+
+================================================================
+2. 현재 상황 및 코드
+================================================================
+
+[Spot.cs] - Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs
+  - 건물(노드) 역할. BuildingType, BuildingState, SetState() 보유.
+  - 이웃 노드 목록(Neighbors)이 없음 → 경로 탐색 불가.
+
+  현재 핵심 코드:
+    [SerializeField] BuildingType _spotType;
+    [SerializeField] BuildingState _buildingState = BuildingState.Idle;
+    public BuildingState CurrentState => _buildingState;
+    public void SetState(BuildingState state) { _buildingState = state; }
+
+[BuildingLineConnector.cs] - Assets/Scripts/StrategyGame/Core/PathFinder/BuildingLineConnector.cs
+  - HQ에서 각 건물까지의 LineRenderer 경로(RoadPath)를 보유.
+  - RoadPath 안에 buildingSpot(Spot)과 waypoints(Transform[])가 있음.
+  - 현재는 시각적 선 그리기 전용. 경로 탐색 데이터로는 미활용.
+
+  현재 구조:
+    [SerializeField] Spot _hqSpot;
+    [SerializeField] RoadPath[] _roads;
+      └ RoadPath: { Spot buildingSpot, LineRenderer lineRenderer, Transform[] waypoints }
+
+[캐릭터 이동 관련]
+  - PathFinderManager.cs 없음 (경로 탐색 로직 없음)
+  - AgentMoveController.cs 없음 (이동 실행 로직 없음)
+  - 캐릭터 오브젝트 자체가 씬에 미구현
+
+================================================================
+3. 구현 방향 (d)
+================================================================
+
+참조 레포(GameDispatchLike)의 구조를 현재 프로젝트에 이식.
+
+  ┌─────────────────────────────────────────────────────────┐
+  │  Spot.cs          → Neighbors(List<Spot>) 필드 추가     │
+  │  PathFinderManager.cs → 신규 생성 (BFS 경로 탐색)       │
+  │  AgentMoveController.cs → 신규 생성 (Lerp 이동 코루틴)  │
+  └─────────────────────────────────────────────────────────┘
+
+[Step A] Spot.cs에 Neighbors 추가
+  - List<Spot> _neighbors 를 [SerializeField]로 추가.
+  - Inspector에서 연결할 이웃 Spot을 직접 드래그 연결.
+  - 읽기용 Property: IReadOnlyList<Spot> Neighbors 추가.
+
+[Step B] PathFinderManager.cs 신규 생성
+  - BFS(너비 우선 탐색)로 시작 Spot → 목표 Spot 최단 경로 계산.
+  - 반환값: List<Spot> (순서대로 거쳐갈 노드 목록).
+  - 싱글턴 또는 씬에 단일 오브젝트로 배치.
+
+[Step C] AgentMoveController.cs 신규 생성
+  - [SerializeField] float _moveSpeed 로 이동 속도 제어.
+  - MoveTo(Spot target, Action onArrived) 메서드 공개.
+    → PathFinderManager에서 경로를 받아 코루틴으로 이동 실행.
+  - 노드 간 이동: Vector3.Lerp (참조 레포와 동일 방식).
+  - 이동 완료 시 onArrived 콜백 및 UnityEvent OnArrived 발생.
+  - 일시정지: SetPause(bool) 정적 메서드.
+
+================================================================
+4. 방식 선택 근거 (e)
+================================================================
+
+[경로 탐색 알고리즘]
+
+  대안 1: BFS (채택)
+    → 노드 수가 많지 않은 전략 맵에서 최단 경로 보장.
+    → 구현 단순. 참조 레포와 동일 구조라 이식 용이.
+
+  대안 2: A* (AStar)
+    → 휴리스틱으로 더 빠르지만 노드가 적은 현재 맵에서 과함.
+    → 나중에 맵 규모가 커지면 교체 고려.
+    → 현재는 채택 안 함.
+
+  대안 3: NavMesh
+    → 3D 또는 복잡한 지형에서 유리. 2D 전략 맵에는 과함.
+    → 채택 안 함.
+
+[이동 애니메이션]
+
+  대안 1: Vector3.Lerp 코루틴 (채택)
+    → 참조 레포와 동일. 노드 간 선형 이동. 구현 단순.
+    → _moveSpeed 하나로 전체 속도 제어 가능.
+
+  대안 2: DOTween
+    → 이징(Ease) 효과로 더 자연스러운 이동 가능.
+    → 현재 프로젝트에 DOTween이 포함되어 있으나,
+       단순 이동에는 Lerp 코루틴으로도 충분.
+    → 시각적 연출 강화 시 교체 고려.
+
+  대안 3: Rigidbody MovePosition
+    → 물리 기반. 전략 게임 노드 이동에는 불필요.
+    → 채택 안 함.
+
+[Neighbors 연결 방식]
+
+  대안 1: Spot에 직접 List<Spot> 추가 (채택)
+    → Inspector에서 직관적으로 연결 가능.
+    → BuildingLineConnector의 기존 연결 정보와 별개로 관리.
+    → 경로 탐색과 시각적 선 그리기가 독립적으로 동작.
+
+  대안 2: BuildingLineConnector의 RoadPath에서 자동 추출
+    → 기존 데이터 재활용 가능하나, 선 그리기 데이터와 탐색 데이터가
+       강결합되어 유지보수 어려움.
+    → 채택 안 함.
+
+================================================================
+5. 진행 순서 (f)
+================================================================
+
+  Step 1. Spot.cs 수정
+    - List<Spot> _neighbors 필드 추가 ([SerializeField])
+    - IReadOnlyList<Spot> Neighbors 프로퍼티 추가
+
+  Step 2. PathFinderManager.cs 신규 생성
+    - Assets/Scripts/StrategyGame/Core/PathFinder/ 에 생성
+    - GetPath(Spot start, Spot target) → List<Spot> 구현 (BFS)
+
+  Step 3. AgentMoveController.cs 신규 생성
+    - Assets/Scripts/StrategyGame/Core/ 에 생성
+    - MoveTo(Spot target, Action onArrived) 구현
+    - 코루틴 내부 Vector3.Lerp 이동 루프 구현
+    - SetPause(bool), OnArrived UnityEvent 추가
+
+  Step 4. Unity Editor 씬 작업
+    - 각 Spot 오브젝트의 _neighbors 슬롯에 연결될 Spot 드래그 연결
+    - PathFinderManager 오브젝트를 씬에 배치
+    - 캐릭터 오브젝트에 AgentMoveController 컴포넌트 추가
+    - AgentMoveController._pathFinder 슬롯에 PathFinderManager 연결
+
+  Step 5. TestingSpotState.cs로 동작 확인
+    - B 키 입력 → 캐릭터가 목표 Spot으로 이동하는 테스트 추가
+
+================================================================
+6. 변경 위치 및 내용 (g)
+================================================================
+
+────────────────────────────────────────────────────────────────
+[파일: Spot.cs]
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs
+
+  변경 전:
+    public class Spot : MonoBehaviour
+    {
+        [SerializeField] BuildingType _spotType;
+        [SerializeField] BuildingState _buildingState = BuildingState.Idle;
+        public BuildingType SpotType => _spotType;
+        public BuildingState CurrentState => _buildingState;
+        public void SetType(BuildingType type) { _spotType = type; }
+        public void SetState(BuildingState state) { _buildingState = state; }
+    }
+
+  변경 후 (추가):
+    public class Spot : MonoBehaviour
+    {
+        [SerializeField] BuildingType _spotType;
+        [SerializeField] BuildingState _buildingState = BuildingState.Idle;
+        [SerializeField] List<Spot> _neighbors;          ← 추가
+
+        public BuildingType SpotType => _spotType;
+        public BuildingState CurrentState => _buildingState;
+        public IReadOnlyList<Spot> Neighbors => _neighbors; ← 추가
+
+        public void SetType(BuildingType type) { _spotType = type; }
+        public void SetState(BuildingState state) { _buildingState = state; }
+    }
+
+────────────────────────────────────────────────────────────────
+[파일: PathFinderManager.cs] ← 신규 생성
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/PathFinderManager.cs
+
+  public class PathFinderManager : MonoBehaviour
+  {
+      // BFS로 start → target 최단 경로 반환
+      // 경로 없으면 null 반환
+      public List<Spot> GetPath(Spot start, Spot target)
+      {
+          if (start == target) return new List<Spot> { start };
+
+          Queue<Spot> queue = new Queue<Spot>();
+          HashSet<Spot> visited = new HashSet<Spot>();
+          Dictionary<Spot, Spot> cameFrom = new Dictionary<Spot, Spot>();
+
+          queue.Enqueue(start);
+          visited.Add(start);
+
+          while (queue.Count > 0)
+          {
+              Spot current = queue.Dequeue();
+              if (current == target) break;
+
+              foreach (Spot neighbor in current.Neighbors)
+              {
+                  if (neighbor == null || visited.Contains(neighbor)) continue;
+                  visited.Add(neighbor);
+                  cameFrom[neighbor] = current;
+                  queue.Enqueue(neighbor);
+              }
+          }
+
+          if (!cameFrom.ContainsKey(target)) return null; // 경로 없음
+
+          // 역추적
+          List<Spot> path = new List<Spot>();
+          Spot node = target;
+          while (node != start)
+          {
+              path.Add(node);
+              node = cameFrom[node];
+          }
+          path.Add(start);
+          path.Reverse();
+          return path;
+      }
+  }
+
+────────────────────────────────────────────────────────────────
+[파일: AgentMoveController.cs] ← 신규 생성
+  경로: Assets/Scripts/StrategyGame/Core/AgentMoveController.cs
+
+  public class AgentMoveController : MonoBehaviour
+  {
+      [SerializeField] PathFinderManager _pathFinder;
+      [SerializeField] float _moveSpeed = 2f;
+
+      public UnityEvent OnArrived;
+
+      private static bool _isPaused = false;
+      private Coroutine _moveCoroutine;
+
+      public static void SetPause(bool pause) { _isPaused = pause; }
+
+      public void MoveTo(Spot target, Action onArrived = null)
+      {
+          // 현재 위치에서 가장 가까운 Spot을 시작점으로 사용 (추후 구현)
+          // 또는 현재 Spot을 외부에서 주입
+          if (_moveCoroutine != null) StopCoroutine(_moveCoroutine);
+          _moveCoroutine = StartCoroutine(MoveCoroutine(target, onArrived));
+      }
+
+      IEnumerator MoveCoroutine(Spot target, Action onArrived)
+      {
+          // ※ 시작 Spot을 외부에서 받는 구조로 수정 필요
+          //    → MoveTo(Spot startSpot, Spot targetSpot, Action onArrived)
+          //    아래는 단순화 예시
+
+          List<Spot> path = _pathFinder.GetPath(/* start */, target);
+          if (path == null || path.Count == 0) yield break;
+
+          for (int i = 0; i < path.Count - 1; i++)
+          {
+              Vector3 from = path[i].transform.position;
+              Vector3 to   = path[i + 1].transform.position;
+              float t = 0f;
+
+              while (t < 1f)
+              {
+                  if (!_isPaused)
+                  {
+                      t += Time.deltaTime * _moveSpeed;
+                      transform.position = Vector3.Lerp(from, to, Mathf.Clamp01(t));
+                  }
+                  yield return null;
+              }
+          }
+
+          onArrived?.Invoke();
+          OnArrived?.Invoke();
+      }
+  }
+
+================================================================
+7. 주의할 점 (h)
+================================================================
+
+  1. Spot._neighbors 연결은 단방향
+     - Spot A의 _neighbors에 Spot B를 추가해도
+       Spot B의 _neighbors에 Spot A가 자동으로 추가되지 않음.
+     - 양방향 이동이 필요하면 양쪽 모두 수동으로 연결해야 함.
+     - 참조 레포의 Node._isBidirectional 자동 처리 기능도 추가 가능.
+
+  2. AgentMoveController의 시작 Spot 처리
+     - 현재 설계에서 '현재 캐릭터가 어느 Spot에 있는가'를 추적해야 함.
+     - _currentSpot 필드를 AgentMoveController에 추가하거나,
+       캐릭터가 항상 특정 Spot 위에 있도록 위치를 강제하는 로직 필요.
+
+  3. 경로가 없는 경우 처리
+     - GetPath()가 null을 반환하는 경우 MoveCoroutine이 조용히 종료됨.
+     - 디버그 로그 또는 UI 피드백으로 "이동 불가" 상태를 알려주는 것 권장.
+
+  4. 이동 중 재이동 요청
+     - MoveTo()를 이동 중에 다시 호출하면 기존 코루틴을 중단하고
+       새 경로로 재시작함. 이 동작이 의도와 맞는지 확인 필요.
+
+  5. DOTween과의 충돌
+     - 현재 프로젝트에 DOTween이 포함되어 있음.
+     - 같은 Transform.position을 Lerp 코루틴과 DOTween이
+       동시에 조작하면 충돌 발생. 한 가지 방식만 사용할 것.
+
+  6. Waypoint 처리 (BuildingLineConnector와의 관계)
+     - BuildingLineConnector의 RoadPath에는 중간 waypoint가 있음.
+     - 캐릭터가 선을 따라 waypoint를 경유하며 이동하려면
+       경로 탐색 결과(List<Spot>)와 별개로
+       각 Spot 간 waypoint 목록도 포함한 확장 경로 구조가 필요.
+     - 1차 구현에서는 Spot 간 직선 이동으로 먼저 검증 후 추가 고려.
+
+================================================================

@@ -1,0 +1,108 @@
+================================================================
+변경완료_26.04.18_14.00 - Spot Inspector 상태 표시 & TestInput Selected
+================================================================
+
+[목차]
+  1. 변경 전후 코드
+  2. 작동 흐름
+  3. 주의할 점
+
+================================================================
+1. 변경 전후 코드
+================================================================
+
+[Spot.cs] - Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs
+
+  ─── 변경 전 ───
+    [SerializeField] BuildingType _spotType;
+
+    public BuildingType SpotType => _spotType;
+
+    public void SetType(BuildingType type)
+    {
+        _spotType = type;
+    }
+
+  ─── 변경 후 ───
+    [SerializeField] BuildingType _spotType;
+    [SerializeField] BuildingState _buildingState;   ← 추가
+
+    public BuildingType SpotType => _spotType;
+    public BuildingState CurrentState => _buildingState;  ← 추가
+
+    public void SetType(BuildingType type)
+    {
+        _spotType = type;
+    }
+
+    public void SetState(BuildingState state)         ← 추가
+    {
+        _buildingState = state;
+    }
+
+────────────────────────────────────────────────────────────────
+
+[TestingSpotState.cs] - Assets/Scripts/StrategyGame/Test/TestingSpotState.cs
+
+  ─── 변경 전 ───
+    public class TestingSpotState : MonoBehaviour
+    {
+        void Start() { }
+        void Update() { }
+    }
+
+  ─── 변경 후 ───
+    public class TestingSpotState : MonoBehaviour
+    {
+        [SerializeField] Spot _targetSpot;   ← 추가
+
+        void Start() { }
+
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.A))
+            {
+                if (_targetSpot != null)
+                    _targetSpot.SetState(BuildingState.Selected);
+            }
+        }
+    }
+
+================================================================
+2. 작동 흐름
+================================================================
+
+  1. Unity Editor에서 TestingSpotState 컴포넌트의 _targetSpot 슬롯에
+     테스트할 Spot 오브젝트를 드래그 연결한다.
+
+  2. 플레이 모드 진입.
+
+  3. 키보드 A 키를 누른다.
+     → TestingSpotState.Update()에서 Input.GetKeyDown(KeyCode.A) 감지
+     → _targetSpot.SetState(BuildingState.Selected) 호출
+     → Spot._buildingState 값이 Selected로 변경됨
+
+  4. Inspector에서 해당 Spot 컴포넌트를 보면
+     _buildingState 필드가 "Selected"로 표시되는 것을 실시간으로 확인 가능.
+
+================================================================
+3. 주의할 점
+================================================================
+
+  1. _buildingState는 [SerializeField]이므로 Inspector에서 직접 수정 가능.
+     → 테스트 중 Inspector 값을 실수로 바꾸지 않도록 주의.
+     → 향후 실제 게임 로직 적용 시 Inspector 편집을 막으려면
+        HideInInspector 또는 Custom Editor를 고려.
+
+  2. TestingSpotState.cs는 TESTING 네임스페이스 내에 있음.
+     → Spot 클래스는 전역(네임스페이스 없음)으로 선언되어 있어
+        using 없이 접근 가능. 문제 없음.
+
+  3. Input.GetKeyDown은 구 InputSystem(Legacy) 기준.
+     → 프로젝트에 새 Input System 패키지가 활성화된 경우
+        키 입력이 동작하지 않을 수 있음.
+
+  4. 플레이 모드 종료 후에는 변경된 _buildingState 값이 리셋됨.
+     (SerializeField의 플레이모드 동작 특성)
+
+================================================================

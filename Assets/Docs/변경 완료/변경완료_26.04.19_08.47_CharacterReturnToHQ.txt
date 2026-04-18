@@ -1,0 +1,143 @@
+================================================================
+변경완료_26.04.19_00.00 - 퀘스트 완료 시 캐릭터 귀환 이동
+================================================================
+
+[목차]
+  1. 변경 개요
+  2. 변경 전/후 코드
+  3. 작동 흐름
+  4. 주의할 점
+
+================================================================
+1. 변경 개요
+================================================================
+
+  대상 파일:
+    - Assets/Scripts/StrategyGame/Core/PathFinder/BuildingLineConnector.cs
+    - Assets/Scripts/StrategyGame/Test/TestingSpotState.cs
+    - Assets/Scripts/StrategyGame/Core/Character/CharacterAgent.cs
+
+  변경 내용 요약:
+    - BuildingLineConnector에 GetReturnWaypoints() 메서드 추가
+      → GetWaypoints()의 역순 경로 반환 (targetSpot → HQ)
+    - TestingSpotState B 키에 귀환 이동 로직 연결
+      → SetState(Completed) + GetReturnWaypoints() + MoveAlong()
+    - CharacterAgent.MoveAlong() 이동 중 요청 무시 로직 추가
+      → _moveCoroutine != null이면 새 요청 무시
+
+================================================================
+2. 변경 전/후 코드
+================================================================
+
+────────────────────────────────────────────────────────────────
+[BuildingLineConnector.cs] — 메서드 추가
+
+  변경 전:
+    (GetReturnWaypoints 메서드 없음)
+
+  변경 후:
+    /// <summary>
+    /// 특정 건물 Spot에서 HQ로 귀환하는 역방향 경로를 Transform 배열로 반환.
+    /// 반환 순서: [targetSpot, waypoint(n-1), ..., waypoint0, HQ]
+    /// </summary>
+    public Transform[] GetReturnWaypoints(Spot fromSpot)
+    {
+        Transform[] path = GetWaypoints(fromSpot);
+        if (path == null) return null;
+
+        System.Array.Reverse(path);
+        return path;
+    }
+
+────────────────────────────────────────────────────────────────
+[CharacterAgent.cs] — MoveAlong() 수정
+
+  변경 전:
+    public void MoveAlong(Transform[] path, Action onArrived = null)
+    {
+        if (_moveCoroutine != null) StopCoroutine(_moveCoroutine);
+        _moveCoroutine = StartCoroutine(MoveCoroutine(path, onArrived));
+    }
+
+  변경 후:
+    public void MoveAlong(Transform[] path, Action onArrived = null)
+    {
+        if (_moveCoroutine != null) return;
+        _moveCoroutine = StartCoroutine(MoveCoroutine(path, onArrived));
+    }
+
+  추가 변경 (MoveCoroutine 끝):
+    // 이동 완료 → 다음 MoveAlong() 요청을 수락할 수 있도록 초기화
+    _moveCoroutine = null;
+
+  이유:
+    - MoveAlong()에서 return 조건이 "_moveCoroutine != null"이므로,
+      코루틴이 끝난 뒤 null로 초기화하지 않으면 도착 후에도
+      MoveAlong() 요청이 영구히 무시됨.
+
+────────────────────────────────────────────────────────────────
+[TestingSpotState.cs] — B 키 수정
+
+  변경 전:
+    if (Input.GetKeyDown(KeyCode.B))
+    {
+        if (_targetSpot != null)
+            _targetSpot.SetState(BuildingState.Completed);
+    }
+
+  변경 후:
+    if (Input.GetKeyDown(KeyCode.B))
+    {
+        if (_targetSpot != null)
+        {
+            _targetSpot.SetState(BuildingState.Completed);
+
+            Transform[] path = _connector.GetReturnWaypoints(_targetSpot);
+            if (path != null)
+                _character.MoveAlong(path);
+        }
+    }
+
+================================================================
+3. 작동 흐름
+================================================================
+
+  B 키 입력
+    → _targetSpot.SetState(Completed)
+         건물 상태를 Completed로 변경
+
+    → _connector.GetReturnWaypoints(_targetSpot)
+         GetWaypoints()로 [HQ, wp0, ..., targetSpot] 배열 생성
+         Array.Reverse 적용 → [targetSpot, ..., wp0, HQ] 반환
+
+    → _character.MoveAlong(path)
+         이동 중이면 요청 무시 (return)
+         이동 중이 아니면 새 코루틴 시작
+         targetSpot → ... → HQ 순서로 Lerp 이동
+         도착 시 OnArrived 이벤트 발생
+         도착 후 _moveCoroutine = null → 다음 MoveAlong() 요청 수락 가능
+
+================================================================
+4. 주의할 점
+================================================================
+
+  1. 이동 중 B 키 입력
+     - MoveAlong()은 이동 중이면 요청을 무시함 (return)
+     - A 키 이동이 끝난 뒤에야 B 키 귀환이 시작됨
+
+  2. A 키 완료 전 B 키 입력
+     - 위 1번과 동일. 이동 중이므로 무시됨
+
+  3. Array.Reverse는 원본 배열을 직접 수정
+     - GetWaypoints()가 new로 생성한 배열을 반환하므로 _roads 원본 데이터 영향 없음
+
+  4. null 체크
+     - GetReturnWaypoints()가 null 반환 시 MoveAlong 호출하지 않음 (path != null 조건)
+     - _connector, _character는 인스펙터에서 반드시 할당 필요
+
+  5. 나중에 Mission 시스템으로 이관 시
+     - TestingSpotState의 B 키 로직
+       (SetState(Completed) + GetReturnWaypoints + MoveAlong)을
+       MissionManager 또는 QuestCoordinator로 이전하면 됨
+
+================================================================

@@ -1,0 +1,211 @@
+================================================================
+변경계획_26.04.18_22.54 - 퀘스트 완료 시 캐릭터 귀환 이동
+================================================================
+
+[목차]
+  1. 요구한 기능
+  2. 현재 상황 및 코드 (c)
+  3. 구현 방향 (d)
+  4. 방식 선택 근거 (e)
+  5. 진행 순서 (f)
+  6. 변경 위치 및 내용 (g)
+  7. 주의할 점 (h)
+
+================================================================
+1. 요구한 기능
+================================================================
+
+  [트리거]
+  - TestingSpotState에서 B 키 입력
+    → _targetSpot.SetState(BuildingState.Completed) 호출
+
+  [상태 전이]
+  - Spot의 BuildingState가 Completed로 변경됨
+
+  [캐릭터 귀환]
+  - _targetSpot에 있는 캐릭터(Character)가
+    HQ로 귀환 이동 시작
+  - 이동 경로는 BuildingLineConnector에 등록된 RoadPath를 역순으로 따름
+    (targetSpot → waypoints 역순 → HQ)
+
+================================================================
+2. 현재 상황 및 코드 (c)
+================================================================
+
+[TestingSpotState.cs]
+  경로: Assets/Scripts/StrategyGame/Test/TestingSpotState.cs
+
+  - [SerializeField] Spot _targetSpot 보유
+  - [SerializeField] BuildingLineConnector _connector 보유
+  - [SerializeField] CharacterAgent _character 보유
+  - A 키 → SetState(Selected) + MoveAlong(HQ → targetSpot)
+  - B 키 → SetState(Completed) 만 호출. 귀환 이동 없음
+
+  현재 B 키 코드:
+    if (Input.GetKeyDown(KeyCode.B))
+    {
+        if (_targetSpot != null)
+            _targetSpot.SetState(BuildingState.Completed);
+    }
+
+────────────────────────────────────────────────────────────────
+[BuildingLineConnector.cs]
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/BuildingLineConnector.cs
+
+  - GetWaypoints(Spot targetSpot) 보유
+    → 반환: [HQ, waypoint0, ..., targetSpot] (HQ 출발 순서)
+  - 역방향 경로를 반환하는 메서드 없음
+
+────────────────────────────────────────────────────────────────
+[CharacterAgent.cs]
+  경로: Assets/Scripts/StrategyGame/Core/Character/CharacterAgent.cs
+
+  - MoveAlong(Transform[] path, Action onArrived = null) 보유
+  - 경로 방향은 path 배열 순서에 따름 → 역순 배열을 주면 역방향 이동 가능
+  - 별도 귀환 메서드 없음
+
+================================================================
+3. 구현 방향 (d)
+================================================================
+
+  B 키 입력 시 아래 흐름으로 처리:
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │  Step A. BuildingLineConnector.cs                            │
+  │    → GetReturnWaypoints(Spot fromSpot) 메서드 추가           │
+  │       GetWaypoints()의 반환 배열을 역순으로 뒤집어 반환      │
+  │       반환 형식: Transform[] (targetSpot → waypoints → HQ)  │
+  │                                                              │
+  │  Step B. TestingSpotState.cs 수정                            │
+  │    → B 키 입력 시:                                           │
+  │       1) _targetSpot.SetState(Completed)                     │
+  │       2) Transform[] path = _connector                       │
+  │                             .GetReturnWaypoints(_targetSpot) │
+  │       3) _character.MoveAlong(path)                          │
+  └──────────────────────────────────────────────────────────────┘
+
+  [전체 흐름]
+
+    [TestingSpotState]
+      B 키 입력
+        ↓
+    _targetSpot.SetState(Completed)
+        ↓
+    _connector.GetReturnWaypoints(_targetSpot)
+        → 해당 Spot의 RoadPath 검색
+        → GetWaypoints()와 동일하게 경로 구성 후 Array.Reverse
+        → [targetSpot, ..., waypoint0, HQ] 반환
+        ↓
+    _character.MoveAlong(path)
+        → 코루틴으로 path 순서대로 Lerp 이동 (targetSpot → HQ)
+        → 도착 시 OnArrived 이벤트 발생
+
+================================================================
+4. 방식 선택 근거 (e)
+================================================================
+
+[역방향 경로 처리]
+
+  대안 1: BuildingLineConnector에 GetReturnWaypoints() 추가 (채택)
+    → GetWaypoints()와 대칭된 메서드로 역할이 명확.
+    → TestingSpotState는 "어떤 경로인지" 신경 쓰지 않아도 됨.
+    → 나중에 MissionManager로 이관할 때도 메서드 호출만 바꾸면 됨.
+
+  대안 2: TestingSpotState에서 Array.Reverse 직접 처리
+    → 코드가 단순하지만 경로 구성 책임이 TestingSpotState에 섞임.
+    → 테스트 클래스에 경로 조작 로직이 들어가는 것은 부적절.
+
+  대안 3: CharacterAgent에 MoveAlongReverse() 추가
+    → CharacterAgent는 "이동"만 담당해야 하므로 경로 방향 결정은 밖에서 처리하는 것이 적합.
+    → 경로 배열의 역순은 이미 MoveAlong()으로 처리 가능하므로 중복.
+
+[트리거 방식]
+
+  현재와 동일하게 TestingSpotState의 B 키에서 직접 처리.
+  Mission 시스템 도입 전 임시 구조이므로 단순하게 유지.
+
+================================================================
+5. 진행 순서 (f)
+================================================================
+
+  Step 1. BuildingLineConnector.cs 수정
+    - GetReturnWaypoints(Spot fromSpot) 메서드 추가
+    - GetWaypoints()로 정방향 경로를 구한 뒤 System.Array.Reverse로 역순 반환
+
+  Step 2. TestingSpotState.cs 수정
+    - B 키 입력 시: SetState(Completed) + GetReturnWaypoints() + MoveAlong() 연결
+
+  Step 3. 동작 확인
+    - A 키: HQ → targetSpot 이동 확인
+    - B 키: targetSpot → HQ 귀환 이동 확인
+    - 경로가 LineRenderer 선과 동일한지 확인
+
+================================================================
+6. 변경 위치 및 내용 (g)
+================================================================
+
+────────────────────────────────────────────────────────────────
+[파일: BuildingLineConnector.cs] ← 메서드 추가
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/BuildingLineConnector.cs
+
+  추가 내용:
+    public Transform[] GetReturnWaypoints(Spot fromSpot)
+    {
+        Transform[] path = GetWaypoints(fromSpot);
+        if (path == null) return null;
+
+        System.Array.Reverse(path);
+        return path;
+    }
+
+────────────────────────────────────────────────────────────────
+[파일: TestingSpotState.cs] ← 수정
+  경로: Assets/Scripts/StrategyGame/Test/TestingSpotState.cs
+
+  변경 전:
+    if (Input.GetKeyDown(KeyCode.B))
+    {
+        if (_targetSpot != null)
+            _targetSpot.SetState(BuildingState.Completed);
+    }
+
+  변경 후:
+    if (Input.GetKeyDown(KeyCode.B))
+    {
+        if (_targetSpot != null)
+        {
+            _targetSpot.SetState(BuildingState.Completed);
+
+            Transform[] path = _connector.GetReturnWaypoints(_targetSpot);
+            if (path != null)
+                _character.MoveAlong(path);
+        }
+    }
+
+================================================================
+7. 주의할 점 (h)
+================================================================
+
+  1. A 키로 이동 완료 전에 B 키를 누르는 경우
+     - CharacterAgent.MoveAlong()은 기존 코루틴을 중단하고 새 경로로 재이동.
+     - 즉, 이동 도중 B를 누르면 중간 위치에서 바로 귀환 시작.
+     - 이 동작이 의도와 맞는지 확인. 원하지 않으면 MoveAlong() 내부에서
+       이동 중일 때 새 요청을 무시하는 처리 추가 고려.
+
+  2. 캐릭터가 targetSpot에 도착하지 않은 상태에서 B 키 입력
+     - 위 1번과 동일. 캐릭터 위치가 targetSpot이 아닌 중간 지점에서 귀환 시작.
+
+  3. GetReturnWaypoints()는 GetWaypoints()를 호출 후 Reverse
+     - GetWaypoints()가 null을 반환하면 GetReturnWaypoints()도 null 반환.
+     - TestingSpotState에서 null 체크 처리됨 (path != null 조건).
+
+  4. Array.Reverse는 원본 배열을 직접 수정
+     - GetWaypoints()에서 new로 생성한 배열을 반환하므로 원본 데이터 영향 없음.
+     - _roads의 waypoints 배열은 건드리지 않음.
+
+  5. 나중에 Mission 시스템으로 이관 시
+     - TestingSpotState의 B 키 로직
+       (SetState(Completed) + GetReturnWaypoints + MoveAlong)을
+       MissionManager 또는 QuestCoordinator로 이전하면 됨.
+
+================================================================

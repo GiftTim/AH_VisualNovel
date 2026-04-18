@@ -1,0 +1,244 @@
+================================================================
+변경계획_26.04.18_13.13 — Building State 테스트 입력 구현
+================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+목차
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 구현 방식
+  e. 방식 선택 이유
+  f. 진행 순서
+  g. 변경 상세 (어디가 어떻게 바뀌는지)
+  h. 주의할 점
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+b. 요구한 기능
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  게임 정식 진행 전에 BuildingState 흐름을 빠르게 확인하기 위한 임시 테스트 입력.
+
+  - A 키 → Building (1)의 상태를 Incident 로 변경
+  - B 키 → Building (1)의 상태를 Selected 로 변경
+  - C 키 → Building (1)의 상태를 Completed 로 변경
+
+  대상 씬 : Assets/Scenes/StrategyGame.unity
+  대상 오브젝트 : "Building (1)"  (씬 내 Buildings 하위)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+c. 현재 상황 및 코드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Spot.cs — Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs]
+
+  public enum BuildingType  { HQ, Normal }
+
+  public enum BuildingState
+  {
+      Idle,         // 대기 중
+      Incident,     // 사건 발생
+      Unselected,   // 미션 만료
+      Selected,     // 미션 진행 중
+      Completed     // 사건 완료
+  }
+
+  [System.Serializable]
+  public class SpotVisualConfig
+  {
+      public BuildingType  _buildingType;
+      public BuildingState _buildingState;
+      public Image         _icon;
+      public Color         color = Color.white;
+  }
+
+  public class Spot : MonoBehaviour
+  {
+      [SerializeField] BuildingType _spotType;
+      public BuildingType SpotType => _spotType;
+
+      public void SetType(BuildingType type) { _spotType = type; }
+  }
+
+  ▶ 문제점
+    - BuildingState 를 저장하는 필드가 Spot 에 없음
+    - 상태를 변경하는 SetState() 메서드가 없음
+    - 키 입력을 처리하는 테스트 스크립트가 없음
+
+[씬 오브젝트 현황]
+  - StrategyGameManager, MissionManager, DayManager, RoadManager 오브젝트가
+    씬에 배치되어 있으나 해당 스크립트 파일이 아직 없음
+  - Spot.cs, BuildingLineConnector.cs 두 파일만 실제 구현되어 있음
+  - 현재 키 입력은 InputSystem(UI Input Module)을 쓰지만
+    게임플레이용 커스텀 키 바인딩은 없음
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+d. 구현 방식
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ① Spot.cs 수정
+    - _buildingState 필드 추가 (BuildingState, SerializeField)
+    - BuildingState 프로퍼티 추가 (읽기 전용)
+    - SetState(BuildingState state) 메서드 추가
+
+  ② BuildingStateTestInput.cs 신규 생성
+    - 경로 : Assets/Scripts/StrategyGame/Debug/BuildingStateTestInput.cs
+    - MonoBehaviour, Update() 로 매 프레임 키 감지
+    - Inspector 에서 Spot 레퍼런스를 직접 연결 (SerializeField)
+    - A → SetState(BuildingState.Incident)
+    - B → SetState(BuildingState.Selected)
+    - C → SetState(BuildingState.Completed)
+    - 상태 변경 시 Debug.Log 출력
+
+  ③ 씬 배치
+    - 씬에 빈 GameObject "TestInputHandler" 생성
+    - BuildingStateTestInput 컴포넌트 부착
+    - Inspector 에서 Building (1)의 Spot 컴포넌트 연결
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+e. 방식 선택 이유
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  후보 방식 비교:
+
+  방식 A — Spot.cs 내부에 직접 Update() + Input 처리
+    장점 : 파일 수 최소화
+    단점 : 테스트 코드와 실 로직이 같은 파일에 섞임.
+           나중에 제거 시 Spot.cs 를 건드려야 해서 위험.
+
+  방식 B — InputSystem Action 으로 바인딩
+    장점 : 정식 InputSystem 흐름에 맞음
+    단점 : Action 에셋 수정, Binding 설정 등 설정 비용이 크다.
+           임시 테스트치고 오버스펙.
+
+  방식 C (채택) — 별도 Debug 스크립트 + Inspector 레퍼런스
+    장점 :
+      - Spot.cs 에 최소한의 변경(state 필드+메서드)만 함
+      - 테스트 코드가 완전히 분리되어 나중에 오브젝트/스크립트
+        하나만 삭제하면 제거 완료
+      - Inspector 연결이므로 Building (1) 외 다른 건물도 즉시 교체 가능
+      - Legacy Input (Input.GetKeyDown) 사용 → 의존 없이 단순
+
+  → 임시 테스트 목적에 가장 가볍고 제거가 쉬운 방식 C 채택
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+f. 진행 순서
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Step 1. Spot.cs 수정
+    - _buildingState 필드 추가
+    - BuildingState 프로퍼티 추가
+    - SetState() 메서드 추가
+
+  Step 2. Debug 폴더 생성 후 BuildingStateTestInput.cs 작성
+    - 경로 : Assets/Scripts/StrategyGame/Debug/
+
+  Step 3. 씬에서 TestInputHandler 오브젝트 생성 및 컴포넌트 부착
+    - "TestInputHandler" 빈 GameObject 추가
+    - BuildingStateTestInput 컴포넌트 부착
+    - _targetSpot 슬롯에 "Building (1)" 드래그 연결
+
+  Step 4. 플레이 테스트
+    - A/B/C 키로 상태 변경 및 Console 로그 확인
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+g. 변경 상세
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[파일 1] Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs  [수정]
+
+  추가할 내용:
+
+  public class Spot : MonoBehaviour
+  {
+      [SerializeField] BuildingType  _spotType;
+      [SerializeField] BuildingState _buildingState;   // ← 추가
+
+      public BuildingType  SpotType       => _spotType;
+      public BuildingState BuildingState  => _buildingState;  // ← 추가
+
+      public void SetType(BuildingType type) { _spotType = type; }
+
+      public void SetState(BuildingState state)   // ← 추가
+      {
+          _buildingState = state;
+      }
+  }
+
+---
+
+[파일 2] Assets/Scripts/StrategyGame/Debug/BuildingStateTestInput.cs  [신규]
+
+  using UnityEngine;
+
+  public class BuildingStateTestInput : MonoBehaviour
+  {
+      [SerializeField] Spot _targetSpot;
+
+      void Update()
+      {
+          if (_targetSpot == null) return;
+
+          if (Input.GetKeyDown(KeyCode.A))
+          {
+              _targetSpot.SetState(BuildingState.Incident);
+              Debug.Log("[Test] Building (1) → Incident");
+          }
+          else if (Input.GetKeyDown(KeyCode.B))
+          {
+              _targetSpot.SetState(BuildingState.Selected);
+              Debug.Log("[Test] Building (1) → Selected");
+          }
+          else if (Input.GetKeyDown(KeyCode.C))
+          {
+              _targetSpot.SetState(BuildingState.Completed);
+              Debug.Log("[Test] Building (1) → Completed");
+          }
+      }
+  }
+
+---
+
+[씬] Assets/Scenes/StrategyGame.unity  [수정]
+
+  - 새 빈 GameObject "TestInputHandler" 추가
+  - 컴포넌트 : BuildingStateTestInput
+  - _targetSpot 필드 : Building (1) 오브젝트의 Spot 컴포넌트 연결
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+h. 주의할 점
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. Legacy Input 사용
+     - 프로젝트가 InputSystem 패키지를 사용 중이므로,
+       Player Settings → Active Input Handling 이 "Both" 또는
+       "Input Manager (Old)" 여야 Input.GetKeyDown 이 동작함.
+       "Input System Package (New)" 단독이면 키 입력이 무시됨.
+       → 확인 방법 : Edit > Project Settings > Player > Other Settings
+                    > Active Input Handling
+
+  2. 이 테스트 코드는 임시용
+     - BuildingStateTestInput.cs 와 씬의 TestInputHandler 오브젝트는
+       정식 구현 완료 후 반드시 제거할 것.
+     - Spot.cs 에 추가된 SetState() / _buildingState 는 정식 로직에서
+       재사용 가능하므로 유지해도 무방함.
+
+  3. 시각적 피드백 없음
+     - 현재 Spot 에는 상태에 따른 색상/아이콘 변경 로직이 없음.
+       상태가 바뀌었는지는 Console 로그 및 Inspector 의
+       _buildingState 필드 값으로만 확인 가능.
+       (SpotVisualConfig 는 데이터 구조만 정의되어 있고 실제 적용 코드 없음)
+
+  4. _targetSpot 연결 누락 주의
+     - Inspector 에서 Building (1) 을 드래그하지 않으면
+       NullReferenceException 없이 그냥 무시됨 (null 체크로 방어).
+       연결 여부 반드시 확인.
+
+================================================================

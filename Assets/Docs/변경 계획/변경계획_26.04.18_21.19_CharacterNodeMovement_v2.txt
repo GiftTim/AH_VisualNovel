@@ -1,0 +1,396 @@
+================================================================
+변경계획_26.04.18_15.30 - 캐릭터 노드 이동 시스템 구현 (v2)
+================================================================
+
+[이전 계획과의 차이점]
+  - 이전 계획(15:00): Spot._neighbors + BFS 경로 탐색
+  - 이번 계획(15:30): BuildingLineConnector.RoadPath 직접 활용
+    → Spot 간 Neighbors 연결 없이도 기존 LineRenderer 경로를 재사용
+    → 더 단순하고 현재 씬 데이터를 바로 활용 가능
+
+================================================================
+[목차]
+  1. 요구한 기능
+  2. 현재 상황 및 코드
+  3. 구현 방향 (d)
+  4. 방식 선택 근거 (e)
+  5. 진행 순서 (f)
+  6. 변경 위치 및 내용 (g)
+  7. 주의할 점 (h)
+================================================================
+
+
+================================================================
+1. 요구한 기능
+================================================================
+
+  [트리거]
+  - TestingSpotState에서 A 키 입력
+    → _targetSpot.SetState(BuildingState.Selected) 호출
+
+  [상태 전이]
+  - Spot의 BuildingState가 Selected로 변경됨
+
+  [캐릭터 이동]
+  - HQ Spot에 있는 캐릭터(Character)가
+    _targetSpot(목표 건물)으로 이동 시작
+  - 이동 경로는 BuildingLineConnector에 등록된 RoadPath를 따름
+    (HQ → waypoints → buildingSpot 순서)
+
+================================================================
+2. 현재 상황 및 코드
+================================================================
+
+[TestingSpotState.cs]
+  경로: Assets/Scripts/StrategyGame/Test/TestingSpotState.cs
+
+  - [SerializeField] Spot _targetSpot 보유
+  - A 키 → _targetSpot.SetState(Selected)
+  - B 키 → _targetSpot.SetState(Completed)
+  - 캐릭터 이동 트리거 로직 없음
+
+  현재 코드:
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.A))
+            _targetSpot.SetState(BuildingState.Selected);
+        if (Input.GetKeyDown(KeyCode.B))
+            _targetSpot.SetState(BuildingState.Completed);
+    }
+
+────────────────────────────────────────────────────────────────
+[Spot.cs]
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs
+
+  - BuildingType, BuildingState 관리
+  - SetState() 보유하나 상태 변경 시 외부 알림(이벤트) 없음
+
+  현재 핵심 코드:
+    public void SetState(BuildingState state)
+    {
+        _buildingState = state;
+    }
+
+────────────────────────────────────────────────────────────────
+[BuildingLineConnector.cs]
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/BuildingLineConnector.cs
+
+  - _hqSpot(Spot), _roads(RoadPath[]) 보유
+  - RoadPath: { Spot buildingSpot, LineRenderer lineRenderer, Transform[] waypoints }
+  - 현재는 시각적 선 그리기 전용
+  - 경로 정보를 외부에서 조회하는 메서드 없음
+
+  현재 구조:
+    [SerializeField] Spot _hqSpot;
+    [SerializeField] RoadPath[] _roads;
+
+    public class RoadPath
+    {
+        public Spot buildingSpot;
+        public LineRenderer lineRenderer;
+        public Transform[] waypoints;
+    }
+
+────────────────────────────────────────────────────────────────
+[캐릭터 이동 관련]
+  - CharacterAgent.cs 없음 (캐릭터 이동 로직 없음)
+  - 씬에 캐릭터 오브젝트 미구현
+  - HQ에서 출발하는 이동 로직 없음
+
+================================================================
+3. 구현 방향 (d)
+================================================================
+
+  기존 BFS 접근(15:00 계획) 대신
+  BuildingLineConnector에 이미 정의된 경로 데이터를 직접 활용.
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │  Step A. Spot.cs                                             │
+  │    → SetState() 내부에서 System.Action<BuildingState> 이벤트  │
+  │       발생시켜 외부(TestingSpotState)가 감지할 수 있게        │
+  │                                                              │
+  │  Step B. BuildingLineConnector.cs                            │
+  │    → GetWaypoints(Spot target) 메서드 추가                   │
+  │       특정 buildingSpot에 해당하는 경로(waypoints)를 반환     │
+  │       반환 형식: Transform[] (HQ → waypoints → target 순서)  │
+  │                                                              │
+  │  Step C. CharacterAgent.cs (신규)                            │
+  │    → 캐릭터 오브젝트에 붙는 이동 컴포넌트                    │
+  │       MoveAlong(Transform[] path, Action onArrived) 구현     │
+  │       Vector3.Lerp 코루틴으로 path를 순서대로 이동            │
+  │                                                              │
+  │  Step D. TestingSpotState.cs 수정                            │
+  │    → [SerializeField] BuildingLineConnector _connector 추가  │
+  │    → [SerializeField] CharacterAgent _character 추가         │
+  │    → A 키 입력 시:                                           │
+  │       1) _targetSpot.SetState(Selected)                      │
+  │       2) Transform[] path = _connector.GetWaypoints(...)     │
+  │       3) _character.MoveAlong(path, onArrived)               │
+  └──────────────────────────────────────────────────────────────┘
+
+  [전체 흐름]
+
+    [TestingSpotState]
+      A 키 입력
+        ↓
+    _targetSpot.SetState(Selected)
+        ↓
+    _connector.GetWaypoints(_targetSpot)
+        → BuildingLineConnector에서 해당 Spot의 RoadPath 검색
+        → [HQ, waypoint0, waypoint1, ..., targetSpot] 반환
+        ↓
+    _character.MoveAlong(path)
+        → 코루틴으로 path 순서대로 Lerp 이동
+        → 도착 시 콜백 / OnArrived 이벤트 발생
+
+================================================================
+4. 방식 선택 근거 (e)
+================================================================
+
+[경로 데이터 방식]
+
+  대안 1: BuildingLineConnector.GetWaypoints() 직접 활용 (채택)
+    → 기존 씬에 이미 연결된 RoadPath 데이터를 그대로 사용.
+    → 추가 연결 작업(Spot._neighbors 설정) 불필요.
+    → 경로 수정 시 LineRenderer 수정만으로 이동 경로도 자동 반영.
+    → 현재 단계(테스트)에서 가장 빠르게 동작 확인 가능.
+
+  대안 2: Spot._neighbors + BFS (이전 15:00 계획)
+    → 노드 간 연결을 별도로 Inspector에서 설정해야 함.
+    → 유연한 분기 경로가 필요할 때 유리하나 현재는 과함.
+    → 나중에 맵 확장 시 채택 고려.
+
+[이동 구현]
+
+  대안 1: Vector3.Lerp 코루틴 (채택)
+    → 단순하고 직관적. waypoints 배열을 순서대로 처리.
+    → _moveSpeed 하나로 전체 속도 제어.
+
+  대안 2: DOTween Sequence
+    → 프로젝트에 DOTween이 포함되어 있음.
+    → Ease 효과 등 추가 연출 가능하나 현재 테스트 단계에서는 과함.
+    → 시각적 연출 강화 필요 시 Lerp에서 교체.
+
+[트리거 방식]
+
+  대안 1: TestingSpotState에서 직접 처리 (채택)
+    → 테스트 목적이므로 Mission 시스템 없이 TestingSpotState에서 전부 관리.
+    → 나중에 Mission 시스템 도입 시 해당 로직을 MissionManager로 이전하면 됨.
+
+  대안 2: Spot.SetState()에서 이벤트로 전파
+    → 더 확장성 있는 구조이나 현재는 Mission 없이 테스트 중이므로 불필요.
+    → 추후 Mission 시스템 연동 시 적용 고려.
+
+================================================================
+5. 진행 순서 (f)
+================================================================
+
+  Step 1. BuildingLineConnector.cs 수정
+    - GetWaypoints(Spot targetSpot) 메서드 추가
+    - 반환: Transform[] (HQ Transform 포함, target Transform 포함)
+    - 해당 targetSpot의 RoadPath를 찾아 waypoints 조합 후 반환
+
+  Step 2. CharacterAgent.cs 신규 생성
+    - Assets/Scripts/StrategyGame/Core/ 에 생성
+    - [SerializeField] float _moveSpeed
+    - MoveAlong(Transform[] path, Action onArrived = null)
+    - IEnumerator MoveCoroutine(Transform[] path, Action onArrived) 구현
+
+  Step 3. TestingSpotState.cs 수정
+    - [SerializeField] BuildingLineConnector _connector 추가
+    - [SerializeField] CharacterAgent _character 추가
+    - A 키: SetState(Selected) + GetWaypoints() + MoveAlong() 연결
+
+  Step 4. Unity Editor 씬 작업
+    - 캐릭터 오브젝트 생성 (빈 오브젝트 + 스프라이트)
+    - CharacterAgent 컴포넌트 부착
+    - TestingSpotState의 _connector, _character 슬롯 연결
+    - 캐릭터 초기 위치를 HQ 위치로 설정
+
+  Step 5. 동작 확인
+    - A 키 입력 → 캐릭터가 HQ에서 목표 건물로 이동하는지 확인
+    - 이동 경로가 LineRenderer 선과 일치하는지 확인
+
+================================================================
+6. 변경 위치 및 내용 (g)
+================================================================
+
+────────────────────────────────────────────────────────────────
+[파일: BuildingLineConnector.cs] ← 메서드 추가
+  경로: Assets/Scripts/StrategyGame/Core/PathFinder/BuildingLineConnector.cs
+
+  추가 내용:
+    public Transform[] GetWaypoints(Spot targetSpot)
+    {
+        foreach (RoadPath road in _roads)
+        {
+            if (road.buildingSpot == targetSpot)
+            {
+                // HQ + 중간 waypoints + 목적지 순으로 배열 구성
+                int count = 1 + road.waypoints.Length + 1;
+                Transform[] path = new Transform[count];
+
+                path[0] = _hqSpot.transform;
+
+                for (int i = 0; i < road.waypoints.Length; i++)
+                    path[i + 1] = road.waypoints[i];
+
+                path[count - 1] = road.buildingSpot.transform;
+                return path;
+            }
+        }
+        return null; // 해당 Spot의 경로 없음
+    }
+
+────────────────────────────────────────────────────────────────
+[파일: CharacterAgent.cs] ← 신규 생성
+  경로: Assets/Scripts/StrategyGame/Core/CharacterAgent.cs
+
+  using System;
+  using System.Collections;
+  using UnityEngine;
+  using UnityEngine.Events;
+
+  public class CharacterAgent : MonoBehaviour
+  {
+      [SerializeField] float _moveSpeed = 2f;
+
+      public UnityEvent OnArrived;
+
+      private Coroutine _moveCoroutine;
+
+      public void MoveAlong(Transform[] path, Action onArrived = null)
+      {
+          if (_moveCoroutine != null) StopCoroutine(_moveCoroutine);
+          _moveCoroutine = StartCoroutine(MoveCoroutine(path, onArrived));
+      }
+
+      IEnumerator MoveCoroutine(Transform[] path, Action onArrived)
+      {
+          if (path == null || path.Length < 2) yield break;
+
+          for (int i = 0; i < path.Length - 1; i++)
+          {
+              Vector3 from = path[i].position;
+              Vector3 to   = path[i + 1].position;
+              float t = 0f;
+
+              while (t < 1f)
+              {
+                  t += Time.deltaTime * _moveSpeed;
+                  transform.position = Vector3.Lerp(from, to, Mathf.Clamp01(t));
+                  yield return null;
+              }
+          }
+
+          onArrived?.Invoke();
+          OnArrived?.Invoke();
+      }
+  }
+
+────────────────────────────────────────────────────────────────
+[파일: TestingSpotState.cs] ← 수정
+  경로: Assets/Scripts/StrategyGame/Test/TestingSpotState.cs
+
+  변경 전:
+    public class TestingSpotState : MonoBehaviour
+    {
+        [SerializeField] Spot _targetSpot;
+
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.A))
+                _targetSpot.SetState(BuildingState.Selected);
+            if (Input.GetKeyDown(KeyCode.B))
+                _targetSpot.SetState(BuildingState.Completed);
+        }
+    }
+
+  변경 후:
+    public class TestingSpotState : MonoBehaviour
+    {
+        [SerializeField] Spot _targetSpot;
+        [SerializeField] BuildingLineConnector _connector;   ← 추가
+        [SerializeField] CharacterAgent _character;          ← 추가
+
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.A))
+            {
+                _targetSpot.SetState(BuildingState.Selected);
+
+                Transform[] path = _connector.GetWaypoints(_targetSpot);
+                if (path != null)
+                    _character.MoveAlong(path);
+            }
+
+            if (Input.GetKeyDown(KeyCode.B))
+                _targetSpot.SetState(BuildingState.Completed);
+        }
+    }
+
+================================================================
+7. 주의할 점 (h)
+================================================================
+
+  1. 캐릭터 초기 위치
+     - CharacterAgent 오브젝트의 초기 위치를 HQ의 위치와 동일하게 설정해야 함.
+     - GetWaypoints()가 반환하는 path[0]이 HQ이므로
+       캐릭터가 HQ에서 시작하지 않으면 첫 이동 시 순간이동처럼 보임.
+
+  2. GetWaypoints()가 null을 반환하는 경우
+     - _targetSpot이 BuildingLineConnector에 등록되지 않은 경우 null 반환.
+     - TestingSpotState에서 null 체크 필요 (이미 위 코드에 반영됨).
+     - 추가로 Debug.LogWarning으로 알림 삽입 권장.
+
+  3. Waypoint의 z값 처리
+     - BuildingLineConnector에서 LineRenderer 표시를 위해 z = _lineZ(-1)로 설정.
+     - CharacterAgent 이동 시 waypoints의 실제 z값은 Transform의 world position.
+     - 2D 게임이므로 캐릭터의 z값을 별도로 고정하거나
+       CharacterAgent에서 이동 후 z를 원하는 값으로 덮어쓰는 처리 필요.
+       예: transform.position = new Vector3(pos.x, pos.y, 원하는z값);
+
+  4. 이동 중 재이동 요청
+     - A 키를 이동 중에 다시 누르면 기존 코루틴이 중단되고 처음부터 재이동.
+     - 이 동작이 의도와 맞는지 확인. 무시하려면 _moveCoroutine != null 시
+       return 처리 추가.
+
+  5. DOTween과의 충돌
+     - 프로젝트에 DOTween이 포함되어 있음.
+     - 같은 Transform.position을 Lerp 코루틴과 DOTween이 동시에 조작하면 충돌.
+     - 캐릭터 오브젝트에는 한 가지 이동 방식만 사용.
+
+  6. 나중에 Mission 시스템으로 이관 시
+     - 현재 TestingSpotState에서 직접 처리하는 로직
+       (SetState + GetWaypoints + MoveAlong)을
+       MissionManager 또는 QuestCoordinator로 이전하면 됨.
+     - TestingSpotState는 테스트용이므로 이 파일을 그대로 참고 후 제거.
+
+  7. BuildingLineConnector의 [ExecuteAlways] 속성
+     - 현재 BuildingLineConnector는 [ExecuteAlways]로 에디터에서도 Update 실행.
+     - GetWaypoints()는 단순 조회 메서드이므로 영향 없음.
+
+================================================================
+[실행 전 코드 비교 - 실제 코드와 계획의 차이점 (2026.04.18 기록)]
+================================================================
+
+  [TestingSpotState.cs] - 실제 코드에 계획과 다른 점 발견
+
+  차이 1: namespace TESTING 래퍼 존재
+    - 계획의 "현재 코드": namespace 없음
+    - 실제 코드: namespace TESTING { ... } 으로 감싸져 있음
+    - 처리: 변경 시 namespace 유지
+
+  차이 2: _targetSpot null 체크 존재
+    - 계획의 "현재 코드": null 체크 없음
+    - 실제 코드: if (_targetSpot != null) 체크가 각 키 입력에 존재
+    - 처리: 변경 후에도 null 체크 유지 (더 안전한 코드)
+
+  차이 3: 빈 Start() 메서드 존재
+    - 계획의 "현재 코드": Start() 없음
+    - 실제 코드: void Start() { } 존재
+    - 처리: 불필요하므로 제거
+
+  → 기능 충돌 없음. 위 차이를 반영하여 변경 진행.
+
+================================================================

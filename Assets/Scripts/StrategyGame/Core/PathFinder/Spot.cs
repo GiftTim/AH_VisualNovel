@@ -28,14 +28,19 @@ public class SpotVisualConfig
 public class Spot : MonoBehaviour
 {
     [SerializeField] BuildingType _spotType;
+    [SerializeField] BuildingState _buildingState = BuildingState.Idle;
 
     public BuildingType SpotType => _spotType;
-
+    public BuildingState CurrentState => _buildingState;
 
     public void SetType(BuildingType type)
     {
         _spotType = type;
+    }
 
+    public void SetState(BuildingState state)
+    {
+        _buildingState = state;
     }
 
 
