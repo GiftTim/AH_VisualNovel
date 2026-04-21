@@ -1,0 +1,319 @@
+================================================================
+변경계획_26.04.20_17.01_CharacterMovement_LineEffect
+================================================================
+
+목차
+----------------------------------------------------------------
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 요구한 기능을 만들기 위해 어떻게 생성하거나 변경해야 하는지
+  e. 다른 방법들 중 왜 d 방식으로 만든 것인지
+  f. 어떤 순서로 진행할 것인지
+  g. 어디가 어떤 식으로 변경되는지
+  h. 주의할 점
+
+
+================================================================
+b. 요구한 기능
+================================================================
+
+참고: https://github.com/ViniciusChrisosthemos/GameDispatchLike
+
+캐릭터가 이동할 때 "지나간 자리에만" 선이 나타나고,
+캐릭터가 지나간 뒤 그 선이 서서히 페이드 아웃되는 효과.
+
+- 이동 전 / 이동 중 (아직 지나지 않은 경로) → 선이 보이지 않음
+- 캐릭터가 지나간 구간 → 선이 나타남
+- 캐릭터가 지나간 직후부터 → 서서히 투명해지며 사라짐
+- 도착 후 남은 선 → 점차 완전히 페이드 아웃되어 사라짐
+
+★ 에디터(Edit 모드)에서는 LineConnectorManager의 경로 선이 보인 채로 유지.
+   Play 시작 시에만 LineRenderer를 투명하게 초기화.
+
+
+================================================================
+c. 현재 상황 및 코드
+================================================================
+
+[참고 깃허브 구현 방식]
+  - PathFinderManager.cs: OnDrawGizmos()로 노드 간 선(cyan), 경로(red)를
+    에디터에서만 표시 → 런타임에는 보이지 않는 디버그 전용 선
+  - AnimatePathController.cs: 런타임 시 hero sprite prefab을 Instantiate하여
+    Vector3.Lerp로 경로를 따라 이동. 도착하면 Destroy()로 제거.
+
+[현재 프로젝트 상태]
+
+▶ LineConnectorManager.cs
+  위치: Assets/Scripts/StrategyGame/Core/PathFinder/LineConnectorManager.cs
+  - HQ Spot과 각 건물 Spot 사이의 LineRenderer를 [ExecuteAlways]로
+    매 프레임 위치 갱신하며 항상 표시 중.
+  - GetWaypoints(targetSpot): HQ → 목적지 Transform[] 반환
+  - GetReturnWaypoints(fromSpot): 역방향 Transform[] 반환
+  - 역할: "경로가 어디에 있는지"를 나타내는 정적 가이드 선
+
+▶ CharacterAgent.cs
+  위치: Assets/Scripts/StrategyGame/Core/Character/CharacterAgent.cs
+  - MoveAlong(Transform[] path, Action onArrived): 경로 이동 시작
+  - MoveCoroutine: path 구간을 Vector3.Lerp로 순서대로 이동
+  - 도착 시 onArrived 콜백 + OnArrived UnityEvent 실행
+
+▶ Spot.cs
+  위치: Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs
+  - BuildingType: HQ, Normal
+  - BuildingState: Idle, Incident, Unselected, Selected, Completed
+  - DOTween으로 건물 이미지 페이드인/아웃 처리 중
+
+[현재 문제]
+  - "지나간 자리에만" 선이 나타나는 기능 없음.
+  - 선이 서서히 사라지는 기능 없음.
+
+
+================================================================
+d. 요구한 기능을 만들기 위해 어떻게 생성하거나 변경해야 하는지
+================================================================
+
+[핵심 아이디어: TrailRenderer + 동적 LineRenderer 조합]
+
+역할 분리:
+  - LineConnectorManager의 LineRenderer
+      → 에디터 작업용 경로 가이드 (Play 시 투명 처리하여 숨김)
+  - CharacterAgent에 붙는 TrailRenderer
+      → 캐릭터가 "지나간 자리"를 자동으로 그리고 시간이 지나면 자동 페이드 아웃
+
+TrailRenderer 선택 이유:
+  - 캐릭터가 지나간 경로를 자동으로 기록
+  - Time 속성으로 지나간 뒤 얼마나 오래 보일지 설정 가능
+  - Color Gradient로 뒤로 갈수록 alpha=0이 되는 자연스러운 페이드 내장
+  - 추가 코루틴/DOTween 없이 Unity가 처리
+
+[변경 1] LineConnectorManager.cs
+  1-A. Start()에서 모든 LineRenderer의 alpha를 0으로 초기화
+       (Play 시에만 적용. 에디터에서는 선 유지)
+
+[변경 2] CharacterAgent.cs
+  2-A. [SerializeField] TrailRenderer _trail 필드 추가
+  2-B. Start()에서 _trail.emitting = false (처음엔 트레일 비활성)
+  2-C. MoveAlong() 시작 시:
+       _trail.Clear() + _trail.emitting = true
+  2-D. MoveCoroutine 완료 시:
+       _trail.emitting = false
+       (emitting을 false로 해도 남아있는 트레일은 Time 설정에 따라 자연히 페이드 아웃)
+
+[변경 3] 씬 Inspector 작업
+  3-A. 캐릭터 GameObject에 TrailRenderer 컴포넌트 추가
+  3-B. TrailRenderer 설정:
+       - Time: 0.8 ~ 1.5 (트레일이 얼마나 오래 보이는지, 초 단위)
+       - Width: LineConnectorManager의 LineRenderer 굵기와 맞춤
+       - Color Gradient:
+           시작(앞, 캐릭터 위치): alpha = 1  (불투명)
+           끝(뒤, 지나간 자리): alpha = 0  (투명)
+       - Material: LineRenderer와 동일한 Material 사용 권장
+
+
+================================================================
+e. 다른 방법들 중 왜 d 방식으로 만든 것인지
+================================================================
+
+[방법 비교]
+
+방법 A. ★선택★ TrailRenderer
+  - 장점:
+    · 캐릭터가 지나간 자리를 자동으로 기록하고 페이드 아웃
+    · Time / Color Gradient 설정만으로 원하는 효과 완성
+    · MoveCoroutine 코드 변경 최소 (emitting ON/OFF만)
+    · Unity 내장 기능이라 별도 패키지 불필요
+  - 단점:
+    · 캐릭터가 빠르게 방향을 바꾸면 트레일이 곡선처럼 보일 수 있음
+      (하지만 Lerp 이동이라 직선 구간이므로 실제로는 직선으로 나옴)
+    · LineRenderer와 완전히 동일한 외형을 맞추려면 Material/Width 조정 필요
+
+방법 B. 동적 LineRenderer (매 프레임 positionCount 갱신)
+  - 장점: LineRenderer와 완전히 동일한 외형
+  - 단점:
+    · 캐릭터 현재 위치를 매 프레임 LineRenderer에 추가해야 함
+    · "이미 지나간 구간의 서서히 사라짐" 구현을 위해
+      구간별 LineRenderer 또는 Color Gradient 애니메이션 별도 구현 필요 → 복잡
+
+방법 C. 구간별 LineRenderer + DOTween 페이드
+  - 장점: 구간 단위로 정밀하게 제어 가능
+  - 단점: waypoint 인덱스마다 LineRenderer 관리 로직 복잡.
+    동시 실행 DOTween 관리 필요.
+
+방법 D. 기존 LineConnectorManager LineRenderer ON/OFF
+  - "지나간 자리에만" 선이 나타나는 요구를 충족 못함.
+    이 방법은 "전체 경로"가 한 번에 나타났다 사라지는 것이라 요구사항 불일치.
+
+→ 방법 A(TrailRenderer) 선택:
+  "지나간 자리에만 나타나고 서서히 사라진다"는 요구를 가장 적은 코드로 정확하게 구현.
+
+
+================================================================
+f. 어떤 순서로 진행할 것인지
+================================================================
+
+순서 1. LineConnectorManager.cs 수정
+  1-1. Start() 추가: Play 시작 시 모든 LineRenderer alpha = 0으로 초기화
+
+순서 2. CharacterAgent.cs 수정
+  2-1. [SerializeField] TrailRenderer _trail 필드 추가
+  2-2. Start()에서 _trail.emitting = false
+  2-3. MoveAlong() 시작 부분에 _trail.Clear() + _trail.emitting = true
+  2-4. MoveCoroutine 완료 직후 _trail.emitting = false
+
+순서 3. 씬 작업 (Inspector)
+  3-1. 캐릭터 GameObject에 TrailRenderer 컴포넌트 추가
+  3-2. TrailRenderer 속성 설정 (Time / Width / Color Gradient / Material)
+  3-3. CharacterAgent의 _trail 슬롯에 TrailRenderer 연결
+
+
+================================================================
+g. 어디가 어떤 식으로 변경되는지
+================================================================
+
+[LineConnectorManager.cs]
+
+  기존: Start() 없음
+
+  변경 후 (추가):
+    private void Start()
+    {
+        // Play 시작 시 모든 경로 선을 투명하게 초기화
+        // (에디터 모드에서는 실행되지 않으므로 에디터 작업에 영향 없음)
+        foreach (RoadPath road in _roads)
+        {
+            if (road.lineRenderer == null) continue;
+            Color c = road.lineRenderer.startColor;
+            c.a = 0f;
+            road.lineRenderer.startColor = c;
+            road.lineRenderer.endColor   = c;
+        }
+    }
+
+------------------------------------------------------------------
+
+[CharacterAgent.cs]
+
+  기존:
+    [SerializeField] float _moveSpeed = 2f;
+    public UnityEvent OnArrived;
+    private Coroutine _moveCoroutine;
+
+    public void MoveAlong(Transform[] path, Action onArrived = null) { ... }
+
+    IEnumerator MoveCoroutine(Transform[] path, Action onArrived) { ... }
+
+  변경 후:
+    [SerializeField] float _moveSpeed = 2f;
+    [SerializeField] TrailRenderer _trail;           // ★ 추가
+    public UnityEvent OnArrived;
+    private Coroutine _moveCoroutine;
+
+    private void Start()
+    {
+        if (_trail != null) _trail.emitting = false; // ★ 추가: 초기에 트레일 비활성
+    }
+
+    public void MoveAlong(Transform[] path, Action onArrived = null)
+    {
+        if (_moveCoroutine != null) StopCoroutine(_moveCoroutine);
+
+        if (_trail != null)
+        {
+            _trail.Clear();           // ★ 추가: 이전 트레일 잔상 제거
+            _trail.emitting = true;   // ★ 추가: 트레일 시작
+        }
+
+        _moveCoroutine = StartCoroutine(MoveCoroutine(path, onArrived));
+    }
+
+    IEnumerator MoveCoroutine(Transform[] path, Action onArrived)
+    {
+        if (path == null || path.Length < 2) yield break;
+
+        for (int i = 0; i < path.Length - 1; i++)
+        {
+            Vector3 from = path[i].position;
+            Vector3 to   = path[i + 1].position;
+            float t = 0f;
+
+            while (t < 1f)
+            {
+                t += Time.deltaTime * _moveSpeed;
+                transform.position = Vector3.Lerp(from, to, Mathf.Clamp01(t));
+                yield return null;
+            }
+        }
+
+        if (_trail != null) _trail.emitting = false; // ★ 추가: 도착 시 트레일 비활성
+                                                     //  → 남은 트레일은 Time 설정에 따라 자동 페이드 아웃
+        onArrived?.Invoke();
+        OnArrived?.Invoke();
+    }
+
+------------------------------------------------------------------
+
+[씬 Inspector 설정 — TrailRenderer 컴포넌트]
+
+  항목              | 권장 값                          | 설명
+  ------------------|----------------------------------|---------------------------
+  Time              | 0.8 ~ 1.5                        | 트레일이 남아있는 시간(초)
+  Min Vertex Dist   | 0.1                              | 트레일 점 최소 간격
+  Width (Curve)     | LineRenderer 굵기와 맞춤         | 선 굵기
+  Color (Gradient)  | 앞(alpha=1) → 뒤(alpha=0)       | 지나간 뒤로 갈수록 투명
+  Material          | LineRenderer와 동일 Material 권장| 외형 통일
+
+------------------------------------------------------------------
+
+[에디터 모드 vs Play 모드 동작 요약]
+
+  에디터(Edit 모드):
+    - LineConnectorManager의 LineRenderer: 보임 (경로 확인 가능)
+    - TrailRenderer: 이동 없으므로 비활성
+
+  Play 진입 (Start):
+    - LineConnectorManager: 모든 LineRenderer alpha = 0 (투명)
+    - TrailRenderer: emitting = false
+
+  이동 시작 (MoveAlong):
+    - TrailRenderer: Clear() + emitting = true
+    - 캐릭터가 지나간 자리에 트레일이 그려지며 뒤쪽부터 페이드 아웃
+
+  도착 (MoveCoroutine 완료):
+    - TrailRenderer: emitting = false
+    - 남아있는 트레일은 Time 설정값에 따라 서서히 사라짐
+
+
+================================================================
+h. 주의할 점
+================================================================
+
+1. TrailRenderer의 emitting = false는 즉시 트레일을 지우지 않는다.
+   새 트레일 추가만 중단하며, 기존에 남은 트레일은 Time 설정대로 사라진다.
+   → 도착 시 원하는 동작 (남은 선이 서서히 사라짐)
+
+2. 재이동(이동 중 목적지 변경) 시 _trail.Clear() 호출
+   MoveAlong()을 다시 호출하면 Clear()로 이전 트레일을 즉시 제거하고
+   새 트레일을 시작한다. 이전 잔상이 남지 않도록 Clear()가 중요하다.
+
+3. TrailRenderer와 LineRenderer의 z값 (2D 프로젝트)
+   LineConnectorManager의 _lineZ = -1f 설정처럼
+   TrailRenderer도 캐릭터 오브젝트의 z값 또는 Order in Layer를
+   LineRenderer보다 앞으로 설정해야 선이 가려지지 않는다.
+
+4. TrailRenderer Width와 LineRenderer Width 단위 차이
+   TrailRenderer의 Width는 월드 단위,
+   LineRenderer의 Width는 프로젝트 설정에 따라 다를 수 있으므로
+   둘을 맞추려면 실제로 Play해보며 조정한다.
+
+5. Material
+   TrailRenderer가 기본 Material을 쓰면 LineRenderer와 외형이 달라 보일 수 있다.
+   LineRenderer의 Material을 TrailRenderer에도 동일하게 지정하면
+   외형 통일이 가능하다.
+
+6. [ExecuteAlways]와 Start() 분리 (의도된 설계)
+   LineConnectorManager에 [ExecuteAlways]가 붙어 에디터에서도 Update가 실행된다.
+   Start()는 Play 시에만 실행되므로 alpha=0 초기화는 Play 진입 시에만 적용된다.
+   → 에디터: 선 보임 / Play: 선 투명 — 이 동작은 의도된 것이며 변경하지 않는다.
+
+================================================================

@@ -5,6 +5,7 @@ using Unity.Collections;
 using UnityEngine.Profiling;
 using Unity.Profiling;
 using UnityEngine.Rendering.RenderGraphModule;
+using UnityEngine.Experimental.Rendering;
 
 // NOTE  NOTE  NOTE  NOTE  NOTE  NOTE  NOTE  NOTE  NOTE
 //
@@ -133,6 +134,11 @@ namespace UnityEngine.Rendering
         /// <param name="keyword">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.EnableKeyword.html)</param>
         public void EnableKeyword(ComputeShader computeShader, in LocalKeyword keyword)  { ThrowIfGlobalStateNotAllowed();  m_WrappedCommandBuffer.EnableKeyword(computeShader, keyword); }
 
+        /// <summary>Wraps [EnableKeyword](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.EnableKeyword.html) on a CommandBuffer.</summary>
+        /// <param name="rayTracingShader">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.EnableKeyword.html)</param>
+        /// <param name="keyword">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.EnableKeyword.html)</param>
+        public void EnableKeyword(RayTracingShader rayTracingShader, in LocalKeyword keyword)  { ThrowIfGlobalStateNotAllowed();  m_WrappedCommandBuffer.EnableKeyword(rayTracingShader, keyword); }
+
         /// <summary>Wraps [DisableShaderKeyword](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.DisableShaderKeyword.html) on a CommandBuffer.</summary>
         /// <param name="keyword">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.DisableShaderKeyword.html)</param>
         public void DisableShaderKeyword(string keyword)  { ThrowIfGlobalStateNotAllowed();  m_WrappedCommandBuffer.DisableShaderKeyword(keyword); }
@@ -151,6 +157,11 @@ namespace UnityEngine.Rendering
         /// <param name="keyword">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.DisableKeyword.html)</param>
         public void DisableKeyword(ComputeShader computeShader, in LocalKeyword keyword)  { ThrowIfGlobalStateNotAllowed();  m_WrappedCommandBuffer.DisableKeyword(computeShader, keyword); }
 
+        /// <summary>Wraps [DisableKeyword](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.DisableKeyword.html) on a CommandBuffer.</summary>
+        /// <param name="rayTracingShader">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.DisableKeyword.html)</param>
+        /// <param name="keyword">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.DisableKeyword.html)</param>
+        public void DisableKeyword(RayTracingShader rayTracingShader, in LocalKeyword keyword)  { ThrowIfGlobalStateNotAllowed();  m_WrappedCommandBuffer.DisableKeyword(rayTracingShader, keyword); }
+
         /// <summary>Wraps [SetKeyword](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.SetKeyword.html) on a CommandBuffer.</summary>
         /// <param name="keyword">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.SetKeyword.html)</param>
         /// <param name="value">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.SetKeyword.html)</param>
@@ -167,6 +178,12 @@ namespace UnityEngine.Rendering
         /// <param name="keyword">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.SetKeyword.html)</param>
         /// <param name="value">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.SetKeyword.html)</param>
         public void SetKeyword(ComputeShader computeShader, in LocalKeyword keyword, bool value)  { ThrowIfGlobalStateNotAllowed();  m_WrappedCommandBuffer.SetKeyword(computeShader, keyword, value); }
+
+        /// <summary>Wraps [SetKeyword](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.SetKeyword.html) on a CommandBuffer.</summary>
+        /// <param name="rayTracingShader">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.SetKeyword.html)</param>
+        /// <param name="keyword">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.SetKeyword.html)</param>
+        /// <param name="value">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.SetKeyword.html)</param>
+        public void SetKeyword(RayTracingShader rayTracingShader, in LocalKeyword keyword, bool value)  { ThrowIfGlobalStateNotAllowed();  m_WrappedCommandBuffer.SetKeyword(rayTracingShader, keyword, value); }
 
         /// <summary>Wraps [SetViewProjectionMatrices](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.SetViewProjectionMatrices.html) on a CommandBuffer.</summary>
         /// <param name="view">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.SetViewProjectionMatrices.html)</param>
@@ -257,6 +274,15 @@ namespace UnityEngine.Rendering
         /// <summary>Wraps [InvokeOnRenderObjectCallbacks](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.InvokeOnRenderObjectCallbacks.html) on a CommandBuffer.</summary>
 
         public void InvokeOnRenderObjectCallbacks()  {  m_WrappedCommandBuffer.InvokeOnRenderObjectCallbacks(); }
+
+        /// <summary>Wraps [SetShadingRateFragmentSize](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.SetShadingRateFragmentSize.html) on a CommandBuffer.</summary>
+        /// <param name="shadingRateFragmentSize">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.SetShadingRateFragmentSize.html)</param>
+        public void SetShadingRateFragmentSize(ShadingRateFragmentSize shadingRateFragmentSize)  {  m_WrappedCommandBuffer.SetShadingRateFragmentSize(shadingRateFragmentSize); }
+
+        /// <summary>Wraps [SetShadingRateCombiner](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.SetShadingRateCombiner.html) on a CommandBuffer.</summary>
+        /// <param name="stage">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.SetShadingRateCombiner.html)</param>
+        /// <param name="combiner">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.SetShadingRateCombiner.html)</param>
+        public void SetShadingRateCombiner(ShadingRateCombinerStage stage, ShadingRateCombiner combiner)  {  m_WrappedCommandBuffer.SetShadingRateCombiner(stage, combiner); }
 
         /// <summary>Wraps [DrawMesh](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.DrawMesh.html) on a CommandBuffer.</summary>
         /// <param name="mesh">[See CommandBuffer documentation](https://docs.unity3d.com/ScriptReference/Rendering.CommandBuffer.DrawMesh.html)</param>

@@ -1,0 +1,220 @@
+================================================================
+변경완료_26.04.21_11.18_CanvasSortOrder_TrailMask_CharacterArrival
+================================================================
+
+목차
+----------------------------------------------------------------
+  a. 변경 전/후 코드
+  b. 작동 흐름
+  c. 주의할 점
+  d. 씬 Inspector 잔여 작업
+
+
+================================================================
+a. 변경 전/후 코드
+================================================================
+
+----------------------------------------------------------------
+[1] Road(LineRenderer)가 에디터/Play에서 보이지 않는 문제
+    — Canvas-Main Sort Order 설정 (씬 Inspector 수정)
+----------------------------------------------------------------
+
+▶ 원인:
+    Canvas-Main (Screen Space - Camera) 의 Sort Order = 2
+    Road의 LineRenderer Sort Order = 0
+    → Sort Order가 낮은 LineRenderer가 Canvas 뒤에 가려짐
+
+▶ 변경 전 (Canvas-Main 설정):
+    Render Mode  : Screen Space - Camera
+    Sort Order   : 2
+
+    LineRenderer (road(1), road(3)):
+    Sorting Layer : Default
+    Order in Layer: 0
+
+▶ 변경 후 (Inspector에서 수정 필요):
+    LineRenderer (road(1), road(3)):
+    Order in Layer: 3  (Canvas-Main Sort Order 2 보다 높게)
+
+    ※ 단, road가 4-Character(Canvas Override Sort Order 3)보다
+       아래에 보여야 한다면 road Order in Layer = 2 로 설정한다.
+
+
+----------------------------------------------------------------
+[2] TrailRenderer가 Mari의 Mask/Outline을 덮는 문제
+    — 4-Character에 Canvas 컴포넌트 추가 (씬 Inspector 수정)
+----------------------------------------------------------------
+
+▶ 원인:
+    TrailRenderer는 CanvasRenderer가 아닌 world-space renderer.
+    Canvas 안에 있어도 Canvas UI 파이프라인을 따르지 않아
+    Mask/Outline(CanvasRenderer) 위에 그려질 수 있음.
+
+▶ 변경 전 (4-Character):
+    컴포넌트: RectTransform 만 존재
+    (Canvas 컴포넌트 없음)
+
+▶ 변경 후 (Inspector에서 수정 필요):
+    4-Character GameObject에 Canvas 컴포넌트 추가
+      Override Sorting : ✔ (체크)
+      Sort Order       : 3
+
+    결과 Sort Order 우선순위:
+      TrailRenderer    Sort Order 0  (뒤)
+      Canvas-Main      Sort Order 2
+      4-Character      Sort Order 3  (앞 — Mask/Outline이 Trail 위에 렌더링)
+
+
+----------------------------------------------------------------
+[3] CharacterAgent.cs — 도착 시 Mask 먼저 숨기고, Trail 페이드 후 Mari 활성화
+----------------------------------------------------------------
+
+▶ 변경 전:
+
+    [SerializeField] float _moveSpeed = 2f;
+    [SerializeField] TrailRenderer _trail;
+
+    IEnumerator MoveCoroutine(Transform[] path, Action onArrived)
+    {
+        if (path == null || path.Length < 2) yield break;
+
+        for (int i = 0; i < path.Length - 1; i++)
+        {
+            Vector3 from = path[i].position;
+            Vector3 to   = path[i + 1].position;
+            float t = 0f;
+
+            while (t < 1f)
+            {
+                t += Time.deltaTime * _moveSpeed;
+                transform.position = Vector3.Lerp(from, to, Mathf.Clamp01(t));
+                yield return null;
+            }
+        }
+
+        if (_trail != null) _trail.emitting = false;
+
+        onArrived?.Invoke();
+        OnArrived?.Invoke();
+    }
+
+▶ 변경 후:
+
+    [SerializeField] float _moveSpeed = 2f;
+    [SerializeField] TrailRenderer _trail;
+    [SerializeField] private GameObject _mask;   // ★ 추가
+
+    IEnumerator MoveCoroutine(Transform[] path, Action onArrived)
+    {
+        if (path == null || path.Length < 2) yield break;
+
+        for (int i = 0; i < path.Length - 1; i++)
+        {
+            Vector3 from = path[i].position;
+            Vector3 to   = path[i + 1].position;
+            float t = 0f;
+
+            while (t < 1f)
+            {
+                t += Time.deltaTime * _moveSpeed;
+                transform.position = Vector3.Lerp(from, to, Mathf.Clamp01(t));
+                yield return null;
+            }
+        }
+
+        if (_trail != null) _trail.emitting = false;
+
+        // 1. 마스크 먼저 비활성화                    ★ 추가
+        if (_mask != null) _mask.SetActive(false);
+
+        // 2. 트레일이 완전히 사라질 때까지 대기       ★ 추가
+        float trailFadeTime = (_trail != null) ? _trail.time : 0f;
+        if (trailFadeTime > 0f)
+            yield return new WaitForSeconds(trailFadeTime);
+
+        // 3. Mari 활성화                              ★ 추가
+        gameObject.SetActive(true);
+
+        onArrived?.Invoke();
+        OnArrived?.Invoke();
+    }
+
+
+================================================================
+b. 작동 흐름
+================================================================
+
+[도착 직전]
+  캐릭터가 마지막 waypoint에 도달해 MoveCoroutine 루프 종료
+
+[도착 즉시 — Step 1]
+  _trail.emitting = false
+  → 새 트레일 추가 중단. 기존 트레일은 Trail.Time(1.5초) 동안 서서히 페이드 아웃
+
+  _mask.SetActive(false)
+  → Mask GameObject 비활성화.
+     캐릭터 스프라이트가 즉시 사라짐 (건물 진입 연출)
+     TrailRenderer는 Mask와 별개이므로 계속 페이드 아웃 진행
+
+[대기 — Step 2]
+  WaitForSeconds(trail.time)
+  → TrailRenderer가 완전히 사라질 때까지 코루틴 정지
+     (trail.time = 1.5초 기준 → 1.5초 대기)
+
+[완료 — Step 3]
+  gameObject.SetActive(true)
+  → Mari GameObject 활성화 (이미 활성 상태라면 no-op)
+
+  onArrived?.Invoke() / OnArrived?.Invoke()
+  → 도착 콜백 실행 (미션 완료 처리 등 외부 로직)
+
+
+================================================================
+c. 주의할 점
+================================================================
+
+1. 코루틴 중단 주의
+   MoveCoroutine은 Mari(gameObject) 위에서 실행 중이다.
+   대기 중(Step 2)에 외부에서 gameObject.SetActive(false)를 호출하면
+   코루틴이 즉시 중단되어 Step 3(gameObject.SetActive(true))가 실행되지 않는다.
+   → Trail 대기 중에는 Mari를 외부에서 비활성화하지 않는다.
+
+2. _mask 미연결 시 건물 진입 연출 없음
+   CharacterAgent의 _mask 슬롯이 비어 있으면 null 체크로 그냥 통과.
+   캐릭터 스프라이트가 숨겨지지 않으므로 Inspector에서 반드시 연결한다.
+
+3. gameObject.SetActive(true) 시 OnEnable 재실행 여부
+   이미 활성 상태일 때 SetActive(true)를 호출하면 OnEnable은 재실행되지 않는다.
+   단, 비활성→활성 전환이 일어나는 경우 OnEnable과 Start(최초 1회)가 실행되므로
+   트레일 초기화(_trail.emitting = false)가 Start에서 처리되는 것을 확인한다.
+
+4. Sort Order 우선순위 정리 (Canvas-Main Sort Order = 2 기준)
+     TrailRenderer   Order 0  → Canvas-Main(배경·건물) 뒤
+     Road(Line)      Order 2  → Canvas-Main과 동일 레벨 (depth 기준 정렬)
+     Road(Line)      Order 3  → Canvas-Main 앞 (캐릭터와 동일 레벨이 됨)
+     4-Character     Order 3  → Mask/Outline이 Trail 위에 렌더링
+   road의 Order를 3으로 올리면 4-Character(Order 3)와 depth 경쟁이 생기므로
+   원하는 시각 결과에 따라 road Order를 2 또는 3으로 조정한다.
+
+5. Trail 페이드 시간 = trail.time 값
+   WaitForSeconds에 TrailRenderer.time 값을 그대로 사용하므로
+   Inspector에서 Trail Time을 변경하면 대기 시간도 자동으로 연동된다.
+
+
+================================================================
+d. 씬 Inspector 잔여 작업 (코드 변경 후 수동 진행 필요)
+================================================================
+
+  1. road(1), road(3) GameObject 선택
+     → LineRenderer 컴포넌트 → Order in Layer 값 조정
+       (Canvas-Main Sort Order 2보다 높게 또는 낮게 — 용도에 따라 결정)
+
+  2. 4-Character GameObject 선택
+     → Add Component → Canvas 추가
+     → Override Sorting : ✔ 체크
+     → Sort Order : 3
+
+  3. Mari GameObject 선택
+     → CharacterAgent 컴포넌트 → _mask 슬롯에 Mask GameObject 연결
+
+================================================================

@@ -1,0 +1,223 @@
+================================================================
+변경완료_26.04.19_14.30 - 미션 파견: MissionDispatcher 신규 생성 및 위임 구조 적용
+================================================================
+
+[목차]
+  1. 변경 전 코드
+  2. 변경 후 코드
+  3. 작동 흐름
+  4. 주의할 점
+  5. 씬 설정 (수동 작업 필요)
+
+================================================================
+1. 변경 전 코드
+================================================================
+
+────────────────────────────────────────────────────────────────
+[MissionDispatcher.cs] → 신규 파일 없음 (존재하지 않았음)
+────────────────────────────────────────────────────────────────
+[TestingSpotState.cs] - 변경 전
+────────────────────────────────────────────────────────────────
+using UnityEngine;
+
+namespace TESTING
+{
+    /// <summary>
+    /// 건물 상태 변경 및 캐릭터 이동을 테스트하는 컴포넌트.
+    /// Mission 시스템 도입 전 임시 테스트용. 추후 MissionManager로 이전 예정.
+    /// </summary>
+    public class TestingSpotState : MonoBehaviour
+    {
+        [SerializeField] Spot _targetSpot;
+        [SerializeField] LineConnectorManager _connector;
+        [SerializeField] CharacterAgent _character;
+
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.A))
+            {
+                if (_targetSpot != null)
+                {
+                    _targetSpot.SetState(BuildingState.Selected);
+                    Transform[] path = _connector.GetWaypoints(_targetSpot);
+                    if (path != null)
+                        _character.MoveAlong(path);
+                }
+            }
+
+            if (Input.GetKeyDown(KeyCode.B))
+            {
+                if (_targetSpot != null)
+                {
+                    _targetSpot.SetState(BuildingState.Completed);
+                    Transform[] path = _connector.GetReturnWaypoints(_targetSpot);
+                    if (path != null)
+                        _character.MoveAlong(path);
+                }
+            }
+        }
+    }
+}
+
+================================================================
+2. 변경 후 코드
+================================================================
+
+────────────────────────────────────────────────────────────────
+[신규: MissionDispatcher.cs]
+경로: Assets/Scripts/StrategyGame/Core/MissionDispatcher.cs
+────────────────────────────────────────────────────────────────
+using UnityEngine;
+
+public class MissionDispatcher : MonoBehaviour
+{
+    [SerializeField] LineConnectorManager _connector;
+    [SerializeField] Transform _hqTransform;
+    [SerializeField] CharacterAgent _character;
+
+    void Awake()
+    {
+        _character.transform.position = _hqTransform.position;
+        _character.gameObject.SetActive(false);
+    }
+
+    public void Dispatch(CharacterAgent character, Spot targetSpot)
+    {
+        targetSpot.SetState(BuildingState.Selected);
+        character.gameObject.SetActive(true);
+        Transform[] path = _connector.GetWaypoints(targetSpot);
+        if (path != null)
+            character.MoveAlong(path, () => character.gameObject.SetActive(false));
+    }
+
+    public void Return(CharacterAgent character, Spot fromSpot)
+    {
+        fromSpot.SetState(BuildingState.Completed);
+        character.gameObject.SetActive(true);
+        Transform[] path = _connector.GetReturnWaypoints(fromSpot);
+        if (path != null)
+            character.MoveAlong(path, () => character.gameObject.SetActive(false));
+    }
+}
+
+────────────────────────────────────────────────────────────────
+[수정: TestingSpotState.cs]
+경로: Assets/Scripts/StrategyGame/Test/TestingSpotState.cs
+────────────────────────────────────────────────────────────────
+using UnityEngine;
+
+namespace TESTING
+{
+    /// <summary>
+    /// MissionDispatcher를 통해 파견/귀환을 테스트하는 컴포넌트.
+    /// Mission 시스템 도입 전 임시 테스트용. 추후 UI 버튼으로 교체 예정.
+    /// </summary>
+    public class TestingSpotState : MonoBehaviour
+    {
+        [SerializeField] Spot _targetSpot;
+        [SerializeField] MissionDispatcher _dispatcher;
+        [SerializeField] CharacterAgent _character;
+
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.A))
+            {
+                if (_targetSpot != null)
+                    _dispatcher.Dispatch(_character, _targetSpot);
+            }
+
+            if (Input.GetKeyDown(KeyCode.B))
+            {
+                if (_targetSpot != null)
+                    _dispatcher.Return(_character, _targetSpot);
+            }
+        }
+    }
+}
+
+================================================================
+3. 작동 흐름
+================================================================
+
+[파견 흐름]
+  A 키 입력 (TestingSpotState.Update)
+    ↓
+  MissionDispatcher.Dispatch(character, targetSpot)
+    ↓
+  targetSpot.SetState(BuildingState.Selected)    → 건물 상태 변경
+    ↓
+  character.gameObject.SetActive(true)            → HQ 위치에서 캐릭터 활성화
+    ↓
+  _connector.GetWaypoints(targetSpot)             → [HQ, wp0, ..., targetSpot] 경로 취득
+    ↓
+  character.MoveAlong(path, onArrived)            → HQ → 목표 건물 이동 시작
+    ↓
+  onArrived 실행 (도착 후)
+    → character.gameObject.SetActive(false)       → 도착 후 비활성화
+
+[귀환 흐름]
+  B 키 입력 (TestingSpotState.Update)
+    ↓
+  MissionDispatcher.Return(character, targetSpot)
+    ↓
+  fromSpot.SetState(BuildingState.Completed)      → 건물 상태 변경
+    ↓
+  character.gameObject.SetActive(true)            → 목표 건물 위치에서 캐릭터 활성화
+    ↓
+  _connector.GetReturnWaypoints(fromSpot)         → [targetSpot, ..., HQ] 역방향 경로 취득
+    ↓
+  character.MoveAlong(path, onArrived)            → 목표 건물 → HQ 귀환 이동 시작
+    ↓
+  onArrived 실행 (도착 후)
+    → character.gameObject.SetActive(false)       → HQ 도착 후 비활성화
+
+[초기화 흐름 (Awake)]
+  게임 시작
+    ↓
+  MissionDispatcher.Awake()
+    → character.transform.position = _hqTransform.position  → HQ 위치로 강제 이동
+    → character.gameObject.SetActive(false)                  → 비활성화 상태로 시작
+
+================================================================
+4. 주의할 점
+================================================================
+
+  1. 씬에서 MissionDispatcher 컴포넌트에 3개 인스펙터 연결 필수
+     - _connector  → LineConnectorManager 오브젝트
+     - _hqTransform → HQ Spot 오브젝트의 Transform
+     - _character  → CharacterAgent 오브젝트
+
+  2. TestingSpotState 인스펙터에서 _connector 연결 제거 필요
+     - 기존에 _connector가 연결되어 있었다면 Missing 참조로 남을 수 있음
+     - _dispatcher 필드에 MissionDispatcher 오브젝트를 새로 연결해야 함
+
+  3. 도착 후 SetActive(false) 타이밍
+     - onArrived 콜백이 먼저 실행된 후 CharacterAgent.OnArrived UnityEvent 실행
+     - Inspector에서 OnArrived에 리스너가 연결되어 있다면 SetActive(false) 이후 실행됨에 주의
+
+  4. 이동 중 재파견 요청
+     - Dispatch() 재호출 시 CharacterAgent가 기존 코루틴을 중단하고 새 경로로 재이동
+     - 재파견 방지가 필요하면 MissionDispatcher에 이동 중 플래그 추가 필요 (현재 미구현)
+
+  5. 귀환 시 캐릭터 위치
+     - Return() 호출 시 캐릭터가 목표 건물 위치에 있어야 자연스러운 귀환 연출
+     - Dispatch() → 도착 후 SetActive(false) → Return() 순서로 호출하면 정상 동작
+
+================================================================
+5. 씬 설정 (수동 작업 필요 - Unity Editor)
+================================================================
+
+  아래 작업은 Unity Editor에서 직접 수행해야 합니다.
+
+  1. MissionDispatcher 오브젝트 생성 (또는 기존 Manager 오브젝트에 추가)
+     - Hierarchy에서 빈 오브젝트 생성 후 MissionDispatcher 컴포넌트 추가
+     - 인스펙터 연결:
+         _connector   → LineConnectorManager 오브젝트
+         _hqTransform → HQ Spot 오브젝트 (Transform)
+         _character   → CharacterAgent 오브젝트
+
+  2. TestingSpotState 인스펙터 수정
+     - 기존 _connector 참조 제거
+     - _dispatcher → MissionDispatcher 오브젝트 연결
+
+================================================================

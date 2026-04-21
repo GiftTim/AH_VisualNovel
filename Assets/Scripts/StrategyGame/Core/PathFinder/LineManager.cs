@@ -19,18 +19,81 @@ public class RoadPath
 /// [ExecuteAlways]로 에디터 모드에서도 Update가 실행되어 선이 실시간으로 반영된다.
 /// </summary>
 [ExecuteAlways]
-public class BuildingLineConnector : MonoBehaviour
+public class LineManager : MonoBehaviour
 {
     /// <summary>본부 건물. 모든 경로의 시작점.</summary>
     [SerializeField] private Spot _hqSpot;
     /// <summary>HQ에서 각 건물로 이어지는 경로 목록.</summary>
     [SerializeField] private RoadPath[] _roads;
     /// <summary>LineRenderer 표시용 z값. 2D에서 선의 렌더링 순서를 조정.</summary>
-    [SerializeField] private float _lineZ = -1f;
+
+    [Header("Editor Preview")]
+    /// <summary>에디터(Play 전)에서 경로 선을 표시할지 여부. Inspector에서 토글로 켜고 끌 수 있다.</summary>
+    [SerializeField] private bool _showPathInEditor = true;
+
+    private void OnEnable()
+    {
+        if (Application.isPlaying) return;
+        RefreshEditorLines();
+    }
+
+    private void Start()
+    {
+        if (!Application.isPlaying) return;
+
+        // Play 시작 시 모든 경로 선을 비활성화
+        foreach (RoadPath road in _roads)
+        {
+            if (road.lineRenderer == null) continue;
+            road.lineRenderer.enabled = false;
+        }
+    }
 
     private void Update()
     {
-        ApplyLines();
+        if (!Application.isPlaying)
+        {
+            RefreshEditorLines();
+        }
+        else
+        {
+            ApplyLines();
+        }
+    }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        // Inspector에서 값이 바뀌면 즉시 반영
+        UnityEditor.EditorApplication.delayCall += () =>
+        {
+            if (this == null) return;
+            RefreshEditorLines();
+        };
+    }
+#endif
+
+    /// <summary>
+    /// 에디터 모드에서 _showPathInEditor 토글에 따라 선을 갱신.
+    /// </summary>
+    private void RefreshEditorLines()
+    {
+        SetLinesEnabled(_showPathInEditor);
+        if (_showPathInEditor)
+            ApplyLines();
+    }
+
+    /// <summary>
+    /// 모든 경로의 LineRenderer 활성화 상태를 일괄 설정.
+    /// </summary>
+    private void SetLinesEnabled(bool enabled)
+    {
+        if (_roads == null) return;
+        foreach (RoadPath road in _roads)
+        {
+            if (road.lineRenderer == null) continue;
+            road.lineRenderer.enabled = enabled;
+        }
     }
 
     /// <summary>
@@ -42,7 +105,6 @@ public class BuildingLineConnector : MonoBehaviour
 
         // HQ 위치 (z값은 LineRenderer 표시용으로 고정)
         Vector3 hqPos = _hqSpot.transform.position;
-        hqPos.z = _lineZ;
 
         foreach (RoadPath road in _roads)
         {
@@ -62,13 +124,11 @@ public class BuildingLineConnector : MonoBehaviour
             {
                 if (road.waypoints[i] == null) continue;
                 Vector3 wp = road.waypoints[i].position;
-                wp.z = _lineZ;
                 road.lineRenderer.SetPosition(i + 1, wp);
             }
 
             // 끝점: 목적지 건물
             Vector3 buildingPos = road.buildingSpot.transform.position;
-            buildingPos.z = _lineZ;
             road.lineRenderer.SetPosition(count - 1, buildingPos);
         }
     }
@@ -120,5 +180,4 @@ public class BuildingLineConnector : MonoBehaviour
         System.Array.Reverse(path);
         return path;
     }
-
 }

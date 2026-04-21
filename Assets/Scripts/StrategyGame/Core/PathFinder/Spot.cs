@@ -1,3 +1,4 @@
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,7 +22,6 @@ public class SpotVisualConfig
 {
     public BuildingType _buildingType;
     public BuildingState _buildingState;
-    public Image _icon;
     public Color color = Color.white;
 }
 
@@ -30,8 +30,21 @@ public class Spot : MonoBehaviour
     [SerializeField] BuildingType _spotType;
     [SerializeField] BuildingState _buildingState = BuildingState.Idle;
 
+    [SerializeField] private Image _buildingImage;
+    [SerializeField] private float _fadeInDuration = 1.0f;
+
     public BuildingType SpotType => _spotType;
     public BuildingState CurrentState => _buildingState;
+
+    private void Awake()
+    {
+        if (_buildingImage != null)
+        {
+            Color c = _buildingImage.color;
+            c.a = 0f;
+            _buildingImage.color = c;
+        }
+    }
 
     public void SetType(BuildingType type)
     {
@@ -40,8 +53,36 @@ public class Spot : MonoBehaviour
 
     public void SetState(BuildingState state)
     {
+        BuildingState prev = _buildingState;
         _buildingState = state;
+
+        // * → Incident: 페이드인
+        if (prev != BuildingState.Incident && state == BuildingState.Incident)
+        {
+            PlayIncidentEffect();
+        }
+        // * → Idle: alpha 페이드아웃 (경로 무관)
+        else if (state == BuildingState.Idle)
+        {
+            if (_buildingImage != null)
+            {
+                _buildingImage.DOKill();
+                _buildingImage.DOFade(0f, _fadeInDuration);
+            }
+        }
+        // Incident → Selected: 유지 (처리 없음)
     }
 
+    private void PlayIncidentEffect()
+    {
+        if (_buildingImage == null) return;
 
+        _buildingImage.DOKill();
+
+        Color c = _buildingImage.color;
+        c.a = 0f;
+        _buildingImage.color = c;
+
+        _buildingImage.DOFade(1f, _fadeInDuration);
+    }
 }

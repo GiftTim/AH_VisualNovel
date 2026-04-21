@@ -1,0 +1,166 @@
+================================================================
+변경 완료: SpotIncident (Spot.cs DOTween 페이드인 처리)
+작성일시: 2026-04-20 16:10 KST
+대상 파일: Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs
+================================================================
+
+
+================================================================
+1. 현재(변경 전) 코드와 계획서 비교 결과
+================================================================
+
+[비교 결과: 일치]
+- 계획서 c섹션의 현재 코드와 실제 Spot.cs의 로직이 동일함
+- 차이점: enum 주석, 줄바꿈 스타일만 다름 (기능적 차이 없음)
+- 판정: 변경 진행
+
+
+================================================================
+2. 변경 전 코드
+================================================================
+
+using UnityEngine;
+using UnityEngine.UI;
+
+public class Spot : MonoBehaviour
+{
+    [SerializeField] BuildingType _spotType;
+    [SerializeField] BuildingState _buildingState = BuildingState.Idle;
+
+    public BuildingType SpotType => _spotType;
+    public BuildingState CurrentState => _buildingState;
+
+    public void SetType(BuildingType type)
+    {
+        _spotType = type;
+    }
+
+    public void SetState(BuildingState state)
+    {
+        _buildingState = state;
+    }
+}
+
+
+================================================================
+3. 변경 후 코드
+================================================================
+
+using DG.Tweening;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class Spot : MonoBehaviour
+{
+    [SerializeField] BuildingType _spotType;
+    [SerializeField] BuildingState _buildingState = BuildingState.Idle;
+
+    [SerializeField] private Image _buildingImage;
+    [SerializeField] private float _fadeInDuration = 1.0f;
+
+    public BuildingType SpotType => _spotType;
+    public BuildingState CurrentState => _buildingState;
+
+    private void Awake()
+    {
+        if (_buildingImage != null)
+        {
+            Color c = _buildingImage.color;
+            c.a = 0f;
+            _buildingImage.color = c;
+        }
+    }
+
+    public void SetType(BuildingType type)
+    {
+        _spotType = type;
+    }
+
+    public void SetState(BuildingState state)
+    {
+        BuildingState prev = _buildingState;
+        _buildingState = state;
+
+        // Idle → Incident: 페이드인
+        if (prev != BuildingState.Incident && state == BuildingState.Incident)
+        {
+            PlayIncidentEffect();
+        }
+        // Incident → Idle: alpha 즉시 0으로
+        else if (prev == BuildingState.Incident && state == BuildingState.Idle)
+        {
+            if (_buildingImage != null)
+            {
+                _buildingImage.DOKill();
+                Color c = _buildingImage.color;
+                c.a = 0f;
+                _buildingImage.color = c;
+            }
+        }
+        // Incident → Selected: 유지 (처리 없음)
+    }
+
+    private void PlayIncidentEffect()
+    {
+        if (_buildingImage == null) return;
+
+        _buildingImage.DOKill();
+
+        Color c = _buildingImage.color;
+        c.a = 0f;
+        _buildingImage.color = c;
+
+        _buildingImage.DOFade(1f, _fadeInDuration);
+    }
+}
+
+
+================================================================
+4. 작동 흐름
+================================================================
+
+[게임 시작 (Awake)]
+  - _buildingImage의 alpha를 0으로 강제 초기화
+  - Inspector에서 alpha 값을 직접 건드릴 필요 없음
+
+[상태 전환: * → Incident]
+  - PlayIncidentEffect() 호출
+  - DOKill()로 기존 Tween 취소
+  - alpha를 0으로 즉시 초기화
+  - DOFade(1f, _fadeInDuration)으로 서서히 alpha 1까지 페이드인
+
+[상태 전환: Incident → Idle]
+  - DOKill()로 기존 Tween 취소
+  - alpha를 0으로 즉시 복귀 (페이드아웃 없음, 즉시 숨김)
+
+[상태 전환: Incident → Selected]
+  - 아무 처리 없음 → alpha 1 그대로 유지
+
+[그 외 전환]
+  - alpha 변경 없음
+
+
+================================================================
+5. 주의할 점
+================================================================
+
+1. [Inspector 할당 필수]
+   변경 후 에디터에서 Building (1), (2), (3)의 Spot 컴포넌트에
+   _buildingImage 필드에 해당 Image 컴포넌트를 직접 할당해야 함.
+   미할당 시 null 체크로 인해 페이드 효과가 발생하지 않음 (오류는 없음).
+
+2. [DOTween 킬 처리]
+   SetState가 짧은 시간 내 여러 번 호출되어도
+   PlayIncidentEffect() 및 Idle 복귀 처리 모두 DOKill() 먼저 호출하므로
+   Tween 중첩 없음.
+
+3. [초기 alpha]
+   Awake()에서 자동으로 alpha = 0 초기화.
+   Inspector에서 수동으로 alpha 값을 조정하지 않아도 됨.
+
+4. [UI Image 확정]
+   Building (1)(2)(3) 모두 UnityEngine.UI.Image 사용.
+   Image.DOFade() 사용 (SpriteRenderer.DOFade() 아님).
+
+5. [_fadeInDuration]
+   Inspector에서 조정 가능. 기본값 1.0f.

@@ -4,7 +4,17 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:api.github.com)",
-      "Bash(find C:Users95timDesktopFileUnityProjectAH_VisualNovelAssetsScriptsStrategyGame -name *.cs)"
+      "Bash(find C:Users95timDesktopFileUnityProjectAH_VisualNovelAssetsScriptsStrategyGame -name *.cs)",
+      "mcp__unity-mcp__get_scene_summary",
+      "mcp__unity-mcp__get_scene_hierarchy_flat",
+      "Bash(xargs grep:*)",
+      "mcp__unity-mcp__list_materials",
+      "mcp__unity-mcp__get_meta_for_asset",
+      "mcp__unity-mcp__list_render_pipelines",
+      "Bash(grep -rl 386f4d09ba6887c47b8eafd050f0b541 C:/Users/95tim/Desktop/File/UnityProject/AH_VisualNovel/Assets --include=*.meta)",
+      "Bash(grep -rl ebe73ca9363db456bacf42c025bb4847 C:/Users/95tim/Desktop/File/UnityProject/AH_VisualNovel/Assets --include=*.meta)",
+      "Bash(grep -rl 846e0a180c2c81a4b94fb7885ae7a6b8 C:/Users/95tim/Desktop/File/UnityProject/AH_VisualNovel/Assets --include=*.meta)",
+      "mcp__unity-mcp__get_scene_components_by_type"
     ]
   }
 }

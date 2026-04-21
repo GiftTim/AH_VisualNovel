@@ -1,0 +1,217 @@
+================================================================
+변경완료_26.04.20_17.30_CharacterMovement_LineEffect
+================================================================
+
+목차
+----------------------------------------------------------------
+  a. 변경 전/후 코드
+  b. 작동 흐름
+  c. 주의할 점
+  d. 씬 Inspector 잔여 작업
+
+
+================================================================
+a. 변경 전/후 코드
+================================================================
+
+----------------------------------------------------------------
+[LineConnectorManager.cs]
+----------------------------------------------------------------
+
+▶ 변경 전:
+    private void Update()
+    {
+        ApplyLines();
+    }
+
+▶ 변경 후 (Start() 추가):
+    private void Start()
+    {
+        // Play 시작 시 모든 경로 선을 투명하게 초기화
+        // (에디터 모드에서는 실행되지 않으므로 에디터 작업에 영향 없음)
+        foreach (RoadPath road in _roads)
+        {
+            if (road.lineRenderer == null) continue;
+            Color c = road.lineRenderer.startColor;
+            c.a = 0f;
+            road.lineRenderer.startColor = c;
+            road.lineRenderer.endColor   = c;
+        }
+    }
+
+    private void Update()
+    {
+        ApplyLines();
+    }
+
+----------------------------------------------------------------
+[CharacterAgent.cs]
+----------------------------------------------------------------
+
+▶ 변경 전:
+    [SerializeField] float _moveSpeed = 2f;
+    public UnityEvent OnArrived;
+    private Coroutine _moveCoroutine;
+
+    public void MoveAlong(Transform[] path, Action onArrived = null)
+    {
+        if (_moveCoroutine != null) StopCoroutine(_moveCoroutine);
+        _moveCoroutine = StartCoroutine(MoveCoroutine(path, onArrived));
+    }
+
+    IEnumerator MoveCoroutine(Transform[] path, Action onArrived)
+    {
+        if (path == null || path.Length < 2) yield break;
+
+        for (int i = 0; i < path.Length - 1; i++)
+        {
+            Vector3 from = path[i].position;
+            Vector3 to   = path[i + 1].position;
+            float t = 0f;
+
+            while (t < 1f)
+            {
+                t += Time.deltaTime * _moveSpeed;
+                transform.position = Vector3.Lerp(from, to, Mathf.Clamp01(t));
+                yield return null;
+            }
+        }
+
+        onArrived?.Invoke();
+        OnArrived?.Invoke();
+    }
+
+▶ 변경 후:
+    [SerializeField] float _moveSpeed = 2f;
+    [SerializeField] TrailRenderer _trail;           // ★ 추가
+
+    public UnityEvent OnArrived;
+    private Coroutine _moveCoroutine;
+
+    private void Start()                             // ★ 추가
+    {
+        if (_trail != null) _trail.emitting = false;
+    }
+
+    public void MoveAlong(Transform[] path, Action onArrived = null)
+    {
+        if (_moveCoroutine != null) StopCoroutine(_moveCoroutine);
+
+        if (_trail != null)                          // ★ 추가
+        {
+            _trail.Clear();
+            _trail.emitting = true;
+        }
+
+        _moveCoroutine = StartCoroutine(MoveCoroutine(path, onArrived));
+    }
+
+    IEnumerator MoveCoroutine(Transform[] path, Action onArrived)
+    {
+        if (path == null || path.Length < 2) yield break;
+
+        for (int i = 0; i < path.Length - 1; i++)
+        {
+            Vector3 from = path[i].position;
+            Vector3 to   = path[i + 1].position;
+            float t = 0f;
+
+            while (t < 1f)
+            {
+                t += Time.deltaTime * _moveSpeed;
+                transform.position = Vector3.Lerp(from, to, Mathf.Clamp01(t));
+                yield return null;
+            }
+        }
+
+        if (_trail != null) _trail.emitting = false; // ★ 추가
+
+        onArrived?.Invoke();
+        OnArrived?.Invoke();
+    }
+
+
+================================================================
+b. 작동 흐름
+================================================================
+
+[에디터(Edit 모드)]
+  - LineConnectorManager의 [ExecuteAlways] Update()가 실행되어
+    LineRenderer가 경로를 보이는 상태로 유지됨 → 씬 작업 시 경로 확인 가능
+  - TrailRenderer는 캐릭터가 이동하지 않으므로 아무것도 그리지 않음
+
+[Play 진입 — Start()]
+  - LineConnectorManager.Start():
+      모든 RoadPath의 lineRenderer.startColor.a = 0,
+      lineRenderer.endColor.a = 0 → 경로 선이 즉시 투명해짐
+  - CharacterAgent.Start():
+      _trail.emitting = false → 트레일 비활성 상태로 초기화
+
+[이동 시작 — MoveAlong() 호출]
+  - 기존 코루틴이 있으면 StopCoroutine으로 중단
+  - _trail.Clear(): 이전 이동에서 남은 트레일 잔상 즉시 제거
+  - _trail.emitting = true: 트레일 기록 시작
+  - MoveCoroutine 코루틴 시작
+
+[이동 중 — MoveCoroutine 실행]
+  - path 배열을 순서대로 Vector3.Lerp로 구간 이동
+  - 캐릭터가 지나간 위치에 TrailRenderer가 자동으로 선을 그림
+  - Color Gradient 설정에 따라 뒤쪽(오래된 트레일)은 alpha=0으로 자연 페이드
+
+[도착 — MoveCoroutine 완료]
+  - _trail.emitting = false: 새 트레일 추가 중단
+    (기존에 남아있는 트레일은 TrailRenderer의 Time 설정에 따라 서서히 사라짐)
+  - onArrived?.Invoke() / OnArrived?.Invoke() 실행
+
+
+================================================================
+c. 주의할 점
+================================================================
+
+1. TrailRenderer의 emitting = false는 즉시 트레일을 지우지 않는다.
+   새 트레일 추가만 중단하며, 기존에 남은 트레일은 Time 설정대로 사라진다.
+   → 도착 시 원하는 동작 (남은 선이 서서히 사라짐)
+
+2. 재이동(이동 중 목적지 변경) 시 _trail.Clear() 호출
+   MoveAlong()을 다시 호출하면 Clear()로 이전 트레일을 즉시 제거하고
+   새 트레일을 시작한다. 이전 잔상이 남지 않도록 Clear()가 중요하다.
+
+3. TrailRenderer와 LineRenderer의 z값 (2D 프로젝트)
+   LineConnectorManager의 _lineZ = -1f 설정처럼
+   TrailRenderer도 캐릭터 오브젝트의 z값 또는 Order in Layer를
+   LineRenderer보다 앞으로 설정해야 선이 가려지지 않는다.
+
+4. TrailRenderer Width와 LineRenderer Width 단위 차이
+   TrailRenderer의 Width는 월드 단위,
+   LineRenderer의 Width는 프로젝트 설정에 따라 다를 수 있으므로
+   둘을 맞추려면 실제로 Play해보며 조정한다.
+
+5. Material
+   TrailRenderer가 기본 Material을 쓰면 LineRenderer와 외형이 달라 보일 수 있다.
+   LineRenderer의 Material을 TrailRenderer에도 동일하게 지정하면
+   외형 통일이 가능하다.
+
+6. [ExecuteAlways]와 Start() 분리 (의도된 설계)
+   LineConnectorManager에 [ExecuteAlways]가 붙어 에디터에서도 Update가 실행된다.
+   Start()는 Play 시에만 실행되므로 alpha=0 초기화는 Play 진입 시에만 적용된다.
+   → 에디터: 선 보임 / Play: 선 투명 — 이 동작은 의도된 것이며 변경하지 않는다.
+
+
+================================================================
+d. 씬 Inspector 잔여 작업 (코드 변경 후 수동 진행 필요)
+================================================================
+
+  1. 캐릭터 GameObject에 TrailRenderer 컴포넌트 추가
+
+  2. TrailRenderer 속성 설정:
+     항목              | 권장 값                          | 설명
+     ------------------|----------------------------------|---------------------------
+     Time              | 0.8 ~ 1.5                        | 트레일이 남아있는 시간(초)
+     Min Vertex Dist   | 0.1                              | 트레일 점 최소 간격
+     Width (Curve)     | LineRenderer 굵기와 맞춤         | 선 굵기
+     Color (Gradient)  | 앞(alpha=1) → 뒤(alpha=0)       | 지나간 뒤로 갈수록 투명
+     Material          | LineRenderer와 동일 Material 권장| 외형 통일
+
+  3. CharacterAgent 컴포넌트의 _trail 슬롯에 TrailRenderer 연결
+
+================================================================

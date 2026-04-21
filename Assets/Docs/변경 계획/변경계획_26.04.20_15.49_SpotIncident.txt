@@ -1,0 +1,218 @@
+================================================================
+a. 목차
+================================================================
+1. 요구한 기능
+2. 현재 상황 및 코드
+3. 구현 방향 (d)
+4. 방식 선택 이유 (e)
+5. 진행 순서 (f)
+6. 변경 상세 (g)
+7. 주의할 점 (h)
+
+
+================================================================
+b. 요구한 기능
+================================================================
+[Spot.cs]
+- Spot의 BuildingState가 Idle → Incident로 변경될 때,
+  연결된 UI Image의 alpha를 0 → 1로 DOTween을 이용해 서서히 페이드인 처리
+- Incident → Idle 전환 시: alpha를 다시 0으로 복귀
+- Incident → Selected 전환 시: alpha 1 그대로 유지 (변경 없음)
+- DOTween 중첩 방지: PlayIncidentEffect() 호출 전 DOKill() 처리
+- 초기 alpha: Awake()에서 alpha = 0으로 초기화
+
+
+================================================================
+c. 현재 상황 및 코드
+================================================================
+
+[씬 직접 확인 결과]
+- Building (1), (2), (3) 모두 Canvas-Main 하위에 존재 (UI 계층)
+- 각 Building 오브젝트에는 UnityEngine.UI.Image 컴포넌트가 붙어 있음
+  → SpriteRenderer 아님, UI Image 확정
+- Spot 컴포넌트가 동일 GameObject에 부착되어 있음
+
+[DOTween]
+- 프로젝트에 DOTween 설치됨 (Assets/Resources/DOTweenSettings.asset 존재)
+
+[현재 Spot.cs]
+-------------------------------
+using UnityEngine;
+using UnityEngine.UI;
+
+public enum BuildingType { HQ, Normal }
+public enum BuildingState { Idle, Incident, Unselected, Selected, Completed }
+
+[System.Serializable]
+public class SpotVisualConfig
+{
+    public BuildingType _buildingType;
+    public BuildingState _buildingState;
+    public Color color = Color.white;
+}
+
+public class Spot : MonoBehaviour
+{
+    [SerializeField] BuildingType _spotType;
+    [SerializeField] BuildingState _buildingState = BuildingState.Idle;
+
+    public BuildingType SpotType => _spotType;
+    public BuildingState CurrentState => _buildingState;
+
+    public void SetType(BuildingType type) { _spotType = type; }
+    public void SetState(BuildingState state) { _buildingState = state; }
+}
+-------------------------------
+
+
+================================================================
+d. 구현 방향
+================================================================
+
+[핵심 변경]
+1. Spot에 [SerializeField] Image _buildingImage 필드 추가
+   (확인된 컴포넌트: UnityEngine.UI.Image)
+
+2. Awake()에서 _buildingImage의 alpha를 0으로 초기화
+
+3. SetState() 내부에서 상태 전환에 따라 처리:
+   - prev != Incident && state == Incident → PlayIncidentEffect() (alpha 0→1 페이드인)
+   - prev == Incident && state == Idle     → alpha 즉시 0으로 복귀 (DOFade 0)
+   - prev == Incident && state == Selected → 아무 처리 없음 (alpha 1 유지)
+
+4. PlayIncidentEffect():
+   - _buildingImage.DOKill() 으로 기존 Tween 먼저 취소
+   - alpha를 0으로 강제 초기화
+   - _buildingImage.DOFade(1f, _fadeInDuration) 실행
+
+[추가 필드]
+- [SerializeField] Image _buildingImage    : 페이드 대상 UI Image
+- [SerializeField] float _fadeInDuration = 1.0f : 페이드인 시간 (Inspector 조정 가능)
+
+
+================================================================
+e. 방식 선택 이유
+================================================================
+
+[DOTween 선택 이유]
+- 프로젝트에 이미 DOTween이 설치되어 있어 추가 의존성 없음
+- Coroutine보다 코드가 간결하고 DOKill()로 중첩 방지가 쉬움
+- Image.DOFade()는 alpha만 변경해 기존 RGB 색상을 그대로 유지
+
+[UI Image 사용 확정]
+- 씬 파일 직접 확인: Building (1)(2)(3) 모두 UnityEngine.UI.Image 컴포넌트
+- SpriteRenderer.DOFade()가 아닌 Image.DOFade() 사용해야 함
+
+[Idle 복귀 시 즉시 0 처리]
+- 페이드아웃 연출 없이 즉시 숨기는 것이 현재 요구사항
+- 추후 페이드아웃 연출 추가는 간단히 확장 가능
+
+
+================================================================
+f. 진행 순서
+================================================================
+
+1. Spot.cs 상단에 using DG.Tweening; 추가
+2. _buildingImage (Image), _fadeInDuration (float) 필드 추가
+3. Awake() 추가 → alpha 0 초기화
+4. SetState()에 상태 전환 감지 및 분기 처리 추가
+5. PlayIncidentEffect() 메서드 추가 (DOKill → alpha 0 → DOFade)
+6. 에디터에서 Building (1)(2)(3)의 Spot 컴포넌트에 _buildingImage 할당
+7. 플레이 모드에서 동작 확인
+
+
+================================================================
+g. 변경 상세
+================================================================
+
+[Spot.cs 변경 후 전체 구조]
+
+using 추가:
+  using DG.Tweening;          ← 신규 추가
+  using UnityEngine.UI;       ← 기존 유지
+
+추가 필드:
+  [SerializeField] private Image _buildingImage;
+  [SerializeField] private float _fadeInDuration = 1.0f;
+
+Awake() 신규 추가:
+  private void Awake()
+  {
+      if (_buildingImage != null)
+      {
+          Color c = _buildingImage.color;
+          c.a = 0f;
+          _buildingImage.color = c;
+      }
+  }
+
+SetState() 변경:
+  Before:
+    public void SetState(BuildingState state)
+    {
+        _buildingState = state;
+    }
+
+  After:
+    public void SetState(BuildingState state)
+    {
+        BuildingState prev = _buildingState;
+        _buildingState = state;
+
+        // Idle → Incident: 페이드인
+        if (prev != BuildingState.Incident && state == BuildingState.Incident)
+        {
+            PlayIncidentEffect();
+        }
+        // Incident → Idle: alpha 즉시 0으로
+        else if (prev == BuildingState.Incident && state == BuildingState.Idle)
+        {
+            if (_buildingImage != null)
+            {
+                _buildingImage.DOKill();
+                Color c = _buildingImage.color;
+                c.a = 0f;
+                _buildingImage.color = c;
+            }
+        }
+        // Incident → Selected: 유지 (처리 없음)
+    }
+
+PlayIncidentEffect() 신규 추가:
+    private void PlayIncidentEffect()
+    {
+        if (_buildingImage == null) return;
+
+        _buildingImage.DOKill();
+
+        Color c = _buildingImage.color;
+        c.a = 0f;
+        _buildingImage.color = c;
+
+        _buildingImage.DOFade(1f, _fadeInDuration);
+    }
+
+
+================================================================
+h. 주의할 점
+================================================================
+
+1. [DOTween 킬 처리] ← 적용 확정
+   SetState가 짧은 시간 내 여러 번 호출될 경우 Tween이 중첩될 수 있음.
+   PlayIncidentEffect() 및 Idle 복귀 처리 모두 DOKill() 먼저 호출.
+
+2. [초기 alpha 상태] ← 적용 확정
+   Awake()에서 _buildingImage의 alpha를 0으로 초기화.
+   Inspector에서 alpha를 수동으로 건드리지 않아도 자동 처리됨.
+
+3. [Incident 해제 시 alpha 처리] ← 적용 확정
+   - Incident → Idle: alpha 즉시 0으로 복귀
+   - Incident → Selected: alpha 1 그대로 유지 (처리 없음)
+   - 그 외 상태 전환 시 alpha 변경 없음
+
+4. [컴포넌트 확인 완료] ← 직접 확인 완료
+   씬 파일 직접 확인 결과: Building (1)(2)(3) 모두 UI Image 사용.
+   SpriteRenderer가 아님. Image.DOFade() 사용.
+
+5. [DOTween 네임스페이스] ← 적용 확정
+   using DG.Tweening; 를 Spot.cs 상단에 추가해야 컴파일 오류 없음.
