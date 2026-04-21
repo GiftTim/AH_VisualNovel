@@ -41,8 +41,10 @@ namespace TESTING
                 Debug.Log("Setting target spot to Selected");
 
                 if (_targetSpot != null)
+                {
                     _targetSpot.SetState(BuildingState.Selected);
                     _dispatcher.Dispatch(_character, _targetSpot);
+                }
             }
 
             // D 키: 목표 건물 상태를 Completed로 변경하고 캐릭터를 HQ로 귀환
@@ -51,9 +53,10 @@ namespace TESTING
                 Debug.Log("Setting target spot to Completed");
 
                 if (_targetSpot != null)
+                {
                     _targetSpot.SetState(BuildingState.Completed);
                     _dispatcher.Return(_character, _targetSpot);
-
+                }
             }
 
 

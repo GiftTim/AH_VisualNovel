@@ -24,9 +24,13 @@ public class CharacterAgent : MonoBehaviour
     /// <summary>현재 실행 중인 이동 코루틴 참조. 재이동 요청 시 중단에 사용.</summary>
     private Coroutine _moveCoroutine;
 
-    private void Start()
+    private void Awake()
     {
-        if (_trail != null) _trail.emitting = false;
+        if (_trail != null)
+        {
+            _trail.emitting = false;
+            _trail.enabled  = false;
+        }
     }
 
     /// <summary>
@@ -39,8 +43,11 @@ public class CharacterAgent : MonoBehaviour
     {
         if (_moveCoroutine != null) StopCoroutine(_moveCoroutine);
 
+        if (_mask != null) _mask.SetActive(true);
+
         if (_trail != null)
         {
+            _trail.enabled  = true;
             _trail.Clear();
             _trail.emitting = true;
         }
@@ -75,17 +82,21 @@ public class CharacterAgent : MonoBehaviour
             }
         }
 
-        if (_trail != null) _trail.emitting = false;
-
-        // 1. 마스크 먼저 비활성화
+        // 1. 마스크 숨김
         if (_mask != null) _mask.SetActive(false);
 
-        // 2. 트레일이 완전히 사라질 때까지 대기
+        // 2. 트레일 방출 중단 (기존 트레일은 페이드 아웃 유지)
+        if (_trail != null) _trail.emitting = false;
+
+        // 3. 트레일이 완전히 사라질 때까지 대기
         float trailFadeTime = (_trail != null) ? _trail.time : 0f;
         if (trailFadeTime > 0f)
             yield return new WaitForSeconds(trailFadeTime);
 
-        // 3. Mari 활성화
+        // 4. 트레일 비활성화
+        if (_trail != null) _trail.enabled = false;
+
+        // 5. Mari 활성화
         gameObject.SetActive(true);
 
         // 도착 콜백 실행 (코드에서 직접 전달한 Action)

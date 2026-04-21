@@ -14,7 +14,12 @@
       "Bash(grep -rl 386f4d09ba6887c47b8eafd050f0b541 C:/Users/95tim/Desktop/File/UnityProject/AH_VisualNovel/Assets --include=*.meta)",
       "Bash(grep -rl ebe73ca9363db456bacf42c025bb4847 C:/Users/95tim/Desktop/File/UnityProject/AH_VisualNovel/Assets --include=*.meta)",
       "Bash(grep -rl 846e0a180c2c81a4b94fb7885ae7a6b8 C:/Users/95tim/Desktop/File/UnityProject/AH_VisualNovel/Assets --include=*.meta)",
-      "mcp__unity-mcp__get_scene_components_by_type"
+      "mcp__unity-mcp__get_scene_components_by_type",
+      "Bash(powershell -Command \"[System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId\\([DateTime]::UtcNow, 'Korea Standard Time'\\).ToString\\('yy.MM.dd_HH.mm'\\)\")",
+      "Bash(rm \"C:\\\\Users\\\\95tim\\\\Desktop\\\\File\\\\UnityProject\\\\AH_VisualNovel\\\\Assets\\\\Scripts\\\\StrategyGame\\\\Core\\\\UI\\\\AlarmTimer.cs\")",
+      "Bash(rm \"C:\\\\Users\\\\95tim\\\\Desktop\\\\File\\\\UnityProject\\\\AH_VisualNovel\\\\Assets\\\\Scripts\\\\StrategyGame\\\\Core\\\\UI\\\\AlarmTimer.cs.meta\")",
+      "Bash(rm \"C:\\\\Users\\\\95tim\\\\Desktop\\\\File\\\\UnityProject\\\\AH_VisualNovel\\\\Assets\\\\Scripts\\\\StrategyGame\\\\Core\\\\UI\\\\AlarmSpawner.cs\")",
+      "Bash(rm \"C:\\\\Users\\\\95tim\\\\Desktop\\\\File\\\\UnityProject\\\\AH_VisualNovel\\\\Assets\\\\Scripts\\\\StrategyGame\\\\Core\\\\UI\\\\AlarmSpawner.cs.meta\")"
     ]
   }
 }

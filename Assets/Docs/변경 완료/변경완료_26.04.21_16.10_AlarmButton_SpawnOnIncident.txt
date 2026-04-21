@@ -1,0 +1,202 @@
+================================================================
+변경완료_26.04.21_16.10_AlarmButton_SpawnOnIncident
+================================================================
+
+
+================================================================
+1. 변경 전후 코드 비교
+================================================================
+
+----------------------------------------------------------------
+[Spot.cs] — 변경 전
+----------------------------------------------------------------
+using DG.Tweening;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class Spot : MonoBehaviour
+{
+    public BuildingType SpotType => _spotType;
+    public BuildingState CurrentState => _buildingState;
+
+    public void SetState(BuildingState state)
+    {
+        BuildingState prev = _buildingState;
+        _buildingState = state;
+
+        if (prev != BuildingState.Incident && state == BuildingState.Incident)
+            PlayIncidentEffect();
+        else if (state == BuildingState.Idle)
+        { ... }
+    }
+}
+
+----------------------------------------------------------------
+[Spot.cs] — 변경 후
+----------------------------------------------------------------
+using System;           // ← 추가
+using DG.Tweening;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class Spot : MonoBehaviour
+{
+    public BuildingType SpotType => _spotType;
+    public BuildingState CurrentState => _buildingState;
+
+    public event Action<BuildingState> OnStateChanged;  // ← 추가
+
+    public void SetState(BuildingState state)
+    {
+        BuildingState prev = _buildingState;
+        _buildingState = state;
+
+        OnStateChanged?.Invoke(state);  // ← 추가
+
+        if (prev != BuildingState.Incident && state == BuildingState.Incident)
+            PlayIncidentEffect();
+        else if (state == BuildingState.Idle)
+        { ... }
+    }
+}
+
+----------------------------------------------------------------
+[AlarmTimer.cs] — 신규 생성
+  경로: Assets/Scripts/StrategyGame/Core/UI/AlarmTimer.cs
+----------------------------------------------------------------
+using DG.Tweening;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class AlarmTimer : MonoBehaviour
+{
+    [SerializeField] float _duration = 10f;
+    [SerializeField] Slider _slider;
+
+    void Awake()
+    {
+        if (_slider == null)
+            _slider = GetComponent<Slider>();
+    }
+
+    void Start()
+    {
+        if (_slider == null) return;
+        _slider.value = 1f;
+        _slider.DOValue(0f, _duration).SetEase(Ease.Linear);
+    }
+}
+
+----------------------------------------------------------------
+[AlarmSpawner.cs] — 신규 생성
+  경로: Assets/Scripts/StrategyGame/Core/UI/AlarmSpawner.cs
+----------------------------------------------------------------
+using UnityEngine;
+
+public class AlarmSpawner : MonoBehaviour
+{
+    [SerializeField] RectTransform _playerInteractionPanel;
+
+    Spot _spot;
+    GameObject _currentButton;
+    const string SGButtonPath = "Prefab/[StrategyGame]UI/SGButton";
+
+    void Awake()  { _spot = GetComponent<Spot>(); }
+    void OnEnable()  { _spot.OnStateChanged += HandleStateChanged; }
+    void OnDisable() { _spot.OnStateChanged -= HandleStateChanged; }
+
+    void HandleStateChanged(BuildingState state)
+    {
+        if (state == BuildingState.Incident) SpawnButton();
+        else                                 DestroyButton();
+    }
+
+    void SpawnButton()
+    {
+        if (_currentButton != null) Destroy(_currentButton);
+
+        GameObject prefab = Resources.Load<GameObject>(SGButtonPath);
+        _currentButton = Instantiate(prefab, _playerInteractionPanel);
+
+        RectTransform rt = _currentButton.GetComponent<RectTransform>();
+        rt.pivot       = new Vector2(1f, 1f);
+        rt.anchorMin   = Vector2.zero;
+        rt.anchorMax   = Vector2.zero;
+        rt.anchoredPosition = GetSpotTopRightLocal();
+    }
+
+    void DestroyButton()
+    {
+        if (_currentButton == null) return;
+        Destroy(_currentButton);
+        _currentButton = null;
+    }
+
+    Vector2 GetSpotTopRightLocal()
+    {
+        var corners = new Vector3[4];
+        ((RectTransform)transform).GetWorldCorners(corners);
+        Canvas canvas = _playerInteractionPanel.GetComponentInParent<Canvas>();
+        Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay
+                     ? null : canvas.worldCamera;
+        Vector2 sp = RectTransformUtility.WorldToScreenPoint(cam, corners[2]);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            _playerInteractionPanel, sp, cam, out Vector2 local);
+        return local;
+    }
+}
+
+----------------------------------------------------------------
+[SGButton.prefab] — 수정 (YAML 직접 편집)
+  경로: Assets/Resources/Prefab/[StrategyGame]UI/SGButton.prefab
+----------------------------------------------------------------
+  변경 전:
+    Root RectTransform  m_Pivot: {x: 0.5, y: 0.5}
+    AlarmButton         m_IsActive: 0
+
+  변경 후:
+    Root RectTransform  m_Pivot: {x: 1, y: 1}
+    AlarmButton         m_IsActive: 1
+
+
+================================================================
+2. 변경 후 작동 흐름
+================================================================
+
+1. 외부 코드에서 spot.SetState(BuildingState.Incident) 호출
+2. Spot.SetState() 내부에서 OnStateChanged?.Invoke(Incident) 발행
+3. AlarmSpawner.HandleStateChanged(Incident) 수신
+4. Resources.Load로 SGButton 프리팹 로드 → Instantiate
+5. RectTransform 설정:
+     - pivot (1,1) : 우상단 기준점
+     - anchorMin/Max (0,0) : 절대 위치 모드
+     - anchoredPosition : Spot 우상단 모서리의 5-Player Interaction 로컬 좌표
+6. SGButton 안에서 AlarmButton(활성) 표시, AlarmTimer가 Slider를 1→0으로 감소
+7. 다른 상태로 전환되면 AlarmSpawner가 SGButton Destroy
+
+
+================================================================
+3. 주의할 점
+================================================================
+
+[Unity Editor 수동 작업 — 미완료 항목]
+  a. SGButton 프리팹 내 AlarmButton에 AlarmTimer 컴포넌트 수동 추가 필요
+     - Project 창에서 SGButton 프리팹 열기
+     - AlarmButton 선택 → Add Component → AlarmTimer
+     - _slider 슬롯에 AlarmButton 자신의 Slider 컴포넌트 연결
+     - _duration 원하는 시간(초) 입력
+
+  b. 씬의 Normal 타입 Spot들에 AlarmSpawner 컴포넌트 추가 필요
+     - 각 Normal Spot 선택 → Add Component → AlarmSpawner
+     - _playerInteractionPanel 슬롯에 씬의 5-Player Interaction RectTransform 연결
+
+[코드 주의사항]
+  - AlarmTimer는 Start()에서 타이머를 시작하므로
+    SGButton이 Instantiate된 순간 자동 시작됨
+  - AlarmTimer 만료 시 현재 아무 처리 없음 (추후 OnTimerExpired 이벤트로 확장 예정)
+  - AlarmSpawner는 Incident 이외의 모든 상태 전환 시 버튼을 Destroy
+    (Incident → Selected 전환 시에도 버튼이 사라짐 — 필요 시 조건 수정)
+  - 캔버스 렌더 모드에 따라 Camera를 자동 감지하므로
+    Overlay / Screen Space Camera 모드 모두 대응 가능
+
+================================================================
