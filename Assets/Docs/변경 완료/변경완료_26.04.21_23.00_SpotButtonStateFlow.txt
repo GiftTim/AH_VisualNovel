@@ -1,0 +1,299 @@
+====================================================
+  Spot 상태(State)에 따른 버튼 3종 활성/비활성 흐름 제어
+  변경 완료일: 2026-04-21 23:00 KST (추가 수정: 2026-04-21)
+====================================================
+
+----------------------------------------------------
+1. 현재 코드 vs 계획서 비교 결과
+----------------------------------------------------
+
+  모든 항목 일치. 다른 점 없음 → 변경 진행.
+
+  확인 항목:
+  - Spot.cs: BuildingState 5종, SetState() 구조, PlayIncidentEffect() DOTween 구조 ✅
+  - Spot.cs: 버튼 참조/제어 코드 전혀 없음 ✅
+  - SliderCountdown.cs: StartCountdown(), CountdownCoroutine() 구조, 완료 이벤트 없음 ✅
+  - MissionDispatcher.cs: Dispatch() 콜백 구조, OnDispatchArrived() 호출 없음 ✅
+
+
+----------------------------------------------------
+2. 변경 전 코드 → 변경 후 코드
+----------------------------------------------------
+
+  ┌─────────────────────────────────────────────────┐
+  │ ① Spot.cs                                       │
+  └─────────────────────────────────────────────────┘
+
+  [최종 코드]
+
+    public class Spot : MonoBehaviour
+    {
+        [SerializeField] BuildingType _spotType;
+        [SerializeField] BuildingState _buildingState = BuildingState.Idle;
+        [SerializeField] private Image _buildingImage;
+        [SerializeField] private float _fadeInDuration = 1.0f;
+
+        [Header("버튼 UI")]
+        [SerializeField] private GameObject _alarmButton;
+        [SerializeField] private GameObject _workButton;
+        [SerializeField] private GameObject _checkButton;
+
+        private System.Action _onReturnCallback;   // ← 추가: Completed 시 호출할 귀환 콜백
+
+        private void Awake()
+        {
+            if (_spotType == BuildingType.HQ) return;
+            if (_buildingImage != null) { ... alpha = 0 ... }
+            SetButtonsAll(false);
+        }
+
+        public void SetState(BuildingState state)
+        {
+            _buildingState = state;
+            if (_spotType == BuildingType.HQ) return;
+
+            switch (state)
+            {
+                case BuildingState.Idle:
+                    SetButtonsAll(false);
+                    if (_buildingImage != null) { _buildingImage.DOKill(); _buildingImage.DOFade(0f, ...); }
+                    break;
+                case BuildingState.Incident:
+                    SetButtonsAll(false);
+                    PlayIncidentEffect();
+                    break;
+                case BuildingState.Selected:
+                    // 버튼은 OnDispatchArrived() 도착 시 제어
+                    break;
+                case BuildingState.Completed:
+                    SetButtonsAll(false);
+                    _checkButton?.SetActive(true);
+                    _onReturnCallback?.Invoke();   // ← 추가: CheckButton 활성화 즉시 귀환 콜백 호출
+                    _onReturnCallback = null;
+                    break;
+            }
+        }
+
+        private void SetButtonsAll(bool active)
+        {
+            _alarmButton?.SetActive(active);
+            _workButton?.SetActive(active);
+            _checkButton?.SetActive(active);
+        }
+
+        private void PlayIncidentEffect()
+        {
+            if (_buildingImage == null) return;
+            _buildingImage.DOKill();
+            Color c = _buildingImage.color; c.a = 0f; _buildingImage.color = c;
+            _buildingImage.DOFade(1f, _fadeInDuration)
+                .OnComplete(() =>
+                {
+                    _alarmButton?.SetActive(true);
+                    SliderCountdown countdown = _alarmButton?.GetComponent<SliderCountdown>();
+                    countdown?.StartCountdown();   // ← 추가: AlarmButton 활성화 직후 카운트다운 자동 시작
+                });
+        }
+
+        public void OnDispatchArrived(System.Action onReturn)   // ← 파라미터 추가: 귀환 콜백
+        {
+            _onReturnCallback = onReturn;   // ← 추가: 콜백 저장
+
+            SetButtonsAll(false);
+            _workButton?.SetActive(true);
+            SliderCountdown countdown = _workButton.GetComponent<SliderCountdown>();
+            if (countdown != null)
+            {
+                countdown.OnCountdownCompleted += HandleWorkComplete;
+                countdown.StartCountdown();
+            }
+        }
+
+        private void HandleWorkComplete()
+        {
+            SliderCountdown countdown = _workButton?.GetComponent<SliderCountdown>();
+            if (countdown != null)
+                countdown.OnCountdownCompleted -= HandleWorkComplete;
+            SetState(BuildingState.Completed);
+        }
+    }
+
+
+  ┌─────────────────────────────────────────────────┐
+  │ ② SliderCountdown.cs                            │
+  └─────────────────────────────────────────────────┘
+
+  [최종 코드 변경 사항]
+
+    // 변경 전: 이미 진행 중이면 초기화 후 재시작
+    public void StartCountdown()
+    {
+        if (_countdownCoroutine != null)
+            StopCoroutine(_countdownCoroutine);
+        _countdownCoroutine = StartCoroutine(CountdownCoroutine());
+    }
+
+    // 변경 후: 이미 진행 중이면 무시 (클릭으로 초기화 방지)
+    public void StartCountdown()
+    {
+        if (_countdownCoroutine != null) return;
+        _countdownCoroutine = StartCoroutine(CountdownCoroutine());
+    }
+
+    // 변경 전: _slider == null 이면 yield break → OnCountdownCompleted 미호출
+    private IEnumerator CountdownCoroutine()
+    {
+        if (_slider == null) yield break;
+        ...
+    }
+
+    // 변경 후: _slider == null 이어도 _countdownCoroutine 정리 + 이벤트 발화
+    private IEnumerator CountdownCoroutine()
+    {
+        if (_slider == null)
+        {
+            _countdownCoroutine = null;
+            OnCountdownCompleted?.Invoke();
+            yield break;
+        }
+        ...
+    }
+
+
+  ┌─────────────────────────────────────────────────┐
+  │ ③ MissionDispatcher.cs                          │
+  └─────────────────────────────────────────────────┘
+
+  [최종 코드 변경 사항]
+
+    // 변경 전
+    character.MoveAlong(path, () =>
+    {
+        character.gameObject.SetActive(false);
+        targetSpot.OnDispatchArrived();
+    });
+
+    // 변경 후: 귀환 콜백을 OnDispatchArrived에 전달
+    character.MoveAlong(path, () =>
+    {
+        character.gameObject.SetActive(false);
+        targetSpot.OnDispatchArrived(() => Return(character, targetSpot));
+    });
+
+    // 변경 전 Return(): fromSpot.SetState(Completed) 호출 후 이동
+    public void Return(CharacterAgent character, Spot fromSpot)
+    {
+        fromSpot.SetState(BuildingState.Completed);
+        character.gameObject.SetActive(true);
+        Transform[] path = _connector.GetReturnWaypoints(fromSpot);
+        if (path != null)
+            character.MoveAlong(path, () => character.gameObject.SetActive(false));
+    }
+
+    // 변경 후 Return(): SetState 호출 제거, 도착 시 캐릭터 비활성화만
+    public void Return(CharacterAgent character, Spot fromSpot)
+    {
+        character.gameObject.SetActive(true);
+        Transform[] path = _connector.GetReturnWaypoints(fromSpot);
+        if (path != null)
+            character.MoveAlong(path, () => character.gameObject.SetActive(false));
+    }
+
+
+----------------------------------------------------
+3. 변경 후 작동 흐름
+----------------------------------------------------
+
+  [Idle]
+    Spot.SetState(Idle) 호출
+    → SetButtonsAll(false): 버튼 3개 비활성
+    → _buildingImage alpha → 0 (DOFade)
+
+  [Incident]
+    Spot.SetState(Incident) 호출
+    → SetButtonsAll(false): 버튼 3개 비활성
+    → PlayIncidentEffect(): _buildingImage alpha 0→1 (DOFade, _fadeInDuration초)
+    → DOTween 완료 콜백: AlarmButton.SetActive(true)
+    → AlarmButton의 SliderCountdown.StartCountdown() 자동 호출
+    → [결과] AlarmButton만 활성 + 카운트다운(1→0) 진행
+
+  [Dispatch 시작 (Selected)]
+    MissionDispatcher.Dispatch(character, targetSpot) 호출
+    → targetSpot.SetState(Selected)
+      → 버튼 제어 없음: AlarmButton 활성 상태 유지
+    → 캐릭터 활성화 + 경로 이동 시작
+
+  [캐릭터 도착]
+    character.MoveAlong onArrived 콜백 실행
+    → character.gameObject.SetActive(false)
+    → targetSpot.OnDispatchArrived(() => Return(character, targetSpot))
+      → _onReturnCallback 저장
+      → SetButtonsAll(false)
+      → WorkButton.SetActive(true)
+      → SliderCountdown.OnCountdownCompleted += HandleWorkComplete
+      → SliderCountdown.StartCountdown() (Slider 1→0, _duration초)
+    → [결과] WorkButton + Slider 활성화, 카운트다운 진행
+
+  [Slider 0 도달 (Completed)]
+    CountdownCoroutine 종료
+    → OnCountdownCompleted.Invoke()
+    → Spot.HandleWorkComplete() 호출
+      → countdown.OnCountdownCompleted -= HandleWorkComplete (구독 해제)
+      → SetState(Completed)
+        → SetButtonsAll(false): WorkButton 비활성
+        → CheckButton.SetActive(true)
+        → _onReturnCallback.Invoke() → MissionDispatcher.Return() 호출
+        → _onReturnCallback = null
+    → [결과] CheckButton만 활성 + 캐릭터 귀환 이동 시작
+
+  [귀환 완료]
+    character.MoveAlong onArrived 콜백 실행
+    → character.gameObject.SetActive(false)
+    → [결과] 캐릭터 비활성, Spot은 Completed 상태 유지
+
+
+----------------------------------------------------
+4. 주의할 점
+----------------------------------------------------
+
+  1. Unity 에디터 Inspector 작업 필수
+     - StrategyGame 씬 각 Spot의 Spot 컴포넌트에서
+       _alarmButton / _workButton / _checkButton 필드에
+       자식 오브젝트 드래그 연결.
+     - AlarmButton GameObject에 SliderCountdown 컴포넌트 필요.
+       (_slider, _duration 설정)
+     - WorkButton GameObject에 SliderCountdown 컴포넌트 필요.
+       (_slider, _duration 설정)
+     - CheckButton은 SliderCountdown 불필요.
+
+  2. AlarmButton 카운트다운 클릭 초기화 방지
+     - StartCountdown()은 이미 진행 중이면 early return.
+     - AlarmButton OnClick에 StartCountdown()을 연결하면 안 됨.
+
+  3. DOTween OnComplete 타이밍
+     - SetState()가 빠르게 재호출되면 이전 DOTween이 Kill되어
+       AlarmButton OnComplete가 실행되지 않을 수 있음.
+     - 현재 SetState 호출 빈도는 낮아 문제 없을 것으로 판단.
+       문제 발생 시 DOTween Sequence + Kill(true) 방식 고려.
+
+  4. 이벤트 구독 해제
+     - HandleWorkComplete()에서 -= 구독 해제를 반드시 수행.
+       Spot이 재사용될 때 중복 호출 방지.
+
+  5. _onReturnCallback은 OnDispatchArrived() 경유 시에만 설정됨
+     - TestingSpotState 등에서 SetState(Completed)를 직접 호출하면
+       _onReturnCallback이 null이므로 Return()이 호출되지 않음.
+     - 테스트 시 D키 대신 C키(Dispatch)로 정상 흐름을 타거나,
+       테스트 코드에서 직접 dispatcher.Return()을 함께 호출해야 함.
+
+  6. AlarmButton 클릭 → Dispatch() 연결 미구현
+     - 현재는 TestingSpotState에서 C키로 Dispatch() 직접 호출로 테스트.
+     - AlarmButton OnClick → MissionDispatcher.Dispatch() 연결은
+       추후 퀘스트 수락 UI 구현 시 추가.
+
+  7. 씬 저장 시 버튼 초기 상태
+     - 씬에서 버튼이 활성화된 채 저장되어도
+       Awake()의 SetButtonsAll(false)로 런타임 초기화됨.
+     - 에디터 화면 오염 방지를 위해 씬 저장 시 미리 비활성화 권장.
+
+====================================================

@@ -1,0 +1,321 @@
+====================================================
+  Spot 상태(State)에 따른 버튼 3종 활성/비활성 흐름 제어
+  작성일: 2026-04-21 22:30 KST
+====================================================
+
+----------------------------------------------------
+a. 목차
+----------------------------------------------------
+
+  a. 목차
+  b. 요구한 기능
+  c. 현재 상황 및 코드
+  d. 요구한 기능을 만들기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+  e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+  f. 어떤 순서로 진행할 것인지
+  g. 어디가 어떤 식으로 변경되는지
+  h. 주의할 점
+
+
+----------------------------------------------------
+b. 요구한 기능
+----------------------------------------------------
+
+  - 대상 씬: Assets/Scenes/StrategyGame.unity
+  - 참고: https://github.com/ViniciusChrisosthemos/GameDispatchLike.git
+
+  Spot의 자식으로 AlarmButton / WorkButton / CheckButton 3종이 존재.
+  BuildingState 변화에 따라 각 버튼을 아래 규칙으로 활성/비활성 제어.
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │ State       │ AlarmButton │ WorkButton │ CheckButton │ 트리거  │
+  ├──────────────────────────────────────────────────────────────┤
+  │ Idle        │ false       │ false      │ false       │ 초기    │
+  │ Incident    │ true (*)    │ false      │ false       │ 페이드인 완료 후 │
+  │ Selected    │ false       │ false      │ false       │ Dispatch 시작 시 │
+  │ (이동 완료) │ false       │ true       │ false       │ 캐릭터 도착 시  │
+  │ Completed   │ false       │ false      │ true        │ Slider 0 도달 시 │
+  └──────────────────────────────────────────────────────────────┘
+
+  (*) AlarmButton: PlayIncidentEffect() DOTween 페이드인이 완전히 끝난 뒤 활성화.
+
+  단계별 상세:
+    a. Idle     → AlarmButton / WorkButton / CheckButton 모두 false
+    b. Incident → PlayIncidentEffect() 완료 콜백에서 AlarmButton true
+    c. Selected → AlarmButton false. 이후 캐릭터가 Spot에 도착하면
+                  AlarmButton false 유지, WorkButton true + SliderCountdown 시작
+    d. Slider value가 0에 도달하면 → BuildingState를 Completed로 전환
+    e. Completed → WorkButton false, CheckButton true
+
+
+----------------------------------------------------
+c. 현재 상황 및 코드
+----------------------------------------------------
+
+  [ Spot.cs - Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs ]
+
+    현재 BuildingState: Idle / Incident / Unselected / Selected / Completed
+    SetState()에서 Incident 전환 시 PlayIncidentEffect() 호출.
+    PlayIncidentEffect()는 DOTween으로 _buildingImage를 alpha 0→1 페이드인.
+
+    버튼 관련 코드: 전혀 없음.
+    버튼 오브젝트 참조: 없음.
+
+  [ SliderCountdown.cs - Assets/Scripts/StrategyGame/Core/UI/SliderCountdown.cs ]
+
+    StartCountdown() 호출 시 Slider.value를 1→0으로 duration초에 걸쳐 감소.
+    감소 완료 시 _countdownCoroutine = null 처리 후 종료.
+
+    완료 이벤트/콜백: 없음 (외부에 완료 통보 불가).
+
+  [ MissionDispatcher.cs - Assets/Scripts/StrategyGame/Core/Mission/MissionDispatcher.cs ]
+
+    Dispatch(character, targetSpot):
+      targetSpot.SetState(Selected) → 캐릭터 활성화 → 경로 이동 시작
+      도착 콜백: () => character.gameObject.SetActive(false)
+      → Spot에 도착 사실을 통보하는 코드 없음.
+
+  [ CharacterAgent.cs - Assets/Scripts/StrategyGame/Core/Character/CharacterAgent.cs ]
+
+    MoveAlong(path, onArrived): 경로 이동 후 onArrived 콜백 실행.
+    → 구조상 MissionDispatcher가 콜백을 조합하여 넘기는 방식.
+
+
+----------------------------------------------------
+d. 요구한 기능을 만들기 위해서 어떤 식으로 생성하거나 변경해야 하는지
+----------------------------------------------------
+
+  ── 변경 파일 1: Spot.cs ──────────────────────────────────────
+
+    [ 추가할 필드 ]
+      [Header("버튼 UI")]
+      [SerializeField] private GameObject _alarmButton;
+      [SerializeField] private GameObject _workButton;
+      [SerializeField] private GameObject _checkButton;
+
+    [ Awake() 수정 ]
+      초기화 시 3개 버튼 모두 SetActive(false).
+
+    [ 헬퍼 메서드 추가 ]
+      private void SetButtonsAll(bool active)
+      {
+          _alarmButton?.SetActive(active);
+          _workButton?.SetActive(active);
+          _checkButton?.SetActive(active);
+      }
+
+    [ SetState() 수정 ]
+      case Idle:
+        SetButtonsAll(false);
+        DOFade(0f) 처리 (기존 유지)
+
+      case Incident:
+        SetButtonsAll(false);  ← 우선 전부 끔
+        PlayIncidentEffect();  ← DOTween 완료 콜백에서 AlarmButton true
+
+      case Selected:
+        SetButtonsAll(false);  ← Dispatch 시작 시 AlarmButton도 끔
+        (WorkButton true는 OnDispatchArrived()에서 처리)
+
+      case Completed:
+        SetButtonsAll(false);
+        _checkButton?.SetActive(true);
+
+    [ PlayIncidentEffect() 수정 ]
+      _buildingImage.DOFade(1f, _fadeInDuration)
+          .OnComplete(() => _alarmButton?.SetActive(true));
+      ← DOTween 완료 콜백으로 AlarmButton 활성화
+
+    [ 신규 메서드: OnDispatchArrived() ]
+      캐릭터가 Spot에 도착했을 때 MissionDispatcher가 호출.
+      public void OnDispatchArrived()
+      {
+          SetButtonsAll(false);
+          _workButton?.SetActive(true);
+
+          // WorkButton의 SliderCountdown을 찾아 시작 + 완료 콜백 등록
+          SliderCountdown countdown = _workButton.GetComponent<SliderCountdown>();
+          if (countdown != null)
+          {
+              countdown.OnCountdownCompleted += HandleWorkComplete;
+              countdown.StartCountdown();
+          }
+      }
+
+    [ 신규 메서드: HandleWorkComplete() ]
+      private void HandleWorkComplete()
+      {
+          SliderCountdown countdown = _workButton?.GetComponent<SliderCountdown>();
+          if (countdown != null)
+              countdown.OnCountdownCompleted -= HandleWorkComplete;  // 구독 해제
+
+          SetState(BuildingState.Completed);
+      }
+
+
+  ── 변경 파일 2: SliderCountdown.cs ──────────────────────────
+
+    [ 추가할 필드 ]
+      public event Action OnCountdownCompleted;
+
+    [ CountdownCoroutine() 수정 ]
+      _slider.value = 0f;
+      _countdownCoroutine = null;
+      OnCountdownCompleted?.Invoke();   ← 완료 이벤트 발행 추가
+
+
+  ── 변경 파일 3: MissionDispatcher.cs ────────────────────────
+
+    [ Dispatch() 수정 ]
+      기존:
+        character.MoveAlong(path, () => character.gameObject.SetActive(false));
+
+      변경:
+        character.MoveAlong(path, () =>
+        {
+            character.gameObject.SetActive(false);
+            targetSpot.OnDispatchArrived();   ← 추가
+        });
+
+
+----------------------------------------------------
+e. 다른 방법들 중에서 왜 d의 방식으로 만든 것인지
+----------------------------------------------------
+
+  [ 버튼 제어 주체 선택 ]
+
+  방법 A (기각): MissionDispatcher가 직접 버튼 참조 보유 및 제어
+    - MissionDispatcher는 이동/경로 담당 → 버튼 UI까지 관리하면 SRP 위반
+    - Spot이 여러 개로 늘어날 때 MissionDispatcher의 복잡도 폭발
+
+  방법 B (기각): Inspector UnityEvent로 SliderCountdown.OnComplete → Spot 연결
+    - Spot.SetCompleted() 같은 래퍼 메서드를 Inspector용으로 노출해야 함
+    - 씬마다 수동 연결이 필요해 유지보수 위험 증가
+
+  방법 C (채택): Spot이 버튼 3종 참조 보유, 코드로 이벤트 구독
+    - Spot이 자신의 시각/UI 상태를 완전히 소유 (단일 책임)
+    - MissionDispatcher는 OnDispatchArrived() 한 줄만 추가 → 최소 침습
+    - SliderCountdown은 C# event만 추가 → Inspector 연결 없이 동작
+    - Spot 복수 생성 시에도 각 인스턴스가 독립적으로 동작
+
+  [ PlayIncidentEffect 완료 후 AlarmButton 활성화 ]
+
+  방법 A (기각): Coroutine으로 WaitForSeconds(_fadeInDuration) 후 활성화
+    - DOTween 실제 완료 시각과 WaitForSeconds 타이밍이 미묘하게 불일치 가능
+
+  방법 B (채택): DOTween .OnComplete() 콜백
+    - 페이드인 완료 시각과 버튼 활성화 시각이 정확히 동기화
+    - 기존 DOTween 사용 패턴(HoverEffect, Spot)과 일관성 유지
+
+
+----------------------------------------------------
+f. 어떤 순서로 진행할 것인지
+----------------------------------------------------
+
+  Step 1. SliderCountdown.cs 수정
+    - using System 추가 (Action 사용을 위해)
+    - public event Action OnCountdownCompleted 필드 추가
+    - CountdownCoroutine() 종료 시 OnCountdownCompleted?.Invoke() 호출
+
+  Step 2. Spot.cs 수정
+    - 버튼 필드 3개 추가 (_alarmButton, _workButton, _checkButton)
+    - Awake()에서 SetButtonsAll(false) 추가
+    - SetButtonsAll() 헬퍼 메서드 추가
+    - SetState() 각 케이스에 버튼 제어 로직 추가
+    - PlayIncidentEffect() .OnComplete() 콜백에 AlarmButton 활성화 추가
+    - OnDispatchArrived() 메서드 추가
+    - HandleWorkComplete() 메서드 추가
+
+  Step 3. MissionDispatcher.cs 수정
+    - Dispatch() 콜백에 targetSpot.OnDispatchArrived() 한 줄 추가
+
+  Step 4. Unity 에디터 작업
+    - StrategyGame 씬에서 각 Spot GameObject의 Spot 컴포넌트 선택
+    - Inspector: _alarmButton / _workButton / _checkButton 필드에
+      자식 오브젝트(AlarmButton, WorkButton, CheckButton) 드래그 연결
+    - WorkButton 하위에 SliderCountdown 컴포넌트가 붙어 있는지 확인
+      (없으면 WorkButton에 Add Component → SliderCountdown)
+    - SliderCountdown._slider에 WorkButton 하위 Slider 오브젝트 연결
+    - SliderCountdown._duration에 원하는 작업 시간(초) 입력
+
+  Step 5. 테스트
+    - Play 모드 진입
+    - Spot.SetState(Idle) → 버튼 3개 모두 비활성 확인
+    - Spot.SetState(Incident) → 페이드인 완료 후 AlarmButton만 활성 확인
+    - Dispatch() 호출 → 이동 시작 시 AlarmButton 비활성 확인
+    - 캐릭터 Spot 도착 → WorkButton 활성 + SliderCountdown 시작 확인
+    - Slider 0 도달 → Completed 전환 → WorkButton 비활성 / CheckButton 활성 확인
+
+
+----------------------------------------------------
+g. 어디가 어떤 식으로 변경되는지
+----------------------------------------------------
+
+  [ 변경 파일 ]
+
+  ① Assets/Scripts/StrategyGame/Core/PathFinder/Spot.cs
+      - 버튼 참조 필드 3개 추가
+      - Awake(): 버튼 전체 false 초기화 추가
+      - SetState(): 각 BuildingState별 버튼 제어 로직 추가
+      - PlayIncidentEffect(): .OnComplete() 콜백 추가
+      - 신규 메서드 OnDispatchArrived(), HandleWorkComplete() 추가
+      - 신규 헬퍼 메서드 SetButtonsAll() 추가
+
+  ② Assets/Scripts/StrategyGame/Core/UI/SliderCountdown.cs
+      - using System 추가
+      - public event Action OnCountdownCompleted 추가
+      - CountdownCoroutine() 종료부에 이벤트 호출 추가
+
+  ③ Assets/Scripts/StrategyGame/Core/Mission/MissionDispatcher.cs
+      - Dispatch() 도착 콜백에 targetSpot.OnDispatchArrived() 추가
+
+  [ 변경 없는 파일 ]
+      - CharacterAgent.cs   : 변경 없음
+      - LineManager.cs      : 변경 없음
+      - HoverEffect.cs      : 변경 없음
+
+  [ Unity 에디터 작업 (씬 변경) ]
+      - StrategyGame.unity
+          · 각 Spot의 Spot 컴포넌트 Inspector에서
+            _alarmButton / _workButton / _checkButton 연결
+          · WorkButton에 SliderCountdown 컴포넌트 연결 확인/추가
+
+
+----------------------------------------------------
+h. 주의할 점
+----------------------------------------------------
+
+  1. DOTween .OnComplete() 호출 타이밍
+     - PlayIncidentEffect()에서 DOFade를 DOKill() 후 재실행하는 구조.
+       SetState()가 빠르게 여러 번 호출되면 이전 DOTween의 OnComplete가
+       이미 Kill되어 AlarmButton이 활성화되지 않을 수 있음.
+     - → 현재 구조에서는 SetState 호출 빈도가 낮아 문제 없을 것으로 판단.
+       문제 발생 시 DOTween Sequence + Kill(true) 방식으로 교체 고려.
+
+  2. OnCountdownCompleted 이벤트 구독 해제
+     - HandleWorkComplete()에서 -= 구독 해제를 반드시 수행.
+       해제하지 않으면 Spot이 비활성화/재사용될 때 중복 호출 위험.
+
+  3. SetState(Completed) 호출 경로
+     - HandleWorkComplete() → SetState(Completed) → SetButtonsAll(false) +
+       CheckButton true 순서로 진행.
+     - Completed 케이스 안에서 다시 SliderCountdown 관련 처리를 하지 않도록 주의.
+
+  4. 퀘스트 수락 (Selected 전환) 미구현
+     - 현재 AlarmButton 클릭 → Dispatch() 호출 연결이 미구현 상태.
+     - AlarmButton OnClick → MissionDispatcher.Dispatch() 연결은
+       추후 퀘스트 수락 UI 구현 시 추가.
+     - 당장은 MissionDispatcher.Dispatch()를 코드에서 직접 호출하여 테스트.
+
+  5. WorkButton의 SliderCountdown 컴포넌트
+     - Spot.OnDispatchArrived()에서 _workButton.GetComponent<SliderCountdown>()
+       으로 가져오므로 WorkButton GameObject에 반드시 SliderCountdown이
+       붙어 있어야 함. 없으면 카운트다운이 시작되지 않음.
+
+  6. 버튼 3종의 초기 상태 (씬 저장 기준)
+     - 씬에서 버튼이 활성화(active=true)된 채로 저장되어도
+       Awake()의 SetButtonsAll(false)가 실행되므로 런타임에 올바르게 초기화됨.
+     - 단, 에디터 화면과 Play 시작 순간에 잠깐 보일 수 있으므로
+       씬 저장 시 미리 비활성화해 두는 것을 권장.
+
+====================================================

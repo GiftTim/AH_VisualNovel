@@ -32,7 +32,11 @@ public class MissionDispatcher : MonoBehaviour
         character.gameObject.SetActive(true);
         Transform[] path = _connector.GetWaypoints(targetSpot);
         if (path != null)
-            character.MoveAlong(path, () => character.gameObject.SetActive(false));
+            character.MoveAlong(path, () =>
+            {
+                character.gameObject.SetActive(false);
+                targetSpot.OnDispatchArrived(() => Return(character, targetSpot));
+            });
     }
 
     /// <summary>
@@ -42,7 +46,6 @@ public class MissionDispatcher : MonoBehaviour
     /// <param name="fromSpot">귀환을 시작할 건물.</param>
     public void Return(CharacterAgent character, Spot fromSpot)
     {
-        fromSpot.SetState(BuildingState.Completed);
         character.gameObject.SetActive(true);
         Transform[] path = _connector.GetReturnWaypoints(fromSpot);
         if (path != null)

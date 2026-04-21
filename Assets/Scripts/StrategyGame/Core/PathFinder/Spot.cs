@@ -22,7 +22,6 @@ public class SpotVisualConfig
 {
     public BuildingType _buildingType;
     public BuildingState _buildingState;
-    public Color color = Color.white;
 }
 
 public class Spot : MonoBehaviour
@@ -33,17 +32,28 @@ public class Spot : MonoBehaviour
     [SerializeField] private Image _buildingImage;
     [SerializeField] private float _fadeInDuration = 1.0f;
 
+    [Header("버튼 UI")]
+    [SerializeField] private GameObject _alarmButton;
+    [SerializeField] private GameObject _workButton;
+    [SerializeField] private GameObject _checkButton;
+
+    private System.Action _onReturnCallback;
+
     public BuildingType SpotType => _spotType;
     public BuildingState CurrentState => _buildingState;
 
     private void Awake()
     {
+        if (_spotType == BuildingType.HQ) return;
+
         if (_buildingImage != null)
         {
             Color c = _buildingImage.color;
             c.a = 0f;
             _buildingImage.color = c;
         }
+
+        SetButtonsAll(false);
     }
 
     public void SetType(BuildingType type)
@@ -53,24 +63,44 @@ public class Spot : MonoBehaviour
 
     public void SetState(BuildingState state)
     {
-        BuildingState prev = _buildingState;
         _buildingState = state;
 
-        // * → Incident: 페이드인
-        if (prev != BuildingState.Incident && state == BuildingState.Incident)
+        if (_spotType == BuildingType.HQ) return;
+
+        switch (state)
         {
-            PlayIncidentEffect();
+            case BuildingState.Idle:
+                SetButtonsAll(false);
+                if (_buildingImage != null)
+                {
+                    _buildingImage.DOKill();
+                    _buildingImage.DOFade(0f, _fadeInDuration);
+                }
+                break;
+
+            case BuildingState.Incident:
+                SetButtonsAll(false);
+                PlayIncidentEffect();
+                break;
+
+            case BuildingState.Selected:
+                // 버튼은 OnDispatchArrived() 도착 시 제어
+                break;
+
+            case BuildingState.Completed:
+                SetButtonsAll(false);
+                _checkButton?.SetActive(true);
+                _onReturnCallback?.Invoke();
+                _onReturnCallback = null;
+                break;
         }
-        // * → Idle: alpha 페이드아웃 (경로 무관)
-        else if (state == BuildingState.Idle)
-        {
-            if (_buildingImage != null)
-            {
-                _buildingImage.DOKill();
-                _buildingImage.DOFade(0f, _fadeInDuration);
-            }
-        }
-        // Incident → Selected: 유지 (처리 없음)
+    }
+
+    private void SetButtonsAll(bool active)
+    {
+        _alarmButton?.SetActive(active);
+        _workButton?.SetActive(active);
+        _checkButton?.SetActive(active);
     }
 
     private void PlayIncidentEffect()
@@ -83,6 +113,36 @@ public class Spot : MonoBehaviour
         c.a = 0f;
         _buildingImage.color = c;
 
-        _buildingImage.DOFade(1f, _fadeInDuration);
+        _buildingImage.DOFade(1f, _fadeInDuration)
+            .OnComplete(() =>
+            {
+                _alarmButton?.SetActive(true);
+                SliderCountdown countdown = _alarmButton?.GetComponent<SliderCountdown>();
+                countdown?.StartCountdown();
+            });
+    }
+
+    public void OnDispatchArrived(System.Action onReturn)
+    {
+        _onReturnCallback = onReturn;
+
+        SetButtonsAll(false);
+        _workButton?.SetActive(true);
+
+        SliderCountdown countdown = _workButton.GetComponent<SliderCountdown>();
+        if (countdown != null)
+        {
+            countdown.OnCountdownCompleted += HandleWorkComplete;
+            countdown.StartCountdown();
+        }
+    }
+
+    private void HandleWorkComplete()
+    {
+        SliderCountdown countdown = _workButton?.GetComponent<SliderCountdown>();
+        if (countdown != null)
+            countdown.OnCountdownCompleted -= HandleWorkComplete;
+
+        SetState(BuildingState.Completed);
     }
 }

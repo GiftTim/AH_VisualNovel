@@ -55,7 +55,6 @@ namespace TESTING
                 if (_targetSpot != null)
                 {
                     _targetSpot.SetState(BuildingState.Completed);
-                    _dispatcher.Return(_character, _targetSpot);
                 }
             }
 

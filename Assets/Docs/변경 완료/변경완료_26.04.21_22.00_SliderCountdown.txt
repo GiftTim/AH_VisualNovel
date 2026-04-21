@@ -1,0 +1,125 @@
+====================================================
+  변경완료: SliderCountdown.cs 신규 생성
+  완료일: 2026-04-21 22:00 KST
+====================================================
+
+----------------------------------------------------
+1. 변경 내용
+----------------------------------------------------
+
+[ 현재 코드와 계획서 c항 비교 결과 ]
+  - 다른 점 없음 → 변경 진행
+
+[ 변경 전 코드 ]
+  해당 없음 (신규 파일)
+
+[ 변경 후 코드 ]
+  파일 경로: Assets/Scripts/StrategyGame/Core/UI/SliderCountdown.cs
+
+  using System.Collections;
+  using UnityEngine;
+  using UnityEngine.UI;
+
+  /// <summary>
+  /// 버튼에 부착.
+  /// StartCountdown()을 Button OnClick에 연결하면
+  /// Slider value가 1에서 0으로 duration 초에 걸쳐 감소한다.
+  /// </summary>
+  public class SliderCountdown : MonoBehaviour
+  {
+      [Header("연결 대상")]
+      [SerializeField] private Slider _slider;
+
+      [Header("타이머 설정")]
+      [SerializeField] private float _duration = 10f;
+
+      private Coroutine _countdownCoroutine;
+
+      /// <summary>
+      /// 버튼 OnClick에 연결할 메서드.
+      /// 이미 진행 중인 카운트다운이 있으면 초기화 후 재시작.
+      /// </summary>
+      public void StartCountdown()
+      {
+          if (_countdownCoroutine != null)
+              StopCoroutine(_countdownCoroutine);
+
+          _countdownCoroutine = StartCoroutine(CountdownCoroutine());
+      }
+
+      private IEnumerator CountdownCoroutine()
+      {
+          if (_slider == null) yield break;
+
+          _slider.value = 1f;
+          float elapsed = 0f;
+
+          while (elapsed < _duration)
+          {
+              elapsed += Time.deltaTime;
+              _slider.value = 1f - Mathf.Clamp01(elapsed / _duration);
+              yield return null;
+          }
+
+          _slider.value = 0f;
+          _countdownCoroutine = null;
+      }
+  }
+
+
+----------------------------------------------------
+2. 작동 흐름
+----------------------------------------------------
+
+  1. Button의 OnClick() 이벤트 → StartCountdown() 호출
+  2. 기존 코루틴이 실행 중이면 즉시 중단 후 재시작
+  3. CountdownCoroutine() 진입
+     a. _slider.value = 1f 로 강제 초기화
+     b. 매 프레임 elapsed += Time.deltaTime 누적
+     c. _slider.value = 1f - Mathf.Clamp01(elapsed / _duration) 로 선형 감소
+     d. elapsed >= _duration 도달 시 _slider.value = 0f 로 고정 후 코루틴 종료
+
+
+----------------------------------------------------
+3. 주의할 점
+----------------------------------------------------
+
+  1. Slider 설정
+     - Min Value = 0, Max Value = 1 이어야 정상 동작
+
+  2. 버튼 재클릭
+     - 진행 중 재클릭 시 Slider가 1f로 초기화되고 재카운트 시작
+     - 재클릭을 막으려면 버튼 Interactable = false 처리 별도 추가 필요
+
+  3. 오브젝트 비활성화
+     - GameObject가 SetActive(false)되면 코루틴 자동 중단
+     - 재활성화 시 Slider.value는 중단 지점 유지
+       → 필요 시 OnEnable()에서 _slider.value = 1f 초기화 추가 고려
+
+  4. Time.timeScale 영향
+     - timeScale = 0이면 카운트다운 정지 (일시정지와 연동됨)
+     - 일시정지 무관하게 흐르려면 Time.unscaledDeltaTime 으로 교체
+
+  5. Unity 에디터 연결 작업 (직접 수행 필요)
+     - StrategyGame.unity 씬에서 대상 Button GameObject 선택
+     - Add Component → SliderCountdown
+     - Inspector: _slider 필드에 Slider 오브젝트 드래그 연결
+     - Inspector: _duration 값 입력 (예: 10)
+     - Button OnClick() → SliderCountdown.StartCountdown() 연결
+
+
+----------------------------------------------------
+4. 변경된 파일 목록
+----------------------------------------------------
+
+  [ 신규 생성 ]
+    - Assets/Scripts/StrategyGame/Core/UI/SliderCountdown.cs
+
+  [ 변경 없음 ]
+    - MissionDispatcher.cs
+    - CharacterAgent.cs
+    - Spot.cs
+    - LineManager.cs
+    - HoverEffect.cs
+
+====================================================
