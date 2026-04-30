@@ -14,6 +14,7 @@ public enum BuildingState
     Incident,    // 사건 발생 건물
     Unselected,  // 선택 안 된 건물 (미션 만료)
     Selected,    // 선택된 건물 (미션 진행 중)
+
     Completed    // 사건 완료 건물
 }
 
@@ -36,7 +37,11 @@ public class Spot : MonoBehaviour
     [SerializeField] private GameObject _alarmButton;
     [SerializeField] private GameObject _workButton;
     [SerializeField] private GameObject _checkButton;
+    [SerializeField] private float _buttonFadeDuration = 0.4f;
 
+    private CanvasGroup _alarmCanvasGroup;
+    private CanvasGroup _workCanvasGroup;
+    private CanvasGroup _checkCanvasGroup;
     private System.Action _onReturnCallback;
 
     public BuildingType SpotType => _spotType;
@@ -53,7 +58,21 @@ public class Spot : MonoBehaviour
             _buildingImage.color = c;
         }
 
+        _alarmCanvasGroup = InitCanvasGroup(_alarmButton);
+        _workCanvasGroup  = InitCanvasGroup(_workButton);
+        _checkCanvasGroup = InitCanvasGroup(_checkButton);
+
         SetButtonsAll(false);
+    }
+
+    private CanvasGroup InitCanvasGroup(GameObject btn)
+    {
+        if (btn == null) return null;
+        CanvasGroup cg = btn.GetComponent<CanvasGroup>();
+        if (cg == null) cg = btn.AddComponent<CanvasGroup>();
+        cg.alpha = 0f;
+        btn.SetActive(false);
+        return cg;
     }
 
     public void SetType(BuildingType type)
@@ -89,7 +108,7 @@ public class Spot : MonoBehaviour
 
             case BuildingState.Completed:
                 SetButtonsAll(false);
-                _checkButton?.SetActive(true);
+                ShowCheckButton();
                 _onReturnCallback?.Invoke();
                 _onReturnCallback = null;
                 break;
@@ -98,10 +117,43 @@ public class Spot : MonoBehaviour
 
     private void SetButtonsAll(bool active)
     {
-        _alarmButton?.SetActive(active);
-        _workButton?.SetActive(active);
-        _checkButton?.SetActive(active);
+        if (active)
+        {
+            ShowAlarmButton();
+            ShowWorkButton();
+            ShowCheckButton();
+        }
+        else
+        {
+            HideAlarmButton();
+            HideWorkButton();
+            HideCheckButton();
+        }
     }
+
+    private void ShowButton(GameObject btn, CanvasGroup cg)
+    {
+        if (btn == null || cg == null) return;
+        btn.SetActive(true);
+        cg.DOKill();
+        cg.alpha = 0f;
+        cg.DOFade(1f, _buttonFadeDuration);
+    }
+
+    private void HideButton(GameObject btn, CanvasGroup cg)
+    {
+        if (btn == null || cg == null) return;
+        cg.DOKill();
+        cg.DOFade(0f, _buttonFadeDuration)
+            .OnComplete(() => btn.SetActive(false));
+    }
+
+    private void ShowAlarmButton() => ShowButton(_alarmButton, _alarmCanvasGroup);
+    private void HideAlarmButton() => HideButton(_alarmButton, _alarmCanvasGroup);
+    private void ShowWorkButton()  => ShowButton(_workButton,  _workCanvasGroup);
+    private void HideWorkButton()  => HideButton(_workButton,  _workCanvasGroup);
+    private void ShowCheckButton() => ShowButton(_checkButton, _checkCanvasGroup);
+    private void HideCheckButton() => HideButton(_checkButton, _checkCanvasGroup);
 
     private void PlayIncidentEffect()
     {
@@ -116,7 +168,7 @@ public class Spot : MonoBehaviour
         _buildingImage.DOFade(1f, _fadeInDuration)
             .OnComplete(() =>
             {
-                _alarmButton?.SetActive(true);
+                ShowAlarmButton();
                 SliderCountdown countdown = _alarmButton?.GetComponent<SliderCountdown>();
                 countdown?.StartCountdown();
             });
@@ -127,7 +179,7 @@ public class Spot : MonoBehaviour
         _onReturnCallback = onReturn;
 
         SetButtonsAll(false);
-        _workButton?.SetActive(true);
+        ShowWorkButton();
 
         SliderCountdown countdown = _workButton.GetComponent<SliderCountdown>();
         if (countdown != null)

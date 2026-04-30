@@ -19,7 +19,11 @@
       "Bash(rm \"C:\\\\Users\\\\95tim\\\\Desktop\\\\File\\\\UnityProject\\\\AH_VisualNovel\\\\Assets\\\\Scripts\\\\StrategyGame\\\\Core\\\\UI\\\\AlarmTimer.cs\")",
       "Bash(rm \"C:\\\\Users\\\\95tim\\\\Desktop\\\\File\\\\UnityProject\\\\AH_VisualNovel\\\\Assets\\\\Scripts\\\\StrategyGame\\\\Core\\\\UI\\\\AlarmTimer.cs.meta\")",
       "Bash(rm \"C:\\\\Users\\\\95tim\\\\Desktop\\\\File\\\\UnityProject\\\\AH_VisualNovel\\\\Assets\\\\Scripts\\\\StrategyGame\\\\Core\\\\UI\\\\AlarmSpawner.cs\")",
-      "Bash(rm \"C:\\\\Users\\\\95tim\\\\Desktop\\\\File\\\\UnityProject\\\\AH_VisualNovel\\\\Assets\\\\Scripts\\\\StrategyGame\\\\Core\\\\UI\\\\AlarmSpawner.cs.meta\")"
+      "Bash(rm \"C:\\\\Users\\\\95tim\\\\Desktop\\\\File\\\\UnityProject\\\\AH_VisualNovel\\\\Assets\\\\Scripts\\\\StrategyGame\\\\Core\\\\UI\\\\AlarmSpawner.cs.meta\")",
+      "mcp__unity-mcp__get_project_info",
+      "mcp__unity-mcp__list_scripts",
+      "Bash(find C:Users95timDesktopFileUnityProjectAH_VisualNovel -type f -name *.inputactions)",
+      "mcp__unity-mcp__list_all_scenes"
     ]
   }
 }

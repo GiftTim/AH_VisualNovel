@@ -10,7 +10,7 @@ using UnityEngine.Events;
 public class CharacterAgent : MonoBehaviour
 {
     /// <summary>이동 속도. 값이 클수록 빠름 (Lerp t 증가 속도에 직접 영향).</summary>
-    [SerializeField] float _moveSpeed = 2f;
+    [SerializeField] float _moveSpeed = 1f;
 
     /// <summary>캐릭터가 지나간 자리에 트레일 효과를 그리는 컴포넌트.</summary>
     [SerializeField] TrailRenderer _trail;

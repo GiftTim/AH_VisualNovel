@@ -1,0 +1,220 @@
+================================================================
+  변경 완료 기록
+  날짜 : 2026-04-26  22:25 (KST)
+  대상 : Assets/Scripts/StrategyGame/Core/UI/RillingEffect.cs
+  브랜치 : UI_DIspatch_like
+================================================================
+
+────────────────────────────────────────────────────────────────
+1. 개요
+────────────────────────────────────────────────────────────────
+MissionPanel > DiceUI > Dice 에 부착하는 주사위 굴리기 연출 스크립트.
+기존에는 빈 템플릿(Start/Update 만 존재)이었으며,
+Dice.controller 의 Rolling.anim(36프레임, 60FPS, 루프) 스프라이트 애니메이션에
+DOTween 효과를 조합하여 실제 주사위를 굴리는 느낌을 준다.
+
+────────────────────────────────────────────────────────────────
+2. 변경 전 코드
+────────────────────────────────────────────────────────────────
+
+using UnityEngine;
+
+public class RillingEffect : MonoBehaviour
+{
+    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    void Start()
+    {
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+    }
+}
+
+
+────────────────────────────────────────────────────────────────
+3. 변경 후 코드
+────────────────────────────────────────────────────────────────
+
+using System;
+using DG.Tweening;
+using UnityEngine;
+
+[RequireComponent(typeof(Animator))]
+public class RillingEffect : MonoBehaviour
+{
+    [Header("감속 설정")]
+    [SerializeField] private float _startSpeed       = 3f;
+    [SerializeField] private float _rollDuration     = 1.5f;
+    [SerializeField] private Ease  _decelerationEase = Ease.InQuad;
+
+    [Header("흔들림")]
+    [SerializeField] private float _shakeStrength    = 10f;
+    [SerializeField] private int   _shakeVibrato     = 20;
+    [SerializeField] private float _shakeRandomness  = 90f;
+
+    [Header("던지기 반동 (Scale Punch)")]
+    [SerializeField] private Vector3 _throwPunch     = new Vector3(0.25f, 0.25f, 0f);
+    [SerializeField] private float   _throwDuration  = 0.18f;
+
+    [Header("착지 반동 (Scale Punch)")]
+    [SerializeField] private Vector3 _landPunch      = new Vector3(0.2f, -0.2f, 0f);
+    [SerializeField] private float   _landDuration   = 0.22f;
+
+    private Animator      _animator;
+    private RectTransform _rect;
+    private Sequence      _seq;
+
+    private void Awake()
+    {
+        _animator = GetComponent<Animator>();
+        _rect     = GetComponent<RectTransform>();
+    }
+
+    private void OnDestroy() { _seq?.Kill(); }
+
+    public void Roll(Action onComplete = null)
+    {
+        _seq?.Kill(complete: false);
+        _animator.speed = _startSpeed;
+
+        _seq = DOTween.Sequence();
+
+        // ① 던지는 순간 - Scale Punch
+        _seq.Append(
+            transform.DOPunchScale(_throwPunch, _throwDuration, vibrato: 5, elasticity: 0.5f)
+        );
+
+        // ② 감속 (Animator.speed: startSpeed → 0)
+        _seq.Append(
+            DOVirtual.Float(_startSpeed, 0f, _rollDuration,
+                            v => _animator.speed = v)
+                     .SetEase(_decelerationEase)
+        );
+
+        // ③ 흔들림 - 감속과 동시에, fadeOut으로 자연스럽게 수렴
+        if (_rect != null)
+        {
+            _seq.Join(
+                _rect.DOShakeAnchorPos(
+                    _rollDuration, _shakeStrength, _shakeVibrato,
+                    _shakeRandomness, snapping: false, fadeOut: true)
+            );
+        }
+
+        // ④ 착지 반동
+        _seq.Append(
+            transform.DOPunchScale(_landPunch, _landDuration, vibrato: 4, elasticity: 0.5f)
+        );
+
+        _seq.OnComplete(() => onComplete?.Invoke());
+        _seq.Play();
+    }
+
+    public void Stop()
+    {
+        _seq?.Kill(complete: false);
+        _animator.speed = 1f;
+    }
+}
+
+
+────────────────────────────────────────────────────────────────
+4. 작동 흐름
+────────────────────────────────────────────────────────────────
+
+Roll() 호출 시 아래 순서로 DOTween Sequence 가 실행된다.
+
+  t = 0.00s  ① 던지기 Scale Punch (0.18s)
+                 transform.DOPunchScale(0.25, 0.25, 0)
+                 → 주사위 크기가 살짝 튀어오르는 효과
+
+  t = 0.18s  ② Animator.speed 감속 시작 (1.5s, InQuad)
+                 DOVirtual.Float : 3x 배속 → 0x (점점 느려지다 정지)
+                 → Rolling.anim 스프라이트가 빠르게 돌다가 서서히 멈춤
+
+  t = 0.18s  ③ 흔들림 동시 실행 (1.5s, fadeOut=true) [Join]
+                 DOShakeAnchorPos : AnchoredPosition 을 무작위 진동
+                 → 처음엔 격렬히, 갈수록 잔잔해지며 수렴
+
+  t = 1.68s  ④ 착지 Scale Punch (0.22s)
+                 transform.DOPunchScale(0.2, -0.2, 0)
+                 → 세로 squash : 주사위가 바닥에 쿵 하는 느낌
+
+  t = 1.90s  onComplete 콜백 호출
+                 → 결과 표시, 다음 게임 로직 등 처리 가능
+
+Stop() 호출 시 : Sequence 즉시 Kill + Animator.speed = 1 로 복구
+
+
+────────────────────────────────────────────────────────────────
+5. 인스펙터 파라미터
+────────────────────────────────────────────────────────────────
+
+  [감속 설정]
+  _startSpeed       = 3f     초기 애니메이션 배속 (높을수록 더 빠르게 시작)
+  _rollDuration     = 1.5f   감속 구간 길이(초) (길수록 긴장감 증가)
+  _decelerationEase = InQuad 감속 곡선 (InQuad = 처음엔 느리게 감속, 후반 급감속)
+
+  [흔들림]
+  _shakeStrength    = 10f    흔들림 강도 (픽셀 단위)
+  _shakeVibrato     = 20     1초당 진동 횟수
+  _shakeRandomness  = 90f    방향 무작위성 (0=일직선, 90=완전 무작위)
+
+  [던지기/착지 반동]
+  _throwPunch       = (0.25, 0.25, 0)   던질 때 Scale 증가량
+  _throwDuration    = 0.18f             던지기 반동 길이
+  _landPunch        = (0.2, -0.2, 0)    착지 squash 량 (Y 음수 = 납작해짐)
+  _landDuration     = 0.22f             착지 반동 길이
+
+
+────────────────────────────────────────────────────────────────
+6. 사용 방법
+────────────────────────────────────────────────────────────────
+
+  // Dice 오브젝트에서 컴포넌트 참조
+  RillingEffect diceEffect = dice.GetComponent<RillingEffect>();
+
+  // 단순 실행
+  diceEffect.Roll();
+
+  // 연출 종료 후 콜백
+  diceEffect.Roll(() => {
+      // 결과 숫자 표시, 다음 로직 등
+  });
+
+  // 강제 중단
+  diceEffect.Stop();
+
+
+────────────────────────────────────────────────────────────────
+7. 주의할 점
+────────────────────────────────────────────────────────────────
+
+  [1] DOShakeAnchorPos (메서드명 주의)
+      이 프로젝트의 DOTween 버전에서는
+      'DOShakeAnchoredPosition' 이 아닌 'DOShakeAnchorPos' 를 사용해야 한다.
+      DOTweenModuleUI.cs 기준 (line 363) 확인 완료.
+
+  [2] Animator.speed = 0 으로 프리즈
+      감속 후 speed 가 0 이 되면 Rolling.anim 이 현재 프레임에서 멈춘다.
+      결과 숫자 스프라이트를 별도로 보여줘야 한다면,
+      onComplete 콜백에서 Animator 를 비활성화하거나 다른 State 로 전환해야 한다.
+
+  [3] Roll() 중복 호출
+      Roll() 이 이미 실행 중일 때 다시 호출하면
+      _seq?.Kill(complete: false) 로 이전 시퀀스를 즉시 정리하고 새로 시작한다.
+      도중에 인터럽트가 필요 없다면 호출 전 isRolling 플래그로 막는 것을 권장.
+
+  [4] RectTransform 없을 때 흔들림 스킵
+      _rect 가 null 이면 DOShakeAnchorPos 를 건너뛴다.
+      Dice 가 반드시 UI Canvas 안에 있어야 흔들림 효과가 적용된다.
+
+  [5] OnDestroy 에서 Kill
+      씬 전환 또는 오브젝트 파괴 시 진행 중인 Sequence 를 Kill 하여
+      메모리 누수 및 NullReferenceException 을 방지한다.
+
+================================================================

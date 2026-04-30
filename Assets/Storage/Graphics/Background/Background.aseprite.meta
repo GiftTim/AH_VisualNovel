@@ -102,7 +102,7 @@ ScriptedImporter:
     generateIndividualEvents: 1
     generateSpriteAtlas: 1
   importFileNodeState: 1
-  platformSettingsDirtyTick: 639122313591682854
+  platformSettingsDirtyTick: 639127313420489826
   textureAssetName: 
   singleSpriteImportData:
   - name: 
@@ -129,7 +129,7 @@ ScriptedImporter:
   animatedSpriteImportData:
   - name: Background
     originalName: 
-    pivot: {x: 0.5, y: 0}
+    pivot: {x: 0.5, y: 0.081140354}
     alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
@@ -138,8 +138,8 @@ ScriptedImporter:
       x: 4
       y: 4
       width: 1365
-      height: 768
-    spriteID: d30882e013ddaee42b536d82b207a820
+      height: 912
+    spriteID: 4aa90f502546a9242a9cba98e2638ad8
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -150,7 +150,70 @@ ScriptedImporter:
     uvTransform: {x: 4, y: 4}
   spriteSheetImportData: []
   tileSetImportData:
-  - name: Layer
+  - name: 2-Building(1)
+    originalName: 
+    pivot: {x: 8.855, y: 4.910714}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    customData: 
+    rect:
+      serializedVersion: 2
+      x: 1783
+      y: 4
+      width: 100
+      height: 84
+    spriteID: 95311f748f7cb5746abe3adf2905d6dd
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 1783, y: 4}
+  - name: 2-Building(2)
+    originalName: 
+    pivot: {x: 11.651316, y: 4.6348314}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    customData: 
+    rect:
+      serializedVersion: 2
+      x: 1783
+      y: 96
+      width: 76
+      height: 89
+    spriteID: cbc361fc57faf974fb44773274098256
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 1783, y: 96}
+  - name: 2-Building(3)
+    originalName: 
+    pivot: {x: 14.516394, y: 6.7622952}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    customData: 
+    rect:
+      serializedVersion: 2
+      x: 1783
+      y: 193
+      width: 61
+      height: 61
+    spriteID: 8b429fda283714b4da80ce1daca64248
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 1783, y: 193}
+  - name: 0-Mosaic
     originalName: 
     pivot: {x: 0.5, y: 0.5}
     alignment: 9
@@ -160,9 +223,9 @@ ScriptedImporter:
       serializedVersion: 2
       x: 4
       y: 4
-      width: 1365
-      height: 768
-    spriteID: f44ca52cffb411440b520d55f85bbc1d
+      width: 1771
+      height: 825
+    spriteID: 3d129483df8d92c47823e95430c2d3fb
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -171,19 +234,19 @@ ScriptedImporter:
     edges: []
     tessellationDetail: 0
     uvTransform: {x: 4, y: 4}
-  - name: Building(1)
+  - name: 1-Background(1)
     originalName: 
-    pivot: {x: 6.825, y: 4.571429}
+    pivot: {x: 0.5, y: 0.5}
     alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
     rect:
       serializedVersion: 2
-      x: 1377
-      y: 4
-      width: 100
-      height: 84
-    spriteID: 36fa322f3b3cc2c4d81c5acc0bf26345
+      x: 4
+      y: 837
+      width: 1771
+      height: 825
+    spriteID: f908a39ca4807b149867a372ed57bf43
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -191,20 +254,20 @@ ScriptedImporter:
     indices: 
     edges: []
     tessellationDetail: 0
-    uvTransform: {x: 1377, y: 4}
-  - name: Building(3)
+    uvTransform: {x: 4, y: 837}
+  - name: Dutorial
     originalName: 
-    pivot: {x: 11.188524, y: 6.295082}
+    pivot: {x: 0.5, y: 0.5}
     alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
     rect:
       serializedVersion: 2
-      x: 1377
-      y: 193
-      width: 61
-      height: 61
-    spriteID: eed8c400e04c3984084f2546e72900c9
+      x: 4
+      y: 1670
+      width: 1771
+      height: 825
+    spriteID: 9fe5bb2679b3c2c408a80c3e0bf01590
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -212,20 +275,20 @@ ScriptedImporter:
     indices: 
     edges: []
     tessellationDetail: 0
-    uvTransform: {x: 1377, y: 193}
-  - name: Building(2)
+    uvTransform: {x: 4, y: 1670}
+  - name: Dutorial-Mosaic
     originalName: 
-    pivot: {x: 9.1, y: 4.3146067}
+    pivot: {x: 0.5, y: 0.5}
     alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
     rect:
       serializedVersion: 2
-      x: 1377
-      y: 96
-      width: 75
-      height: 89
-    spriteID: 7ed4f8bfb83d2f94aa7e990b5664331a
+      x: 4
+      y: 2503
+      width: 1771
+      height: 825
+    spriteID: c0957d3be5a2ca544b44ecc2e840a508
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -233,104 +296,179 @@ ScriptedImporter:
     indices: 
     edges: []
     tessellationDetail: 0
-    uvTransform: {x: 1377, y: 96}
+    uvTransform: {x: 4, y: 2503}
   asepriteLayers:
   - layerIndex: 0
     uuid:
-      value0: 2515812103
+      value0: 1476831483
       value1: 0
       value2: 0
       value3: 0
     guid: 0
-    name: Layer
+    name: 0-Mosaic
     layerFlags: 3
     layerType: 0
     blendMode: 0
     cells:
-    - name: Layer
+    - name: 0-Mosaic
       frameIndex: 0
       additiveSortOrder: 0
       cellRect:
         x: 0
         y: 0
-        width: 1365
-        height: 768
-      spriteId: f44ca52cffb411440b520d55f85bbc1d
+        width: 1771
+        height: 825
+      spriteId: 3d129483df8d92c47823e95430c2d3fb
     linkedCells: []
     tileCells: []
     tileSetIndex: 0
     parentIndex: -1
   - layerIndex: 1
     uuid:
-      value0: 4108708020
+      value0: 2641126594
       value1: 0
       value2: 0
       value3: 0
     guid: 0
-    name: Building(1)
+    name: 1-Background(1)
     layerFlags: 3
     layerType: 0
     blendMode: 0
     cells:
-    - name: Building(1)
+    - name: 1-Background(1)
       frameIndex: 0
       additiveSortOrder: 0
       cellRect:
-        x: 597
-        y: 336
-        width: 100
-        height: 84
-      spriteId: 36fa322f3b3cc2c4d81c5acc0bf26345
+        x: 0
+        y: 0
+        width: 1771
+        height: 825
+      spriteId: f908a39ca4807b149867a372ed57bf43
     linkedCells: []
     tileCells: []
     tileSetIndex: 0
     parentIndex: -1
   - layerIndex: 2
     uuid:
-      value0: 3705423493
+      value0: 2712383997
       value1: 0
       value2: 0
       value3: 0
     guid: 0
-    name: Building(2)
+    name: 2-Building(1)
     layerFlags: 3
     layerType: 0
     blendMode: 0
     cells:
-    - name: Building(2)
+    - name: 2-Building(1)
       frameIndex: 0
       additiveSortOrder: 0
       cellRect:
-        x: 866
-        y: 316
-        width: 75
-        height: 89
-      spriteId: 7ed4f8bfb83d2f94aa7e990b5664331a
+        x: 597
+        y: 393
+        width: 100
+        height: 84
+      spriteId: 95311f748f7cb5746abe3adf2905d6dd
     linkedCells: []
     tileCells: []
     tileSetIndex: 0
     parentIndex: -1
   - layerIndex: 3
     uuid:
-      value0: 976540138
+      value0: 1146300056
       value1: 0
       value2: 0
       value3: 0
     guid: 0
-    name: Building(3)
+    name: 2-Building(2)
     layerFlags: 3
     layerType: 0
     blendMode: 0
     cells:
-    - name: Building(3)
+    - name: 2-Building(2)
+      frameIndex: 0
+      additiveSortOrder: 0
+      cellRect:
+        x: 898
+        y: 357
+        width: 76
+        height: 89
+      spriteId: cbc361fc57faf974fb44773274098256
+    linkedCells: []
+    tileCells: []
+    tileSetIndex: 0
+    parentIndex: -1
+  - layerIndex: 4
+    uuid:
+      value0: 3875183411
+      value1: 0
+      value2: 0
+      value3: 0
+    guid: 0
+    name: 2-Building(3)
+    layerFlags: 3
+    layerType: 0
+    blendMode: 0
+    cells:
+    - name: 2-Building(3)
       frameIndex: 0
       additiveSortOrder: 0
       cellRect:
         x: 592
-        y: 408
+        y: 465
         width: 61
         height: 61
-      spriteId: eed8c400e04c3984084f2546e72900c9
+      spriteId: 8b429fda283714b4da80ce1daca64248
+    linkedCells: []
+    tileCells: []
+    tileSetIndex: 0
+    parentIndex: -1
+  - layerIndex: 5
+    uuid:
+      value0: 1463083048
+      value1: 0
+      value2: 0
+      value3: 0
+    guid: 0
+    name: Dutorial
+    layerFlags: 3
+    layerType: 0
+    blendMode: 0
+    cells:
+    - name: Dutorial
+      frameIndex: 0
+      additiveSortOrder: 0
+      cellRect:
+        x: 0
+        y: 0
+        width: 1771
+        height: 825
+      spriteId: 9fe5bb2679b3c2c408a80c3e0bf01590
+    linkedCells: []
+    tileCells: []
+    tileSetIndex: 0
+    parentIndex: -1
+  - layerIndex: 6
+    uuid:
+      value0: 2147566951
+      value1: 0
+      value2: 0
+      value3: 0
+    guid: 0
+    name: Dutorial-Mosaic
+    layerFlags: 3
+    layerType: 0
+    blendMode: 0
+    cells:
+    - name: Dutorial-Mosaic
+      frameIndex: 0
+      additiveSortOrder: 0
+      cellRect:
+        x: 0
+        y: 0
+        width: 1771
+        height: 825
+      spriteId: c0957d3be5a2ca544b44ecc2e840a508
     linkedCells: []
     tileCells: []
     tileSetIndex: 0
@@ -412,5 +550,5 @@ ScriptedImporter:
   generatePhysicsShape: 0
   secondarySpriteTextures: []
   spritePackingTag: 
-  canvasSize: {x: 1365, y: 768}
-  previousTextureSize: {x: 2048, y: 1024}
+  canvasSize: {x: 1771, y: 825}
+  previousTextureSize: {x: 2048, y: 4096}

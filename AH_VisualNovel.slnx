@@ -9,6 +9,6 @@
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Assembly-CSharp-Editor-firstpass.csproj" />
   <Project Path="AYellowpaper.SerializedCollections.Editor.csproj" />
-  <Project Path="ACTk.Examples.Genuine.Editor.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="ACTk.Examples.Genuine.Editor.csproj" />
 </Solution>
